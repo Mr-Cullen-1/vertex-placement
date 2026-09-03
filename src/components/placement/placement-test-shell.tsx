@@ -165,13 +165,17 @@ export function PlacementTestShell({
   const isLast = currentIndex === questions.length - 1;
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-4 py-6 sm:px-6">
-      <header className="mb-6 flex items-center justify-between gap-4">
+    <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col overflow-hidden px-4 sm:px-6">
+      {/* Header, progress, and footer are pinned (shrink-0) so the timer
+       * and submit/navigation controls are always visible — only the
+       * question + navigator area scrolls if it doesn't fit the
+       * viewport, so the page itself never needs to scroll. */}
+      <header className="shrink-0 py-4 flex items-center justify-between gap-4">
         <VertexWordmark />
         <PlacementTimer expiresAt={expiresAt} onExpire={handleExpire} />
       </header>
 
-      <div className="mb-6">
+      <div className="shrink-0 mb-4">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-primary transition-all duration-300"
@@ -180,7 +184,7 @@ export function PlacementTestShell({
         </div>
       </div>
 
-      <main className="flex-1">
+      <main className="min-h-0 flex-1 overflow-y-auto">
         <PlacementQuestion
           key={currentQuestion.questionId}
           question={currentQuestion}
@@ -199,16 +203,16 @@ export function PlacementTestShell({
             </span>
           )}
         </div>
+
+        <QuestionNavigator
+          items={questions.map((q) => ({ order: q.order, answered: q.selectedOptionId !== null }))}
+          currentOrder={currentQuestion.order}
+          onJump={(order) => setCurrentIndex(questions.findIndex((q) => q.order === order))}
+          className="my-6"
+        />
       </main>
 
-      <QuestionNavigator
-        items={questions.map((q) => ({ order: q.order, answered: q.selectedOptionId !== null }))}
-        currentOrder={currentQuestion.order}
-        onJump={(order) => setCurrentIndex(questions.findIndex((q) => q.order === order))}
-        className="my-6"
-      />
-
-      <footer className="flex items-center justify-between gap-3 border-t border-border pt-4">
+      <footer className="shrink-0 flex items-center justify-between gap-3 border-t border-border py-4">
         <Button
           variant="outline"
           onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}

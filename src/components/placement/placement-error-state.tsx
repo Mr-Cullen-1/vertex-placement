@@ -47,7 +47,7 @@ export function PlacementErrorState({ code }: { code: string }) {
   const { title, description } = PRESENTATIONS[code] ?? FALLBACK;
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
+    <div className="flex h-dvh flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-8 text-center">
       <VertexWordmark />
       <div className="flex max-w-sm flex-col gap-2">
         <h1 className="text-lg font-semibold text-foreground">{title}</h1>

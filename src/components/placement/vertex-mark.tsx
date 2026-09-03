@@ -1,29 +1,33 @@
-/** Inline recreation of the Vertex chevron mark in brand color — see
- * design/logo.png and DESIGN_REFERENCE.png. Kept as inline SVG (not an
- * imported raster asset) since the source logo is a white mark on a
- * solid black square, not directly usable on a light surface. */
+import Image from "next/image";
+
+/** The real Vertex mark (design/logo.png, copied to public/vertex-logo.png
+ * as a static asset — not an inline recreation). The source file is a
+ * solid black square with no alpha channel, so it's presented as a
+ * small rounded app-icon-style badge rather than composited directly
+ * onto the page background. Size is controlled entirely by `className`
+ * (e.g. `size-8`) via `fill`, so one component works both as a small
+ * inline mark next to text and as a larger standalone icon. */
 export function VertexMark({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
+    <span
+      className={`relative inline-block shrink-0 overflow-hidden rounded-[28%] ${className ?? ""}`}
     >
-      <path
-        d="M3 6h6l7 14 7-14h6L16 28 3 6Z"
-        fill="currentColor"
+      <Image
+        src="/vertex-logo.png"
+        alt=""
+        fill
+        sizes="64px"
+        className="object-cover"
+        priority
       />
-      <path d="M12.5 15 16 21.5 19.5 15h-2.6L16 17l-.9-2h-2.6Z" fill="var(--background)" />
-    </svg>
+    </span>
   );
 }
 
 export function VertexWordmark({ className }: { className?: string }) {
   return (
     <div className={`flex items-center gap-2 ${className ?? ""}`}>
-      <VertexMark className="h-6 w-6 text-primary" />
+      <VertexMark className="size-6" />
       <span className="text-base font-semibold tracking-tight text-foreground">
         Vertex Placement
       </span>

@@ -27,7 +27,7 @@ export function PlacementInstructions({
   onBegin,
 }: PlacementInstructionsProps) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-12">
+    <div className="flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
       <div className="flex w-full max-w-md flex-col gap-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <VertexWordmark />
