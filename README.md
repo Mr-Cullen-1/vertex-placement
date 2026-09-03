@@ -5,12 +5,12 @@ Standalone product — independent codebase, database, and deployment. See
 [`/docs`](./docs) for architecture, database, routes, product rules, and
 the design system.
 
-**Status:** Phase 1 (core backend foundation) complete, connected to a
-dedicated Supabase PostgreSQL database (Phase 1.5). The domain/service
-layer, RBAC, token and attempt lifecycles, and the scoring/submission
-pipeline are implemented and tested — see
-[`docs/PHASE_1.md`](./docs/PHASE_1.md). No visual UI (student test screen,
-admin dashboard) is built yet.
+**Status:** Phase 2A complete — the full student placement flow
+(`/placement/[token]`: welcome, candidate confirmation, instructions,
+timed test, result) is implemented and tested on top of the Phase 1
+backend and Phase 1.5's Supabase connection. See
+[`docs/PHASE_2A.md`](./docs/PHASE_2A.md). No admin dashboard, analytics,
+import, or Telegram/Excel integration yet.
 
 ## Stack
 
@@ -55,6 +55,7 @@ v4 · shadcn/ui · Auth.js v5 · Zod · Vitest
 
 ## Docs
 
+- [`docs/PHASE_2A.md`](./docs/PHASE_2A.md) — Phase 2A implementation report: student flow, components, server/client boundary, timer, security, tests
 - [`docs/PHASE_1.md`](./docs/PHASE_1.md) — Phase 1 implementation report: services, RBAC, token/attempt/scoring flow, tests, security review
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system architecture, folder structure, extensibility points
 - [`docs/DATABASE.md`](./docs/DATABASE.md) — schema and the reasoning behind each entity split

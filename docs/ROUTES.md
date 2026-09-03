@@ -9,21 +9,22 @@ scaffolded in Phase 0 plus the shape planned for Phase 1+ — routes marked
 | Route | Purpose | Auth |
 | --- | --- | --- |
 | `/` | Placeholder landing page | none |
-| `/placement/[token]` | Student entry point. Placeholder in Phase 0 — see below for the intended flow. | none — gated by token validity, not by login |
+| `/placement/[token]` | Student entry point — full flow, implemented in Phase 2A. See below. | none — gated by token validity, not by login |
 
-### Student flow (planned, not built in Phase 0)
+### Student flow (implemented in Phase 2A)
 
 ```
 /placement/{token}
   -> validate token (see domain/tokens) -> if not found/revoked/already used: error state, no candidate form
      (MVP invitations never expire on a timer, so EXPIRED is not a
      practically reachable case yet — see ARCHITECTURE.md)
-  -> /placement/{token}/start        candidate info form (first/last name, phone, age, optional email)
-  -> /placement/{token}/test         the 70-question flow (forward/back/skip, fixed question order)
-  -> /placement/{token}/result       clean summary only — no answer key, no per-question review
+  -> welcome -> candidate confirmation -> instructions -> test -> result
+     (client-managed phases, ONE route — not the /start, /test, /result
+     sub-routes originally sketched here; see
+     /docs/PHASE_2A.md "Routes" for why)
 ```
 
-All of these stay under the same `[token]` segment rather than becoming
+Everything stays under the same `[token]` segment rather than becoming
 `/attempt/[attemptId]/...` — the student never needs to know an attempt ID
 exists; the token is their only credential for the entire flow, consistent
 with "student does not need an account."

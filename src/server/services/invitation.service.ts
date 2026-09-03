@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { db } from "@/lib/db";
 import type { Actor } from "@/server/rbac";
 import { assertPermission } from "@/server/rbac";
@@ -15,6 +16,7 @@ import {
   validateInvitation,
   type InvitationRecordForValidation,
 } from "@/domain/tokens/token";
+import { candidateInputSchema } from "@/domain/candidate/schema";
 
 /**
  * Invitation/token lifecycle. See /docs/ARCHITECTURE.md ("Token
@@ -161,6 +163,50 @@ export async function validateTokenAndLoad(plaintextToken: string): Promise<Vali
       status: loaded.assignment.test.status,
       durationSeconds: loaded.assignment.test.durationSeconds,
     },
+  };
+}
+
+export interface CandidateInfo {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  age: number;
+  email: string | null;
+}
+
+/** Phase 2A addition: the candidate row behind an assignment is created
+ * by an Admin (see /docs/DATABASE.md), but the student confirms/corrects
+ * their own details before starting — e.g. the admin may only have had a
+ * phone number on hand, or a name was mistyped. Token-authorized, same
+ * security model as every other student-facing operation: the token
+ * proves the caller may act on THIS assignment's candidate, nothing more
+ * (never an arbitrary candidateId from the client). Allowed any time the
+ * invitation is still ACTIVE — see /docs/PHASE_2A.md ("Candidate
+ * confirmation step") for why this doesn't also gate on attempt state. */
+export async function updateCandidateForToken(
+  plaintextToken: string,
+  input: z.infer<typeof candidateInputSchema>
+): Promise<CandidateInfo> {
+  const data = candidateInputSchema.parse(input);
+  const { assignment } = await validateTokenAndLoad(plaintextToken);
+
+  const candidate = await db.candidate.update({
+    where: { id: assignment.candidateId },
+    data: {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phoneNumber: data.phoneNumber,
+      age: data.age,
+      email: data.email ?? null,
+    },
+  });
+
+  return {
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    phoneNumber: candidate.phoneNumber,
+    age: candidate.age,
+    email: candidate.email,
   };
 }
 

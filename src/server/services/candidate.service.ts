@@ -1,23 +1,20 @@
-import { z } from "zod";
 import { db } from "@/lib/db";
 import type { Actor } from "@/server/rbac";
 import { assertPermission } from "@/server/rbac";
 import { CandidateNotFoundError } from "@/server/errors";
+import { candidateInputSchema, type CandidateInput } from "@/domain/candidate/schema";
 
 /**
  * Candidates never authenticate (see /docs/PRODUCT_RULES.md) — this
  * service is Admin/Super-Admin-only, used when setting up an assignment.
+ * Validation shape lives in domain/candidate/schema.ts and is shared
+ * with the student-facing confirmation step (invitation.service.ts) and
+ * the CandidateForm client component.
  */
 
-const createCandidateSchema = z.object({
-  firstName: z.string().trim().min(1).max(100),
-  lastName: z.string().trim().min(1).max(100),
-  phoneNumber: z.string().trim().min(1).max(30),
-  age: z.number().int().min(1).max(120),
-  email: z.email().max(255).optional().nullable(),
-});
+const createCandidateSchema = candidateInputSchema;
 
-export type CreateCandidateInput = z.infer<typeof createCandidateSchema>;
+export type CreateCandidateInput = CandidateInput;
 
 export async function createCandidate(actor: Actor, input: CreateCandidateInput) {
   assertPermission(actor, "assignment:write");

@@ -12,6 +12,7 @@ import type { DifficultyProgressionEntry, TopicPerformanceEntry } from "@/domain
 
 export interface StudentResultSummary {
   attemptId: string;
+  candidateName: string;
   level: string | null;
   rawScore: number;
   totalQuestions: number;

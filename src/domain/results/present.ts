@@ -5,6 +5,7 @@ const STRONGEST_TOPICS_COUNT = 3;
 
 export interface BuildStudentResultSummaryInput {
   attemptId: string;
+  candidateName: string;
   level: string | null;
   rawScore: number;
   totalQuestions: number;
@@ -23,6 +24,7 @@ export function buildStudentResultSummary(
 
   return {
     attemptId: input.attemptId,
+    candidateName: input.candidateName,
     level: input.level,
     rawScore: input.rawScore,
     totalQuestions: input.totalQuestions,

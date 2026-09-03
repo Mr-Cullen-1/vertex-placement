@@ -9,6 +9,7 @@ import {
   DuplicateSubmissionError,
   InvalidAttemptStateError,
   InvalidOptionError,
+  InvitationUsedError,
   QuestionNotFoundError,
   TestNotPublishedError,
 } from "@/server/errors";
@@ -16,11 +17,13 @@ import { validateTokenAndLoad } from "@/server/services/invitation.service";
 import { buildOptionOrder } from "@/domain/attempts/option-order";
 import { computeAttemptExpiry, isPastDeadline } from "@/domain/attempts/timing";
 import { computeScoring, type ScoringQuestionInput } from "@/domain/scoring/engine";
+import { hashInvitationToken } from "@/domain/tokens/token";
 import {
   buildAdminResultDetail,
   buildStudentResultSummary,
 } from "@/domain/results/present";
 import type { AdminResultDetail, StudentResultSummary } from "@/domain/results/types";
+import type { TopicPerformanceEntry } from "@/domain/scoring/types";
 
 /**
  * The attempt lifecycle and the ONE shared finalization pipeline (see
@@ -299,7 +302,7 @@ async function finalizeAttempt(
 
   const testId = attempt.assignment.testId;
 
-  const [questions, answers, bands, priorCanonical] = await Promise.all([
+  const [questions, answers, bands, priorCanonical, candidate] = await Promise.all([
     db.question.findMany({
       where: { testId, status: "PUBLISHED" },
       orderBy: { order: "asc" },
@@ -315,6 +318,7 @@ async function finalizeAttempt(
         id: { not: attemptId },
       },
     }),
+    db.candidate.findUniqueOrThrow({ where: { id: attempt.assignment.candidateId } }),
   ]);
 
   const scoringQuestions: ScoringQuestionInput[] = questions.map((q) => {
@@ -375,6 +379,7 @@ async function finalizeAttempt(
 
   return buildStudentResultSummary({
     attemptId,
+    candidateName: `${candidate.firstName} ${candidate.lastName}`,
     level: scoring.placementBand?.label ?? null,
     rawScore: scoring.rawScore.rawScore,
     totalQuestions: scoring.rawScore.totalQuestions,
@@ -395,6 +400,134 @@ async function autoFinalizeIfExpired(attemptId: string, throwIfFinalized: boolea
 
   await finalizeAttempt(attemptId, "AUTO");
   if (throwIfFinalized) throw new AttemptExpiredError();
+}
+
+// --- Placement status & completed result (student-facing) ---------------
+//
+// Phase 2A additions. Neither computes/recomputes scoring — both are pure
+// reads that either return already-persisted data (getCompletedResultForToken)
+// or decide which UI phase the token should land on without creating an
+// attempt as a side effect (getPlacementStatus). See /docs/PHASE_2A.md.
+
+export type PlacementStatus =
+  | {
+      kind: "NOT_STARTED";
+      testTitle: string;
+      durationSeconds: number;
+      totalQuestions: number;
+      candidate: { firstName: string; lastName: string; phoneNumber: string; age: number; email: string | null };
+    }
+  | { kind: "IN_PROGRESS"; expiresAt: string; totalQuestions: number }
+  | { kind: "COMPLETED"; result: StudentResultSummary }
+  | { kind: "TEST_UNAVAILABLE" };
+
+/** Resolves what the /placement/{token} page should show WITHOUT the side
+ * effect of starting an attempt (unlike startOrResumeAttempt, which
+ * creates one) — the pre-attempt wizard (welcome/candidate-info/
+ * instructions) must not start the 30-minute clock before the student
+ * has actually chosen to begin. An already-expired IN_PROGRESS attempt
+ * is still finalized here (consistent with the on-access enforcement
+ * model everywhere else), since discovering that state should not be a
+ * silent no-op. */
+export async function getPlacementStatus(plaintextToken: string): Promise<PlacementStatus> {
+  let loaded: Awaited<ReturnType<typeof validateTokenAndLoad>>;
+  try {
+    loaded = await validateTokenAndLoad(plaintextToken);
+  } catch (error) {
+    if (error instanceof InvitationUsedError) {
+      return { kind: "COMPLETED", result: await getCompletedResultForToken(plaintextToken) };
+    }
+    throw error;
+  }
+
+  const existing = await db.placementAttempt.findUnique({
+    where: { invitationId: loaded.invitation.id },
+  });
+
+  if (existing) {
+    if (existing.status !== "IN_PROGRESS") {
+      // Invariant: a non-IN_PROGRESS attempt implies its invitation is
+      // USED, which would already have been caught above. Defensive only.
+      return { kind: "COMPLETED", result: await getCompletedResultForToken(plaintextToken) };
+    }
+    if (isPastDeadline(new Date(), existing.expiresAt)) {
+      const result = await finalizeAttempt(existing.id, "AUTO");
+      return { kind: "COMPLETED", result };
+    }
+    const totalQuestions = await db.question.count({
+      where: { testId: loaded.assignment.testId, status: "PUBLISHED" },
+    });
+    return {
+      kind: "IN_PROGRESS",
+      expiresAt: existing.expiresAt.toISOString(),
+      totalQuestions,
+    };
+  }
+
+  if (loaded.test.status !== "PUBLISHED") {
+    return { kind: "TEST_UNAVAILABLE" };
+  }
+
+  const [test, candidate, totalQuestions] = await Promise.all([
+    db.placementTest.findUniqueOrThrow({ where: { id: loaded.assignment.testId } }),
+    db.candidate.findUniqueOrThrow({ where: { id: loaded.assignment.candidateId } }),
+    db.question.count({ where: { testId: loaded.assignment.testId, status: "PUBLISHED" } }),
+  ]);
+
+  return {
+    kind: "NOT_STARTED",
+    testTitle: test.title,
+    durationSeconds: test.durationSeconds,
+    totalQuestions,
+    candidate: {
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      phoneNumber: candidate.phoneNumber,
+      age: candidate.age,
+      email: candidate.email,
+    },
+  };
+}
+
+/** Re-derives a student's own already-computed result from the persisted
+ * `PlacementResult` — never recomputes scoring (there is exactly one
+ * finalization pipeline; this only reads its output). Used both by
+ * `getPlacementStatus` and directly when a student revisits a completed
+ * link (e.g. refreshing the result page). */
+export async function getCompletedResultForToken(
+  plaintextToken: string
+): Promise<StudentResultSummary> {
+  const tokenHash = hashInvitationToken(plaintextToken);
+  const invitation = await db.placementInvitation.findUnique({
+    where: { tokenHash },
+    include: {
+      attempt: {
+        include: {
+          result: { include: { placementBand: true } },
+          assignment: { include: { candidate: true } },
+        },
+      },
+    },
+  });
+
+  if (!invitation || invitation.status !== "USED" || !invitation.attempt?.result) {
+    throw new AttemptNotFoundError();
+  }
+
+  const { attempt } = invitation;
+  const candidate = attempt.assignment.candidate;
+  const topicPerformance = attempt.result!.topicPerformance as unknown as TopicPerformanceEntry[];
+
+  return buildStudentResultSummary({
+    attemptId: attempt.id,
+    candidateName: `${candidate.firstName} ${candidate.lastName}`,
+    level: attempt.result!.placementBand?.label ?? null,
+    rawScore: attempt.result!.rawScore,
+    totalQuestions: attempt.result!.totalQuestions,
+    percentage: attempt.result!.percentage,
+    completionSeconds: attempt.result!.completionSeconds,
+    topicPerformance,
+  });
 }
 
 // --- Admin read: full result detail --------------------------------------
