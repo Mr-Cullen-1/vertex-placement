@@ -30,6 +30,12 @@ option order is randomized per attempt.
 | View candidates/results | ✅ (everything) | ✅ | own result only |
 | Export analytics | ✅ full | ✅ standard | ❌ |
 
+Enforced in code, not just UI, as of Phase 1: `src/server/rbac.ts` holds
+the single permission matrix, and every mutating (and most reading)
+function in `src/server/services/*` checks it against an explicit actor
+before touching the database. See "Authentication & authorization" in
+[ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Student flow
 
 ```
@@ -114,6 +120,14 @@ correct/incorrect, or a question-by-question review.
 **Admin sees:** candidate information, score, percentage, level,
 completion time, difficulty progression, question-by-question analysis,
 topic analysis.
+
+Implemented as of Phase 1: `buildStudentResultSummary` produces exactly
+the student-safe view (never per-question data); `getAdminResultDetail`
+(`attempt.service.ts`) produces the full admin view, including
+question-by-question analysis — reading it requires `result:read`
+(Admin or Super Admin), enforced the same way as every other RBAC check.
+Neither an admin dashboard page nor a student result page consumes these
+yet — see [PHASE_1.md](./PHASE_1.md) "Scope boundary".
 
 ## Analytics
 

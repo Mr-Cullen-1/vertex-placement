@@ -132,13 +132,23 @@ migration at that point.
 
 ## Indexes worth calling out
 
-- `PlacementInvitation.token` — unique, indexed. This is the hot lookup
-  path for every student request (`/placement/{token}`).
+- `PlacementInvitation.tokenHash` — unique, indexed. This is the hot
+  lookup path for every student request (`/placement/{token}`) — the
+  incoming plaintext token is hashed first, then looked up by hash (see
+  "Security review" in [PHASE_1.md](./PHASE_1.md)).
 - `Candidate.phoneNumber` — indexed (not unique — duplicate names/phones
   across candidates are legitimate) for admin lookup/search.
 - `Question @@unique([testId, order])` and `Option @@unique([questionId,
   order])` — enforce that fixed ordering is actually unique per parent,
   catching import/authoring bugs at the database level.
+- `PlacementInvitation` has a hand-written **partial unique index**
+  (migration `20260903111521_active_invitation_unique_index`, added in
+  Phase 1) enforcing at most one `ACTIVE` invitation per assignment at
+  the database level — Prisma's schema DSL has no portable way to
+  express a partial unique index, so this one migration is raw SQL. It
+  closes the race window in the application-level check
+  (`invitation.service.ts`) between "does an ACTIVE invitation already
+  exist" and "create one".
 
 ## Open decisions for Phase 1+
 

@@ -47,46 +47,86 @@ src/
                              notification RULES live — kept independent of
                              how they're invoked (route handler, server
                              action, cron job, etc).
-    scoring/               — Raw score -> difficulty progression -> topic
-                             performance -> placement band mapping
-    tokens/                — Invitation validation/regeneration contracts
-    attempts/              — Attempt state machine, server-authoritative timing
+    scoring/               — computeScoring: raw score -> difficulty
+                             progression -> topic performance -> band match
+    tokens/                — token generation/hashing + invitation
+                             validation (pure — no Prisma)
+    attempts/               — option-order shuffle + server-authoritative
+                             timing helpers
+    results/                — result *presentation* — student summary vs
+                             admin detail views over one PlacementResult
     import/                — Source file -> NormalizedQuestion[] contract
+                             (types only — see "Import architecture")
     notifications/         — PLACEMENT_COMPLETED event + adapter contract
-    export/                — Excel workbook shape
-  lib/                     — Infrastructure: Prisma client, env validation,
-                             Auth.js config. Wires domain logic to the
-                             framework/database; domain code never imports
-                             from here.
+                             (types only — see "Telegram integration")
+    export/                — Excel workbook shape (types only — see
+                             "Excel export")
+  server/                  — Prisma-backed service layer + cross-cutting
+                             server concerns. Wires domain/* logic to the
+                             database; every mutating (and most reading)
+                             function takes an explicit `Actor` and starts
+                             with `assertPermission(actor, "...")`.
+    rbac.ts                — the ONE permission matrix (see "Role-based
+                             access control" below)
+    errors.ts               — domain error classes (stable `code` +
+                             `httpStatus`, no leaked DB internals)
+    services/               — one file per aggregate: placement-test,
+                             question, placement-band, candidate,
+                             assignment, invitation, attempt
+    actions/                — thin "use server" wrappers around the
+                             services above (not yet wired into any page)
+  lib/                     — Framework glue: Prisma client (driver
+                             adapter), env validation, Auth.js config,
+                             and `actor.ts` (the one place allowed to call
+                             `auth()` and hand a plain Actor to `server/`).
   components/ui/           — shadcn/ui primitives
   proxy.ts                 — Next.js 16 "Proxy" (formerly Middleware):
                              gates /admin/* on authentication
 prisma/
   schema.prisma            — see DATABASE.md
-  seed.ts                  — bootstraps the first Super Admin only
-docs/                      — this document and its siblings
+  migrations/              — committed SQL, including one hand-written
+                             migration for a partial unique index (see
+                             "Security review" in PHASE_1.md)
+  seed.ts                  — Super Admin bootstrap + an optional,
+                             clearly-marked DEVELOPMENT-ONLY sample test
+tests/
+  unit/                    — pure domain logic, no database
+  integration/             — real ephemeral Postgres, full service layer
+  setup/                   — global setup/teardown, env, db reset helper
+scripts/
+  local-postgres.mjs       — dev-only local Postgres via embedded-postgres
+docs/                      — this document and its siblings, plus PHASE_1.md
 design/                    — visual reference material (see DESIGN_SYSTEM.md)
 ```
 
-**Why `domain/` is separate from `lib/` and `app/`:** the brief explicitly
-asks to keep scoring logic separate from presentation, token logic separate
-from test definitions, and attempts separate from assignments. Modeling
-those as distinct TypeScript modules (not just distinct DB tables) means a
-route handler or a future cron job can call the same scoring function
-without duplicating logic, and the logic can be unit-tested without a
-database or an HTTP request in the loop.
+**Why `domain/` is separate from `server/`, `lib/`, and `app/`:** the
+brief explicitly asks to keep scoring logic separate from presentation,
+token logic separate from test definitions, and attempts separate from
+assignments. `domain/*` holds pure functions and types with no Prisma or
+Next.js imports (scoring math, token hashing/validation, option
+shuffling, timing, result presentation) — genuinely unit-testable with no
+database in the loop (`tests/unit/*`). `server/*` is one layer up: it's
+where that pure logic gets wired to Prisma and to the RBAC/error
+machinery, and where the actual attempt/submission/finalization
+*orchestration* lives (see PHASE_1.md — that orchestration is real logic
+too, just inherently coupled to persistence, so it lives in `server/`
+rather than being forced into a "pure" shape it doesn't have).
 
-In Phase 0 the `domain/*` folders contain **only type contracts** — no
-business logic is implemented (per the Phase 0 scope: no scoring, no token
-issuance, no attempt flow yet). The types exist so the shape of each
-domain is fixed before implementation starts, and so `docs/` can point at
-real code instead of prose-only descriptions.
+As of Phase 1, `domain/*` and `server/*` contain real, tested
+implementations for test/question/band/candidate/assignment/invitation/attempt
+management, RBAC, and the scoring + submission pipeline. `domain/import`,
+`domain/notifications`, and `domain/export` remain **type contracts
+only** — those three areas are still out of scope (see PHASE_1.md
+"Scope boundary"). See [PHASE_1.md](./PHASE_1.md) for the full
+implementation report.
 
 ## Authentication & authorization
 
-- **Students never authenticate.** They are identified solely by a
-  `PlacementInvitation.token` in the URL. There is no student account,
-  session, or password.
+- **Students never authenticate.** They are identified solely by an
+  invitation token in the URL — its SHA-256 hash is what's actually
+  stored, as `PlacementInvitation.tokenHash` (see "Security review" in
+  [PHASE_1.md](./PHASE_1.md)). There is no student account, session, or
+  password.
 - **Admin / Super Admin** authenticate via Auth.js Credentials provider
   (email + bcrypt-hashed password) against the `User` table. Sessions are
   JWT-based — no database session table, since there's no OAuth provider
@@ -95,21 +135,57 @@ real code instead of prose-only descriptions.
   1. `prisma/seed.ts`, gated behind `SEED_SUPER_ADMIN_EMAIL` /
      `SEED_SUPER_ADMIN_PASSWORD` env vars, for the very first Super Admin.
   2. A Super Admin creating further Admin/Super Admin accounts through the
-     product itself (Phase 1+; not built yet).
-- **Route gating** happens in two layers:
+     product itself (Phase 2+; not built yet — Phase 1 only builds the
+     bootstrap path).
+- **Route gating** happens in three layers, from coarsest to finest:
   1. `src/proxy.ts` (Next.js 16's renamed Middleware) redirects
      unauthenticated requests to `/admin/*` (other than `/admin/login`) to
-     the login page. This is coarse — authentication only.
-  2. **Role** (Admin vs Super Admin) is *not* checked in proxy — Next.js's
-     own guidance is to treat Proxy as a first line of defense and verify
-     authorization again inside each Server Function/route handler, since a
-     matcher change can silently stop covering a path. Role checks belong
-     in each Super-Admin-only route/action once those are built. See
-     [ROUTES.md](./ROUTES.md) for the permission matrix.
+     the login page. Authentication only, no role check.
+  2. **RBAC** (`src/server/rbac.ts`) is the single permission matrix —
+     every mutating (and most reading) function in `src/server/services/*`
+     calls `assertPermission(actor, "...")` as its first line, against an
+     explicit `Actor` the caller supplies (never something the service
+     resolves from a global/ambient session — see "Role-based access
+     control" in [PHASE_1.md](./PHASE_1.md) for why). This is what makes
+     "Admin cannot edit test content" actually enforced, not just hidden
+     in a UI Super Admin never sees.
+  3. Student-facing service functions (`attempt.service.ts`,
+     `invitation.service.ts`'s `validateTokenAndLoad`) take no `Actor` at
+     all and are gated purely by the invitation token — see "Token
+     lifecycle" below.
+
+## PlacementTest lifecycle
+
+```
+DRAFT --(Super Admin publishes, requires >=1 PUBLISHED question)--> PUBLISHED --(archive)--> ARCHIVED
+DRAFT --(archive)--------------------------------------------------------------------------> ARCHIVED
+```
+
+Implemented in `placement-test.service.ts`. A few rules that matter
+elsewhere in the system:
+
+- **Only DRAFT is editable.** `updatePlacementTest` and question/option
+  edits (`question.service.ts`) refuse once a test is PUBLISHED — a
+  published test is what students may be mid-attempt against, so its
+  content must not shift under them.
+- **A student can never reach a DRAFT test.** `PlacementAssignment`
+  creation requires `PUBLISHED` (`assignment.service.ts`), and attempt
+  creation independently re-checks `PUBLISHED` too (defense in depth,
+  since assignment-time and attempt-time can be far apart) — see "Attempt
+  lifecycle" below.
+- **Archiving blocks new assignments, not attempts already in progress.**
+  If a test is archived while a candidate is mid-attempt, that specific
+  attempt can still be resumed, answered, and submitted — only *starting
+  a new* attempt/assignment against that test is blocked. `PlacementBand`
+  rows remain editable on a PUBLISHED test (institutional scoring rules
+  can be tuned without unpublishing) but lock once ARCHIVED, matching
+  question/option edits.
 
 ## Token lifecycle
 
-See the `PlacementInvitation` model in [DATABASE.md](./DATABASE.md). Summary:
+See the `PlacementInvitation` model in [DATABASE.md](./DATABASE.md) and
+`src/domain/tokens/token.ts` / `src/server/services/invitation.service.ts`
+for the implementation. Summary:
 
 ```
 Admin creates PlacementAssignment (test + candidate)
@@ -167,11 +243,27 @@ IN_PROGRESS --(server deadline reached)--> AUTO_SUBMITTED
   even though the MVP only ever produces one. `PlacementAttempt.isCanonical`
   marks the official result. This is intentional headroom for retakes —
   see "Attempts" in [PRODUCT_RULES.md](./PRODUCT_RULES.md).
+- **Every public entry point in `attempt.service.ts` takes the invitation
+  token, never a bare `attemptId`.** A student has no session, so the
+  token is the only thing the server can trust as proof a request is
+  allowed to touch a given attempt — an `attemptId` is an internal
+  database key, not a credential, and is never accepted as caller-
+  supplied input from outside the module (see "Security review" in
+  [PHASE_1.md](./PHASE_1.md)).
+- **One shared finalization pipeline** (`finalizeAttempt`, private to
+  `attempt.service.ts`) handles both manual submission and lazy
+  auto-submission — scoring, `PlacementResult` creation, invitation
+  invalidation, and canonical-result determination happen in exactly one
+  place, inside one transaction, guarded by an atomic
+  `status = IN_PROGRESS` conditional update so two racing submit requests
+  can't both finalize the same attempt (see PHASE_1.md "Security review"
+  — duplicate submission).
 
 ## Scoring & result architecture
 
-Deliberately decomposed (see `src/domain/scoring/types.ts` and the
-`PlacementResult` / `PlacementBand` models):
+Deliberately decomposed (see `src/domain/scoring/engine.ts`,
+`src/domain/results/*`, and the `PlacementResult` / `PlacementBand`
+models):
 
 - **Raw score** (`rawScore`, `totalQuestions`, `percentage`) — purely
   mechanical, derived from `PlacementAnswer` + `Option.isCorrect`.
@@ -208,8 +300,10 @@ parser only needs to implement `(fileBuffer) => NormalizedQuestion[]`
 (`src/domain/import/types.ts`) — everything downstream of that is
 format-agnostic.
 
-Not implemented in Phase 0: no parsers, no upload endpoint, no preview UI.
-The 70 source questions are not imported.
+Still not implemented as of Phase 1: no parsers, no upload endpoint, no
+preview UI. The 70 source questions are not imported — question content
+in Phase 1 is created directly through `question.service.ts` (used by
+tests and the seed's development-only sample test).
 
 ## Telegram integration architecture
 
@@ -230,9 +324,11 @@ attempt-submission code only needs to emit an event, not know that Telegram
 exists. Adding email or SMS later means adding another `NotificationAdapter`
 implementation, not touching the emitting code.
 
-Not implemented in Phase 0: no event emission, no bot token wiring, no
-`TelegramAdapter`. `.env.example` reserves `TELEGRAM_BOT_TOKEN` /
-`TELEGRAM_GROUP_CHAT_ID` as commented-out placeholders.
+Still not implemented as of Phase 1: no event emission (the finalize
+pipeline in `attempt.service.ts` has a comment marking exactly where it
+would hook in), no bot token wiring, no `TelegramAdapter`. `.env.example`
+reserves `TELEGRAM_BOT_TOKEN` / `TELEGRAM_GROUP_CHAT_ID` as commented-out
+placeholders.
 
 ## Excel export architecture
 
@@ -240,7 +336,10 @@ Not implemented in Phase 0: no event emission, no bot token wiring, no
 sheets go into a given export. Admin-triggered exports get the standard
 sheet set (`Candidates`, `Results`, `Topic Analysis`); Super Admin exports
 add `Question Analysis`. The actual XLSX generation, the endpoint, and any
-UI are not implemented in Phase 0.
+UI are still not implemented as of Phase 1. `getAdminResultDetail`
+(`attempt.service.ts`) already produces the per-attempt data a
+`Results`/`Question Analysis` sheet would need — an exporter would
+consume that, not recompute it.
 
 ## Future extensibility points
 

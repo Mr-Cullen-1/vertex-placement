@@ -1,0 +1,176 @@
+/**
+ * Domain errors for the service layer. Each carries a stable `code` safe
+ * to show a caller (never a raw Prisma/Postgres message) and an
+ * `httpStatus` a future route handler/server action can map to a
+ * response without re-deriving it. See /docs/PHASE_1.md ("Error
+ * handling").
+ */
+export abstract class DomainError extends Error {
+  abstract readonly code: string;
+  abstract readonly httpStatus: number;
+}
+
+// --- Auth / RBAC -----------------------------------------------------
+
+export class UnauthorizedError extends DomainError {
+  readonly code = "UNAUTHORIZED";
+  readonly httpStatus = 401;
+  constructor() {
+    super("Authentication is required.");
+  }
+}
+
+export class ForbiddenError extends DomainError {
+  readonly code = "FORBIDDEN";
+  readonly httpStatus = 403;
+  constructor(message = "You do not have permission to perform this action.") {
+    super(message);
+  }
+}
+
+// --- Invitation / token ------------------------------------------------
+
+export class InvitationNotFoundError extends DomainError {
+  readonly code = "INVITATION_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("This invitation link is not valid.");
+  }
+}
+
+export class InvitationRevokedError extends DomainError {
+  readonly code = "INVITATION_REVOKED";
+  readonly httpStatus = 410;
+  constructor() {
+    super("This invitation link is no longer valid.");
+  }
+}
+
+export class InvitationUsedError extends DomainError {
+  readonly code = "INVITATION_USED";
+  readonly httpStatus = 410;
+  constructor() {
+    super("This test has already been completed with this link.");
+  }
+}
+
+// Reserved for a future optional-expiry feature — see PlacementInvitation.expiresAt.
+export class InvitationExpiredError extends DomainError {
+  readonly code = "INVITATION_EXPIRED";
+  readonly httpStatus = 410;
+  constructor() {
+    super("This invitation link has expired.");
+  }
+}
+
+export class InvitationAlreadyActiveError extends DomainError {
+  readonly code = "INVITATION_ALREADY_ACTIVE";
+  readonly httpStatus = 409;
+  constructor() {
+    super("This assignment already has an active invitation. Regenerate it instead of creating a new one.");
+  }
+}
+
+// --- Test / question ---------------------------------------------------
+
+export class TestNotFoundError extends DomainError {
+  readonly code = "TEST_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("Placement test not found.");
+  }
+}
+
+export class TestNotPublishedError extends DomainError {
+  readonly code = "TEST_NOT_PUBLISHED";
+  readonly httpStatus = 409;
+  constructor() {
+    super("This placement test is not currently available.");
+  }
+}
+
+export class InvalidTestStateError extends DomainError {
+  readonly code = "INVALID_TEST_STATE";
+  readonly httpStatus = 409;
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class QuestionNotFoundError extends DomainError {
+  readonly code = "QUESTION_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("Question not found.");
+  }
+}
+
+export class InvalidOptionError extends DomainError {
+  readonly code = "INVALID_OPTION";
+  readonly httpStatus = 400;
+  constructor() {
+    super("The selected option is not valid for this question.");
+  }
+}
+
+// --- Candidate / assignment ---------------------------------------------
+
+export class CandidateNotFoundError extends DomainError {
+  readonly code = "CANDIDATE_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("Candidate not found.");
+  }
+}
+
+export class AssignmentNotFoundError extends DomainError {
+  readonly code = "ASSIGNMENT_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("Assignment not found.");
+  }
+}
+
+// --- Attempt -------------------------------------------------------------
+
+export class AttemptNotFoundError extends DomainError {
+  readonly code = "ATTEMPT_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("Attempt not found.");
+  }
+}
+
+export class AttemptExpiredError extends DomainError {
+  readonly code = "ATTEMPT_EXPIRED";
+  readonly httpStatus = 410;
+  constructor() {
+    super("Time is up for this attempt. It has been submitted automatically.");
+  }
+}
+
+export class InvalidAttemptStateError extends DomainError {
+  readonly code = "INVALID_ATTEMPT_STATE";
+  readonly httpStatus = 409;
+  constructor(message = "This attempt is not in a valid state for that action.") {
+    super(message);
+  }
+}
+
+export class DuplicateSubmissionError extends DomainError {
+  readonly code = "DUPLICATE_SUBMISSION";
+  readonly httpStatus = 409;
+  constructor() {
+    super("This attempt has already been submitted.");
+  }
+}
+
+/** Thrown when a validation schema (Zod) rejects input. Wraps the
+ * underlying issues without leaking implementation details. */
+export class ValidationError extends DomainError {
+  readonly code = "VALIDATION_ERROR";
+  readonly httpStatus = 400;
+  constructor(message = "Invalid input.") {
+    super(message);
+  }
+}

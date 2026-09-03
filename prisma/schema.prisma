@@ -285,8 +285,14 @@ model PlacementInvitation {
   assignmentId String
   assignment   PlacementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
-  token  String           @unique // opaque, unguessable, used in the student URL
-  status InvitationStatus @default(ACTIVE)
+  // SHA-256 hash of the opaque token, never the plaintext (Phase 1 security
+  // decision — see /docs/PHASE_1.md "Security review"). The plaintext
+  // token exists only in memory at generation time and in the URL the
+  // candidate receives; only its hash is persisted, so a database read
+  // (backup leak, insider access, injection) can never recover a usable
+  // token.
+  tokenHash String           @unique
+  status    InvitationStatus @default(ACTIVE)
 
   // Nullable by design (MVP decision): an invitation does NOT expire on a
   // fixed timer. It stays ACTIVE indefinitely until either (a) it is
@@ -308,7 +314,6 @@ model PlacementInvitation {
 
   attempt PlacementAttempt?
 
-  @@index([token])
   @@map("placement_invitations")
 }
 
