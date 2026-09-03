@@ -5,7 +5,8 @@ Standalone product — independent codebase, database, and deployment. See
 [`/docs`](./docs) for architecture, database, routes, product rules, and
 the design system.
 
-**Status:** Phase 1 (core backend foundation) complete. The domain/service
+**Status:** Phase 1 (core backend foundation) complete, connected to a
+dedicated Supabase PostgreSQL database (Phase 1.5). The domain/service
 layer, RBAC, token and attempt lifecycles, and the scoring/submission
 pipeline are implemented and tested — see
 [`docs/PHASE_1.md`](./docs/PHASE_1.md). No visual UI (student test screen,
@@ -18,12 +19,15 @@ v4 · shadcn/ui · Auth.js v5 · Zod · Vitest
 
 ## Getting started
 
-1. Copy `.env.example` to `.env` and fill in a real `DATABASE_URL` (a local
-   or hosted PostgreSQL instance) and a generated `AUTH_SECRET`
-   (`npx auth secret`). For local development without installing
-   PostgreSQL yourself, run `npm run db:local:start` in its own terminal
-   first — it boots a real local Postgres and the default `.env` already
-   points at it.
+1. Copy `.env.example` to `.env` and fill in `DATABASE_URL` +
+   `DIRECT_DATABASE_URL` (see the comments in `.env.example` — against
+   Supabase these are the Transaction Pooler and Direct/Session Pooler
+   connection strings respectively; see
+   [`docs/PHASE_1.md`](./docs/PHASE_1.md#phase-15--supabase-connection))
+   and a generated `AUTH_SECRET` (`npx auth secret`). For local
+   development without a hosted database, run `npm run db:local:start`
+   in its own terminal instead — it boots a real local Postgres and both
+   URLs can point at it.
 2. Install dependencies: `npm install`
 3. Apply the schema: `npm run db:migrate`
 4. Bootstrap the first Super Admin: set `SEED_SUPER_ADMIN_EMAIL` /

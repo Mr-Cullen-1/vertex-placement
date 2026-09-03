@@ -43,7 +43,15 @@ export default async function globalSetup() {
 
   execSync("npx prisma migrate deploy", {
     cwd: process.cwd(),
-    env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
+    // prisma.config.ts (the CLI's datasource) reads DIRECT_DATABASE_URL,
+    // not DATABASE_URL — see /docs/PHASE_1.md ("Phase 1.5 — Supabase
+    // connection"). This local ephemeral instance has no pooled/direct
+    // distinction, so both point at the same single database.
+    env: {
+      ...process.env,
+      DATABASE_URL: TEST_DATABASE_URL,
+      DIRECT_DATABASE_URL: TEST_DATABASE_URL,
+    },
     stdio: "inherit",
   });
 

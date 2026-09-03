@@ -364,3 +364,66 @@ build-out or the security review, not a preference change:
 None of these required re-deciding anything already settled by you in
 the Phase 0 review (invitation expiry, auto-submit mechanism, canonical
 result, git history) — those stand exactly as approved.
+
+## Phase 1.5 — Supabase connection
+
+Status: complete. Connects the project to a dedicated Supabase
+PostgreSQL database. No schema change, no domain/service code change, no
+UI. Two small, additive infrastructure changes:
+
+- **`prisma.config.ts`** now reads `DIRECT_DATABASE_URL` instead of
+  `DATABASE_URL` for the CLI datasource (`migrate`/`db seed`/`studio`).
+  `src/lib/db.ts` (the runtime driver adapter) is unchanged — it still
+  reads `DATABASE_URL`. This is the pooled-vs-direct split described
+  when this phase was proposed: the app should never hold long-lived
+  direct connections, and migrations need a connection DDL/shadow-DB
+  operations can rely on.
+- **`.env.example`** documents both variables and which Supabase
+  connection string (from the dashboard) each maps to.
+
+**A real constraint discovered while connecting, not an architecture
+issue:** Supabase's true "Direct connection" host
+(`db.<project-ref>.supabase.co:5432`) resolves to an IPv6 address only,
+with no IPv4 address, unless the project has Supabase's paid IPv4
+add-on. This network doesn't have outbound IPv6 connectivity, so that
+host was unreachable (`P1001`). Supabase's own documented workaround —
+used here — is the **Session Pooler** connection string for
+`DIRECT_DATABASE_URL` instead: same Supavisor pooler host as the
+transaction pooler, port 5432 instead of 6543. Session mode gives each
+client a dedicated backend connection for the session's duration (unlike
+transaction mode, where the backend can change between transactions), so
+it behaves like a direct connection for `prisma migrate`'s purposes
+while still being IPv4-reachable. `DATABASE_URL` (the app's runtime
+connection) correctly stays on the true transaction pooler, port 6543.
+
+Verified, against the real Supabase database:
+
+- `prisma migrate deploy` — both committed migrations applied cleanly
+  (via the session-pooler `DIRECT_DATABASE_URL`); `prisma migrate status`
+  reports the schema up to date afterward.
+- The hand-written partial unique index
+  (`placement_invitations_one_active_per_assignment`) is present and
+  correctly defined — checked directly via `pg_indexes`, not assumed.
+- The **runtime** path — `@prisma/adapter-pg` over `DATABASE_URL` (the
+  transaction pooler) — works end to end: five sequential parameterized
+  queries and a Prisma model-API query all succeeded with no
+  prepared-statement errors, confirming the adapter's default of not
+  caching named prepared statements (verified earlier from its type
+  definitions) really is compatible with Supabase's transaction-mode
+  pooling in practice, not just in theory.
+- `npm run dev` against Supabase: `/`, `/admin` (redirects, unauthenticated),
+  and `/admin/login` all respond as expected.
+- A local-only bug this change would otherwise have introduced: the test
+  suite's `global-setup.ts` invokes `prisma migrate deploy` against its
+  own ephemeral local database by overriding env vars for that
+  subprocess — it was only overriding `DATABASE_URL`, which the CLI no
+  longer reads. Fixed by also overriding `DIRECT_DATABASE_URL` for that
+  subprocess. Caught before it could silently break `npm test`;
+  confirmed fixed — full suite re-run, 56/56 passing.
+- Full verification suite re-run after these changes: `tsc`, `eslint`,
+  `next build`, and `npm test` all clean.
+
+No real data was seeded into Supabase (no Super Admin, no sample test) —
+only the schema. `.env` itself was edited directly by the user with
+their Supabase credentials and was not read or echoed by the assistant
+into any output, doc, or commit.

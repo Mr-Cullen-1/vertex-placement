@@ -30,6 +30,16 @@ rather than resolving the URL internally. This is documented inline in
 `prisma.config.ts` and `src/lib/db.ts` since it's a recent, easy-to-miss
 breaking change relative to most existing Prisma tutorials/examples.
 
+This split turned out to matter for real once the project connected to
+Supabase (Phase 1.5): `prisma.config.ts` (CLI — migrations) and
+`src/lib/db.ts` (runtime — the driver adapter) now intentionally read
+**two different env vars**, `DIRECT_DATABASE_URL` and `DATABASE_URL`
+respectively — a managed Postgres provider's pooled connection isn't
+suitable for running migrations against, and the app shouldn't hold
+direct connections. See [PHASE_1.md](./PHASE_1.md#phase-15--supabase-connection)
+for the full rationale and the specific Supabase connection strings each
+one maps to.
+
 No ORM/framework substitutions were made — the stack as specified fit
 cleanly.
 
