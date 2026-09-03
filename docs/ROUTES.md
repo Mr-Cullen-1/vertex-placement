@@ -34,20 +34,30 @@ with "student does not need an account."
 | Route | Purpose | Minimum role |
 | --- | --- | --- |
 | `/admin/login` | Credentials sign-in | none (must be unauthenticated to be useful) |
-| `/admin` | Landing after login. Placeholder in Phase 0. | Admin |
+| `/admin` | Dashboard (live counts, recent activity). Implemented in Phase 2B — see [PHASE_2B.md](./PHASE_2B.md). | Admin |
 
-### Planned admin surface (not built in Phase 0)
+### Implemented in Phase 2B
 
 | Route | Purpose | Minimum role |
 | --- | --- | --- |
-| `/admin/tests` | List/manage `PlacementTest` definitions | **Super Admin** |
-| `/admin/tests/[testId]` | Edit a test: questions, options, scoring bands | **Super Admin** |
+| `/admin/tests` | List `PlacementTest` definitions (view only for Admin; create for Super Admin) | Admin (read) / **Super Admin** (write) |
+| `/admin/tests/[id]` | Test detail — info, bands (read-only), assignments; edit/publish/archive | Admin (read) / **Super Admin** (write) |
+| `/admin/candidates` | Candidate list/search + create | Admin |
+| `/admin/candidates/[id]` | Candidate detail + their assignments | Admin |
+| `/admin/assignments` | Create assignments, pick/enter candidate, generate/regenerate/revoke invitations | Admin |
+| `/admin/assignments/[id]` | Assignment detail, invitation history, attempts | Admin |
+| `/admin/results/[attemptId]` | Question-by-question answer key + topic/difficulty analysis for one candidate | Admin |
+
+Question/option authoring, the import pipeline, and a route for editing
+scoring bands were **not** built in Phase 2B — a test created via
+`/admin/tests` has no content until a later phase adds it. See
+[PHASE_2B.md](./PHASE_2B.md) "Known limitations".
+
+### Still planned (not built)
+
+| Route | Purpose | Minimum role |
+| --- | --- | --- |
 | `/admin/tests/[testId]/import` | Import pipeline UI (upload -> preview -> confirm) | **Super Admin** |
-| `/admin/assignments` | Create assignments, enter candidate info, generate/regenerate tokens | Admin |
-| `/admin/assignments/[assignmentId]` | Assignment detail, invitation history | Admin |
-| `/admin/candidates` | Candidate list/search | Admin |
-| `/admin/results` | Results list | Admin (standard view) / Super Admin (full view) |
-| `/admin/results/[attemptId]` | Question-by-question + topic analysis for one candidate | Admin |
 | `/admin/analytics` | Aggregate dashboard (level distribution, question/topic performance) | Admin (standard) / Super Admin (full export) |
 | `/admin/settings/users` | Manage Admin/Super Admin accounts | **Super Admin** |
 

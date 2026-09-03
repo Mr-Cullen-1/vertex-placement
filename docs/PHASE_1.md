@@ -36,6 +36,11 @@ Two thin `"use server"` wrappers exist (`src/server/actions/*.ts`) —
 services are callable as real Server Actions. **No page imports them
 yet**; that's Phase 2.
 
+(Phase 2B split `admin-actions.ts` into `test-actions.ts` /
+`candidate-actions.ts` / `assignment-actions.ts` / `invitation-actions.ts`
+/ `auth-actions.ts` once the Admin UI actually started calling them —
+see [PHASE_2B.md](./PHASE_2B.md).)
+
 ## Database migration
 
 Two migrations, both applied and committed under `prisma/migrations/`:
