@@ -113,16 +113,28 @@ See the `PlacementInvitation` model in [DATABASE.md](./DATABASE.md). Summary:
 
 ```
 Admin creates PlacementAssignment (test + candidate)
-  -> Admin generates PlacementInvitation (token, status ACTIVE, expiresAt)
+  -> Admin generates PlacementInvitation (token, status ACTIVE, expiresAt = null)
        -> Student opens /placement/{token}
-            - token not found / EXPIRED / REVOKED / already USED -> rejected
-            - token ACTIVE and not expired -> candidate info -> PlacementAttempt created
+            - token not found / REVOKED / already USED -> rejected
+            - (EXPIRED is reserved for a possible future optional-expiry
+               feature — MVP invitations never reach it, see below)
+            - token ACTIVE -> candidate info -> PlacementAttempt created
                  -> on submit (or auto-submit), invitation.status -> USED
                  -> that token can never start another attempt
   -> Admin can REGENERATE: previous invitation -> REVOKED,
      new invitation row created against the SAME assignment.
      Regenerating never touches PlacementTest or PlacementAssignment.
 ```
+
+**MVP decision: invitations do not expire on a fixed timer.**
+`PlacementInvitation.expiresAt` is nullable and left unset in the MVP — a
+generated link stays `ACTIVE` indefinitely until it is either consumed by a
+successfully completed attempt (`USED`) or explicitly invalidated by an
+admin action (`REVOKED`, via regeneration or manual revoke). No 24-hour /
+7-day / any fixed expiry window is implemented or implied. The nullable
+column and the `EXPIRED` status exist so a future *optional*, per-invitation
+expiry could be added without a schema migration — but nothing in the MVP
+sets or checks it.
 
 ## Attempt lifecycle
 
@@ -132,11 +144,20 @@ IN_PROGRESS --(server deadline reached)--> AUTO_SUBMITTED
 ```
 
 - `PlacementAttempt.expiresAt` is computed once, server-side, at start
-  (`startedAt + PlacementTest.durationSeconds`). The frontend timer is a
-  presentation of that deadline, never the authority over it — any submit
-  request arriving after `expiresAt` is treated as an auto-submission
-  boundary case, and a background/periodic check (Phase 1+) auto-submits
-  attempts whose deadline has passed regardless of client activity.
+  (`startedAt + PlacementTest.durationSeconds`). The frontend runs its own
+  countdown from that value — for UX, and to call submit proactively at
+  00:00 — but that client timer is never the authority. **MVP decision:
+  enforcement is lazy, not scheduled.** There is no cron/sweep job walking
+  `IN_PROGRESS` attempts. Instead, every attempt-related request (fetch the
+  current question, submit an answer, submit the test) re-checks `now >=
+  expiresAt` server-side before doing anything else; if an `IN_PROGRESS`
+  attempt is accessed past its deadline — through any such request, or a
+  late `SUBMIT` — the handler finalizes it as `AUTO_SUBMITTED` and computes
+  the result right then. A student who never touches the page again after
+  time runs out leaves the attempt `IN_PROGRESS` until the next access
+  (admin viewing results, a later retry) discovers and finalizes it — an
+  accepted tradeoff for MVP to avoid background infrastructure. See
+  `src/domain/attempts/types.ts`.
 - Per-attempt option display order is randomized once at attempt start and
   stored on the attempt (`PlacementAttempt.optionOrder`), so navigating
   backward/forward through the 70 questions always shows the same order to

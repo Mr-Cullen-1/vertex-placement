@@ -15,7 +15,9 @@ scaffolded in Phase 0 plus the shape planned for Phase 1+ — routes marked
 
 ```
 /placement/{token}
-  -> validate token (see domain/tokens) -> if invalid/expired/used: error state, no candidate form
+  -> validate token (see domain/tokens) -> if not found/revoked/already used: error state, no candidate form
+     (MVP invitations never expire on a timer, so EXPIRED is not a
+     practically reachable case yet — see ARCHITECTURE.md)
   -> /placement/{token}/start        candidate info form (first/last name, phone, age, optional email)
   -> /placement/{token}/test         the 70-question flow (forward/back/skip, fixed question order)
   -> /placement/{token}/result       clean summary only — no answer key, no per-question review
@@ -71,10 +73,14 @@ and, if ever needed, a route handler could call. This isn't finalized —
 flagged here so Phase 1 planning starts from a stated default rather than
 re-deciding it per feature.
 
-One exception: **attempt auto-submission** on timeout most likely needs a
-route handler (or scheduled function) reachable independent of a specific
-user's request, since "the timer must be authoritative on the server" means
-an attempt can expire with nobody watching the page.
+**Attempt auto-submission** does not need a dedicated route or a scheduled
+function in the MVP (decision: no cron/sweep job). Every route/action that
+touches an `IN_PROGRESS` attempt re-validates `expiresAt` server-side first
+and finalizes it as `AUTO_SUBMITTED` on the spot if the deadline has
+passed — see [ARCHITECTURE.md](./ARCHITECTURE.md#attempt-lifecycle). The
+client-side countdown calling submit at 00:00 is the common-case path;
+server-side lazy validation is what makes the deadline authoritative even
+if that call never arrives.
 
 ## Route protection
 
@@ -85,6 +91,7 @@ an attempt can expire with nobody watching the page.
   [ARCHITECTURE.md](./ARCHITECTURE.md#authentication--authorization) for
   why role checks live in each route/action instead.
 - `/placement/[token]` has no middleware gating at all — a token is not a
-  session, and validity (exists / not expired / not revoked / not already
-  used) must be re-checked on every mutating action, not just on first
-  load, since a student could sit on the page past expiry.
+  session, and validity (exists / not revoked / not already used, plus the
+  underlying attempt's `expiresAt`) must be re-checked on every mutating
+  action, not just on first load, since a student could sit on the page
+  past the attempt deadline.

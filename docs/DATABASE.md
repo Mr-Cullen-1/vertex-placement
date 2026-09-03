@@ -66,7 +66,9 @@ columns:
   `PlacementTest` at all.** This is the literal requirement from the brief:
   "Regenerating a link is NOT the same thing as creating a retake" and
   "the invitation/token belongs to an assignment/session, not directly to
-  the test definition."
+  the test definition." `expiresAt` is nullable and unset by default — MVP
+  invitations stay `ACTIVE` until `USED` or `REVOKED`, not on a timer (see
+  [ARCHITECTURE.md](./ARCHITECTURE.md#token-lifecycle)).
 - `PlacementAttempt` is the actual act of taking the test — one row per
   attempt, holding the server-authoritative `expiresAt`, the randomized
   `optionOrder`, and the answers. It references the specific invitation
@@ -151,6 +153,14 @@ ambiguity instead of inventing business rules:
   name) to detect duplicates — left open; the source material doesn't
   specify a dedup policy and inventing one risks rejecting legitimate
   re-tests.
-- Attempt auto-submission trigger mechanism (polling job vs. on-request
-  lazy check when a student action arrives after `expiresAt`) — schema
-  supports either; not decided since no attempt flow is built yet.
+
+The following were open in the Phase 0 report and have since been decided
+(kept here for history rather than deleted):
+
+- ~~Attempt auto-submission trigger mechanism~~ — **decided**: on-request
+  lazy check, no scheduled sweep/cron in the MVP. See
+  [ARCHITECTURE.md](./ARCHITECTURE.md#attempt-lifecycle).
+- ~~Invitation expiry duration~~ — **decided**: `PlacementInvitation.expiresAt`
+  is nullable and unset in the MVP; invitations don't expire on a fixed
+  timer, only via `USED` or `REVOKED`. See
+  [ARCHITECTURE.md](./ARCHITECTURE.md#token-lifecycle).

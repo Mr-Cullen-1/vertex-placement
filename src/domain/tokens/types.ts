@@ -6,6 +6,9 @@
 
 export type TokenValidationFailureReason =
   | "NOT_FOUND"
+  // Only reachable if a future feature sets PlacementInvitation.expiresAt.
+  // MVP invitations have a null expiresAt and never expire on a timer —
+  // they become invalid only via ALREADY_USED or REVOKED.
   | "EXPIRED"
   | "REVOKED"
   | "ALREADY_USED";

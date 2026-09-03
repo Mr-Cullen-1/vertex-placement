@@ -48,8 +48,12 @@ test — the student sees only the final result, after submission.
 ## Test rules
 
 - **Duration**: 30 minutes maximum, **server-authoritative**. The frontend
-  timer is a display of the server deadline, never the source of truth for
-  whether time has run out.
+  runs its own countdown from the server-issued deadline and calls submit
+  at 0 for normal-case UX, but the server independently re-validates
+  `expiresAt` on every attempt-related request and finalizes a late
+  attempt as auto-submitted regardless of whether the client ever calls
+  submit — see [ARCHITECTURE.md](./ARCHITECTURE.md#attempt-lifecycle). No
+  scheduled/cron sweep is used in the MVP; enforcement is on-access.
 - Frontend timer states: normal -> visually urgent at 5 minutes remaining
   -> automatic submission at 0.
 - **Question order**: fixed, matches the source material. Never randomized.
@@ -70,8 +74,24 @@ test — the student sees only the final result, after submission.
   in the UI or the token flow offers "try again."
 - **Regenerating a link is not a retake.** Regenerating creates a new
   `PlacementInvitation` against the *same* `PlacementAssignment` (e.g. the
-  original link expired or was lost before the student ever started) — it
-  does not create a new attempt and does not touch the test definition.
+  original link was lost, sent to the wrong contact, or needs to be
+  reissued before the student ever started — not because it expired; see
+  "Invitations don't expire on a timer" below) — it does not create a new
+  attempt and does not touch the test definition.
+- **A candidate can already have multiple attempts over time** at the
+  schema level, without any migration: `Candidate` 1:N `PlacementAssignment`
+  1:N `PlacementAttempt`. Nothing about the MVP restricts a candidate to one
+  `PlacementAssignment` for life — an admin creating a second assignment for
+  the same candidate (a different test, or a policy-driven re-test later)
+  is already representable. What the MVP restricts is narrower and
+  specific: *within a given assignment*, a token that completed an attempt
+  cannot start another one. `isCanonical` marks the official attempt per
+  assignment once an assignment is ever allowed to hold more than one.
+- **Invitations don't expire on a timer.** `PlacementInvitation.expiresAt`
+  is nullable and unset in the MVP — no fixed window such as 24 hours or 7
+  days. A generated link stays valid until it is either consumed by a
+  completed attempt (`USED`) or explicitly revoked/regenerated
+  (`REVOKED`). See [ARCHITECTURE.md](./ARCHITECTURE.md#token-lifecycle).
 
 ## Scoring & placement
 
@@ -127,19 +147,22 @@ only), Topic Analysis. Not implemented in Phase 0.
 
 ## Open decisions
 
-Flagged rather than guessed at:
+Still genuinely open, flagged rather than guessed at:
 
 - **Exact `PlacementBand` configuration** for the Language Hub test (which
   percentage ranges map to which labels) — depends on the actual source
   material and any institutional guidance, neither of which is available
-  yet.
-- **Invitation expiry duration** (`PlacementInvitation.expiresAt`) — the
-  brief doesn't specify how long a generated link should stay valid before
-  needing regeneration. No default was invented in the schema; this needs
-  a decision (or an admin-configurable duration) in Phase 1.
-- **Auto-submission trigger mechanism** — whether attempts past their
-  deadline are auto-submitted by a scheduled sweep, on next student
-  interaction, or on next admin/result view. Affects how "promptly" a
-  timed-out attempt shows up as complete. Not decided.
+  yet. Stays configurable business logic; nothing hard-coded.
 - **Duplicate candidates** — no dedup rule specified by the brief; not
   invented.
+
+Resolved since the Phase 0 report (kept here for history):
+
+- ~~Invitation expiry duration~~ — **decided**: no fixed expiry.
+  `PlacementInvitation.expiresAt` is nullable and unset in the MVP; a link
+  is valid until `USED` or `REVOKED`, never on a timer.
+- ~~Auto-submission trigger mechanism~~ — **decided**: on-access lazy
+  validation, no scheduled sweep/cron. The client times out and calls
+  submit for UX; the server independently re-checks `expiresAt` on every
+  attempt-related request and finalizes late attempts as `AUTO_SUBMITTED`
+  whenever one is next touched.

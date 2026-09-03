@@ -272,7 +272,7 @@ model PlacementAssignment {
 enum InvitationStatus {
   ACTIVE
   USED
-  EXPIRED
+  EXPIRED // reserved: only reachable if a future feature sets expiresAt
   REVOKED // superseded by a regenerated invitation, or manually revoked
 }
 
@@ -285,9 +285,16 @@ model PlacementInvitation {
   assignmentId String
   assignment   PlacementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
-  token     String           @unique // opaque, unguessable, used in the student URL
-  status    InvitationStatus @default(ACTIVE)
-  expiresAt DateTime
+  token  String           @unique // opaque, unguessable, used in the student URL
+  status InvitationStatus @default(ACTIVE)
+
+  // Nullable by design (MVP decision): an invitation does NOT expire on a
+  // fixed timer. It stays ACTIVE indefinitely until either (a) it is
+  // consumed by a successfully completed attempt (-> USED), or (b) an
+  // admin explicitly revokes/regenerates it (-> REVOKED). A non-null value
+  // is reserved for a future optional-expiry feature; nothing in the MVP
+  // sets it. See /docs/PRODUCT_RULES.md.
+  expiresAt DateTime?
 
   regeneratedFromId String?              @unique
   regeneratedFrom   PlacementInvitation? @relation("InvitationRegeneration", fields: [regeneratedFromId], references: [id])
@@ -328,8 +335,16 @@ model PlacementAttempt {
   expiresAt   DateTime
   submittedAt DateTime?
 
-  // First completed attempt per assignment is canonical/official in the MVP.
-  // Field exists so future retake support doesn't require a migration.
+  // The first COMPLETED attempt per assignment is canonical/official in the
+  // MVP (application-level rule: a used invitation cannot start a second
+  // attempt, so today there is only ever one). Field exists so future
+  // retake support — multiple attempts under one assignment — doesn't
+  // require a migration. A single Candidate can already accumulate
+  // multiple attempts over time via multiple PlacementAssignment rows
+  // (Candidate 1:N PlacementAssignment 1:N PlacementAttempt); this field
+  // additionally allows multiple attempts WITHIN one assignment once
+  // retakes are enabled, without changing what "canonical" means per
+  // assignment. See /docs/DATABASE.md.
   isCanonical Boolean @default(true)
 
   // Per-attempt randomized option display order, keyed by questionId:
