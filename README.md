@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vertex Placement
 
-## Getting Started
+A professional English placement test platform for educational centers.
+Standalone product — independent codebase, database, and deployment. See
+[`/docs`](./docs) for architecture, database, routes, product rules, and
+the design system.
 
-First, run the development server:
+**Status:** Phase 0 (foundation) complete. No test-taking flow, admin
+dashboard, or import pipeline is implemented yet — see
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for what exists.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Next.js 16 (App Router) · TypeScript · PostgreSQL · Prisma 7 · Tailwind CSS
+v4 · shadcn/ui · Auth.js v5
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Getting started
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Copy `.env.example` to `.env` and fill in a real `DATABASE_URL` (a local
+   or hosted PostgreSQL instance) and a generated `AUTH_SECRET`
+   (`npx auth secret`).
+2. Install dependencies: `npm install`
+3. Apply the schema: `npm run db:migrate`
+4. Bootstrap the first Super Admin: set `SEED_SUPER_ADMIN_EMAIL` /
+   `SEED_SUPER_ADMIN_PASSWORD` in `.env`, then `npm run db:seed`. Clear
+   those two env vars afterward — there is no public registration.
+5. `npm run dev` and sign in at `/admin/login`.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run db:generate` | Regenerate the Prisma client |
+| `npm run db:migrate` | Run Prisma migrations (dev) |
+| `npm run db:seed` | Run `prisma/seed.ts` (Super Admin bootstrap only) |
+| `npm run db:studio` | Prisma Studio |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Docs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system architecture, folder structure, extensibility points
+- [`docs/DATABASE.md`](./docs/DATABASE.md) — schema and the reasoning behind each entity split
+- [`docs/ROUTES.md`](./docs/ROUTES.md) — route map and auth/role gating
+- [`docs/PRODUCT_RULES.md`](./docs/PRODUCT_RULES.md) — business rules distilled from the product brief
+- [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md) — visual direction and design tokens

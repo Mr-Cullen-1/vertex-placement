@@ -1,0 +1,393 @@
+// Vertex Placement — database schema
+// See /docs/DATABASE.md for entity relationship rationale and design decisions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// AUTH — Admin / Super Admin only. Students never authenticate.
+// ============================================================
+
+enum UserRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdTests       PlacementTest[]       @relation("TestCreatedBy")
+  createdAssignments PlacementAssignment[] @relation("AssignmentCreatedBy")
+  createdInvitations PlacementInvitation[] @relation("InvitationCreatedBy")
+  importJobs         ImportJob[]           @relation("ImportJobCreatedBy")
+
+  @@map("users")
+}
+
+// ============================================================
+// TEST DEFINITION — owned exclusively by Super Admin.
+// ============================================================
+
+enum TestStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model PlacementTest {
+  id                 String     @id @default(cuid())
+  title              String
+  description        String?
+  sourceAttribution  String? // e.g. "Language Hub Placement Test, Macmillan Education, 2019"
+  status             TestStatus @default(DRAFT)
+  durationSeconds    Int        @default(1800) // 30 minutes, server-authoritative
+  totalQuestionCount Int        @default(70)
+
+  createdByUserId String
+  createdBy       User   @relation("TestCreatedBy", fields: [createdByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions   Question[]
+  bands       PlacementBand[]
+  assignments PlacementAssignment[]
+  importJobs  ImportJob[]
+
+  @@map("placement_tests")
+}
+
+enum QuestionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// Question order is FIXED and meaningful — `order` encodes the original,
+// progressively-increasing-difficulty sequence from the source material.
+// It is never randomized. Only Option order is randomized, per attempt.
+model Question {
+  id     String        @id @default(cuid())
+  testId String
+  test   PlacementTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  order  Int // 1-based fixed position within the test
+  prompt String
+  status QuestionStatus @default(DRAFT)
+
+  importJobId String?
+  importJob   ImportJob? @relation(fields: [importJobId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options  Option[]
+  metadata QuestionMetadata?
+  answers  PlacementAnswer[]
+
+  @@unique([testId, order])
+  @@map("questions")
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  text      String
+  isCorrect Boolean @default(false)
+  order     Int // original/authoring order — NOT the display order shown to a candidate
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers PlacementAnswer[]
+
+  @@unique([questionId, order])
+  @@map("options")
+}
+
+// Kept separate from Question so import/analytics concerns (topic tagging,
+// difficulty banding, source traceability) can evolve independently of the
+// core question/option content.
+model QuestionMetadata {
+  id         String   @id @default(cuid())
+  questionId String   @unique
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Free-form label taken from the source material's progressive bands
+  // (e.g. "Beginner", "Elementary", "Pre-Intermediate", ...). Deliberately
+  // a string, not an enum tied to CEFR — see /docs/DATABASE.md.
+  difficultyBand String?
+  topic          String? // e.g. "Grammar", "Vocabulary", "Tenses", "Modals", "Phrasal Verbs"
+  tags           String[] @default([])
+  sourceRef      String? // page/section reference in the source material
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("question_metadata")
+}
+
+// Configurable scoring → placement-level mapping, per test. Populated by
+// Super Admin. Intentionally NOT hard-coded — the source material does not
+// define official CEFR boundaries.
+model PlacementBand {
+  id     String        @id @default(cuid())
+  testId String
+  test   PlacementTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  order         Int // display/evaluation order, lowest band first
+  label         String // e.g. "A2", "Elementary" — whatever the org decides to call it
+  minPercentage Float
+  maxPercentage Float
+  description   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  results PlacementResult[]
+
+  @@unique([testId, order])
+  @@map("placement_bands")
+}
+
+// ============================================================
+// IMPORT PIPELINE — source file -> parser -> normalized schema ->
+// validation -> preview -> confirm -> draft -> publish.
+// Imported content is never auto-published (see ImportJob.status).
+// ============================================================
+
+enum ImportSourceType {
+  PDF
+  XLSX
+  JSON
+  DOCX
+}
+
+enum ImportStatus {
+  UPLOADED
+  PARSING
+  PARSED
+  VALIDATION_FAILED
+  VALIDATED
+  IMPORTED // questions created as DRAFT — still requires explicit publish
+  FAILED
+}
+
+model ImportJob {
+  id         String           @id @default(cuid())
+  sourceType ImportSourceType
+  fileName   String
+  fileRef    String // storage location/path/URL of the uploaded source file
+  status     ImportStatus     @default(UPLOADED)
+
+  testId String?
+  test   PlacementTest? @relation(fields: [testId], references: [id])
+
+  createdByUserId String
+  createdBy       User   @relation("ImportJobCreatedBy", fields: [createdByUserId], references: [id])
+
+  previewData Json? // normalized question schema, pre-confirmation
+  errorLog    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions Question[]
+
+  @@map("import_jobs")
+}
+
+// ============================================================
+// CANDIDATES — never authenticate; identified only by invitation token.
+// ============================================================
+
+model Candidate {
+  id          String  @id @default(cuid())
+  firstName   String
+  lastName    String
+  phoneNumber String
+  age         Int
+  email       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments PlacementAssignment[]
+
+  @@index([phoneNumber])
+  @@map("candidates")
+}
+
+// ============================================================
+// ASSIGNMENT / INVITATION / ATTEMPT — kept as distinct concepts so that
+// regenerating a link never requires recreating the test or the session,
+// and so the architecture can support future retakes without redesign.
+// ============================================================
+
+enum AssignmentStatus {
+  PENDING // invitation exists, not yet started
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+// One PlacementAssignment = one intended test-taking engagement for one
+// candidate against one test. This is the "session" an Admin creates.
+model PlacementAssignment {
+  id     String        @id @default(cuid())
+  testId String
+  test   PlacementTest @relation(fields: [testId], references: [id])
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+
+  status AssignmentStatus @default(PENDING)
+
+  createdByUserId String
+  createdBy       User   @relation("AssignmentCreatedBy", fields: [createdByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitations PlacementInvitation[]
+  attempts    PlacementAttempt[]
+
+  @@map("placement_assignments")
+}
+
+enum InvitationStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REVOKED // superseded by a regenerated invitation, or manually revoked
+}
+
+// A token belongs to an assignment, never directly to a test. Regenerating
+// a link creates a NEW row here (previous one REVOKED) — the assignment
+// and test are untouched. This is distinct from a "retake": a retake would
+// be a new PlacementAttempt, not a new PlacementInvitation.
+model PlacementInvitation {
+  id           String              @id @default(cuid())
+  assignmentId String
+  assignment   PlacementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  token     String           @unique // opaque, unguessable, used in the student URL
+  status    InvitationStatus @default(ACTIVE)
+  expiresAt DateTime
+
+  regeneratedFromId String?              @unique
+  regeneratedFrom   PlacementInvitation? @relation("InvitationRegeneration", fields: [regeneratedFromId], references: [id])
+  regeneratedTo     PlacementInvitation? @relation("InvitationRegeneration")
+
+  createdByUserId String
+  createdBy       User   @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id])
+
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  attempt PlacementAttempt?
+
+  @@index([token])
+  @@map("placement_invitations")
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED // server-side timeout submission
+  ABANDONED
+}
+
+model PlacementAttempt {
+  id           String              @id @default(cuid())
+  assignmentId String
+  assignment   PlacementAssignment @relation(fields: [assignmentId], references: [id])
+
+  invitationId String              @unique
+  invitation   PlacementInvitation @relation(fields: [invitationId], references: [id])
+
+  status AttemptStatus @default(IN_PROGRESS)
+
+  // Server-authoritative timing. expiresAt = startedAt + test.durationSeconds,
+  // computed once at start and never trusted from the client.
+  startedAt   DateTime  @default(now())
+  expiresAt   DateTime
+  submittedAt DateTime?
+
+  // First completed attempt per assignment is canonical/official in the MVP.
+  // Field exists so future retake support doesn't require a migration.
+  isCanonical Boolean @default(true)
+
+  // Per-attempt randomized option display order, keyed by questionId:
+  // { [questionId]: optionId[] }. Recorded once at attempt start so
+  // navigating back and forth shows a stable order. Never affects
+  // Option.isCorrect scoring logic.
+  optionOrder Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers PlacementAnswer[]
+  result  PlacementResult?
+
+  @@map("placement_attempts")
+}
+
+model PlacementAnswer {
+  id        String           @id @default(cuid())
+  attemptId String
+  attempt   PlacementAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  selectedOptionId String?
+  selectedOption   Option? @relation(fields: [selectedOptionId], references: [id])
+
+  answeredAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([attemptId, questionId])
+  @@map("placement_answers")
+}
+
+// Computed once on submission. Kept separate from PlacementAttempt so the
+// raw attempt record (answers, timing) stays independent of derived,
+// potentially-recomputable scoring output.
+model PlacementResult {
+  id        String           @id @default(cuid())
+  attemptId String           @unique
+  attempt   PlacementAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  rawScore          Int
+  totalQuestions    Int
+  percentage        Float
+  completionSeconds Int
+
+  placementBandId String?
+  placementBand   PlacementBand? @relation(fields: [placementBandId], references: [id])
+
+  // Denormalized analytics snapshots — derived from QuestionMetadata at
+  // scoring time, not queried live, so historical results remain stable
+  // even if metadata/topics are edited later.
+  difficultyProgression Json // e.g. { "Beginner": { correct: 6, total: 6 }, ... }
+  topicPerformance      Json // e.g. { "Grammar": 0.72, "Vocabulary": 0.61, ... }
+
+  computedAt DateTime @default(now())
+
+  @@map("placement_results")
+}
