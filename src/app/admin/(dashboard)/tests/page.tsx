@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge } from "@/components/admin/status-badge";
 import { CreateTestDialog } from "@/components/admin/tests/create-test-dialog";
+import { ImportLanguageHubDialog } from "@/components/admin/tests/import-language-hub-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate, formatDurationSeconds } from "@/lib/format";
 
@@ -18,7 +19,14 @@ export default async function TestsPage() {
       <PageHeader
         title="Placement tests"
         description="Test definitions available for assignment."
-        action={isSuperAdmin ? <CreateTestDialog /> : undefined}
+        action={
+          isSuperAdmin ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <ImportLanguageHubDialog />
+              <CreateTestDialog />
+            </div>
+          ) : undefined
+        }
       />
 
       {tests.length === 0 ? (
@@ -26,10 +34,17 @@ export default async function TestsPage() {
           title="No placement tests yet"
           description={
             isSuperAdmin
-              ? "Create a test to start assigning it to candidates."
+              ? "Create a test to start assigning it to candidates, or import the Language Hub placement test."
               : "No placement test has been created yet. A Super Admin needs to create one."
           }
-          action={isSuperAdmin ? <CreateTestDialog /> : undefined}
+          action={
+            isSuperAdmin ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <ImportLanguageHubDialog />
+                <CreateTestDialog />
+              </div>
+            ) : undefined
+          }
         />
       ) : (
         <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
