@@ -41,17 +41,22 @@ with "student does not need an account."
 | Route | Purpose | Minimum role |
 | --- | --- | --- |
 | `/admin/tests` | List `PlacementTest` definitions (view only for Admin; create for Super Admin) | Admin (read) / **Super Admin** (write) |
-| `/admin/tests/[id]` | Test detail — info, bands (read-only), assignments; edit/publish/archive | Admin (read) / **Super Admin** (write) |
+| `/admin/tests/[id]` | Test detail — info, bands (editable for Super Admin), assignments; edit/publish/archive | Admin (read) / **Super Admin** (write) |
 | `/admin/candidates` | Candidate list/search + create | Admin |
 | `/admin/candidates/[id]` | Candidate detail + their assignments | Admin |
 | `/admin/assignments` | Create assignments, pick/enter candidate, generate/regenerate/revoke invitations | Admin |
 | `/admin/assignments/[id]` | Assignment detail, invitation history, attempts | Admin |
 | `/admin/results/[attemptId]` | Question-by-question answer key + topic/difficulty analysis for one candidate | Admin |
 
-Question/option authoring, the import pipeline, and a route for editing
-scoring bands were **not** built in Phase 2B — a test created via
-`/admin/tests` has no content until a later phase adds it. See
-[PHASE_2B.md](./PHASE_2B.md) "Known limitations".
+### Implemented in Phase 2C
+
+| Route | Purpose | Minimum role |
+| --- | --- | --- |
+| `/admin/tests/[id]/questions` | Question/option/metadata list + authoring (DRAFT tests only) | Admin (read) / **Super Admin** (write) |
+
+The import pipeline was **not** built in Phase 2C — questions are
+authored one at a time through this page. See
+[PHASE_2C.md](./PHASE_2C.md) "Known limitations".
 
 ### Still planned (not built)
 

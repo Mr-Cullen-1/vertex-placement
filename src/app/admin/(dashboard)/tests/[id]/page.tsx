@@ -11,7 +11,10 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge, AssignmentStatusBadge } from "@/components/admin/status-badge";
 import { TestLifecycleActions } from "@/components/admin/tests/test-lifecycle-actions";
+import { BandsManager } from "@/components/admin/bands/bands-manager";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListChecksIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate, formatDurationSeconds } from "@/lib/format";
 
@@ -47,7 +50,20 @@ export default async function TestDetailPage({
         title={test.title}
         backHref="/admin/tests"
         backLabel="Tests"
-        action={isSuperAdmin ? <TestLifecycleActions test={test} /> : undefined}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={`/admin/tests/${id}/questions`} />}
+            >
+              <ListChecksIcon />
+              Questions
+            </Button>
+            {isSuperAdmin && <TestLifecycleActions test={test} />}
+          </div>
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -73,9 +89,8 @@ export default async function TestDetailPage({
               )}
               {test.status === "DRAFT" && publishedQuestionCount === 0 && (
                 <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                  This test has no published questions yet, so it can&apos;t be published.
-                  Question authoring/import is not part of this phase — content is added
-                  separately.
+                  This test has no published questions yet, so it can&apos;t be published. Add
+                  and publish at least one question first.
                 </p>
               )}
             </CardContent>
@@ -131,7 +146,9 @@ export default async function TestDetailPage({
             <CardTitle>Placement bands</CardTitle>
           </CardHeader>
           <CardContent>
-            {bands.length === 0 ? (
+            {isSuperAdmin ? (
+              <BandsManager testId={id} bands={bands} locked={test.status === "ARCHIVED"} />
+            ) : bands.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No scoring bands configured — results will show a raw score without a level
                 label.

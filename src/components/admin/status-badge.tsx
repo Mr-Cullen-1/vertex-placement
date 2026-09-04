@@ -2,6 +2,7 @@ import type {
   AssignmentStatus,
   AttemptStatus,
   InvitationStatus,
+  QuestionStatus,
   TestStatus,
 } from "@prisma/client";
 import { Badge, type badgeVariants } from "@/components/ui/badge";
@@ -21,6 +22,16 @@ const TEST_STATUS: Record<TestStatus, { label: string; variant: Variant }> = {
 
 export function TestStatusBadge({ status }: { status: TestStatus }) {
   const { label, variant } = TEST_STATUS[status];
+  return <StatusBadge label={label} variant={variant} />;
+}
+
+const QUESTION_STATUS: Record<QuestionStatus, { label: string; variant: Variant }> = {
+  DRAFT: { label: "Draft", variant: "secondary" },
+  PUBLISHED: { label: "Published", variant: "success" },
+};
+
+export function QuestionStatusBadge({ status }: { status: QuestionStatus }) {
+  const { label, variant } = QUESTION_STATUS[status];
   return <StatusBadge label={label} variant={variant} />;
 }
 

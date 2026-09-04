@@ -135,15 +135,83 @@ export async function updateQuestion(
   });
 }
 
+/** Guarded the same way createQuestion/updateQuestion are: a question can
+ * only be published while its test is still DRAFT. Without this, a
+ * question left DRAFT when the test was published could be published
+ * later and silently join the live question set students are already
+ * mid-attempt against (see /docs/PHASE_2C.md "Decisions"). */
 export async function publishQuestion(actor: Actor, questionId: string) {
   assertPermission(actor, "question:write");
   const question = await db.question.findUnique({
     where: { id: questionId },
-    include: { options: true },
+    include: { options: true, test: true },
   });
   if (!question) throw new QuestionNotFoundError();
+  if (question.test.status !== "DRAFT") {
+    throw new InvalidTestStateError("Questions can only be published while the test is DRAFT.");
+  }
   assertExactlyOneCorrectOption(question.options);
   return db.question.update({ where: { id: questionId }, data: { status: "PUBLISHED" } });
+}
+
+/** No ARCHIVED question status exists in the domain, and a question
+ * cannot be un-published — so deletion is the only removal path, and
+ * only while its test is DRAFT. That's safe by construction: an attempt
+ * can only ever be started against a PUBLISHED test (attempt.service.ts),
+ * so while a test is DRAFT no PlacementAnswer can reference any of its
+ * questions yet, regardless of the question's own DRAFT/PUBLISHED status. */
+export async function deleteQuestion(actor: Actor, questionId: string) {
+  assertPermission(actor, "question:write");
+  const question = await db.question.findUnique({
+    where: { id: questionId },
+    include: { test: true },
+  });
+  if (!question) throw new QuestionNotFoundError();
+  if (question.test.status !== "DRAFT") {
+    throw new InvalidTestStateError("Questions can only be deleted while the test is DRAFT.");
+  }
+  await db.question.delete({ where: { id: questionId } });
+}
+
+/** Reassigns `order` for every question of a test to match the given
+ * sequence. Question order is fixed/authoring-time only — never touched
+ * by attempt-taking or scoring logic — so this is purely a Super Admin
+ * authoring tool, restricted to DRAFT tests like every other content
+ * edit. `orderedQuestionIds` must be exactly the test's current question
+ * ids, each once; positions become 1-based order values. */
+export async function reorderQuestions(
+  actor: Actor,
+  testId: string,
+  orderedQuestionIds: readonly string[]
+) {
+  assertPermission(actor, "question:write");
+  const test = await db.placementTest.findUnique({ where: { id: testId } });
+  if (!test) throw new TestNotFoundError();
+  if (test.status !== "DRAFT") {
+    throw new InvalidTestStateError("Questions can only be reordered while the test is DRAFT.");
+  }
+
+  const existing = await db.question.findMany({ where: { testId }, select: { id: true } });
+  const existingIds = new Set(existing.map((q) => q.id));
+  const givenIds = new Set(orderedQuestionIds);
+  if (
+    orderedQuestionIds.length !== existing.length ||
+    givenIds.size !== existing.length ||
+    ![...existingIds].every((id) => givenIds.has(id))
+  ) {
+    throw new InvalidTestStateError("Reorder must include exactly the test's current questions.");
+  }
+
+  await db.$transaction([
+    // Two-pass update avoids colliding with the @@unique([testId, order])
+    // constraint while positions are mid-shuffle.
+    ...orderedQuestionIds.map((id, index) =>
+      db.question.update({ where: { id }, data: { order: -1 * (index + 1) } })
+    ),
+    ...orderedQuestionIds.map((id, index) =>
+      db.question.update({ where: { id }, data: { order: index + 1 } })
+    ),
+  ]);
 }
 
 export async function listQuestionsForTest(actor: Actor, testId: string) {
