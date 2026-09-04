@@ -5,10 +5,8 @@ import {
   BarChart3Icon,
   BookmarkIcon,
   ClockIcon,
-  FileTextIcon,
   GraduationCapIcon,
   LinkIcon,
-  TrendingUpIcon,
   UsersIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,13 +41,6 @@ const FEATURES = [
   },
 ];
 
-const SPEC_ITEMS = [
-  { icon: FileTextIcon, value: "70", label: "Questions" },
-  { icon: ClockIcon, value: "30 min", label: "Test duration", accent: true },
-  { icon: BarChart3Icon, value: "6", label: "Placement levels" },
-  { icon: TrendingUpIcon, value: "Progressive", label: "Difficulty" },
-];
-
 // The product visual — an illustrative rendering of the real assessment
 // experience (fixed-order questions, progressively increasing
 // difficulty, automatic band scoring; see src/components/placement/).
@@ -61,21 +52,20 @@ const CURRENT_LEVEL_INDEX = 3;
 const ANSWER_OPTIONS = ["lives", "has lived", "is living", "lived"];
 const SELECTED_OPTION_INDEX = 1;
 
-/** Marketing/informational landing page for the root route — rebuilt to
- * reproduce design/new reference.png as closely as technically possible
- * (composition, typography, the layered product-visual concept, the
- * hand-drawn annotations, the atmospheric background). Vertex Placement
- * has no public self-serve flow — students only ever arrive via a
- * one-time invitation link (see /docs/ROUTES.md) — so "Admin login" is
- * the only functional control on the page. No invented customer names,
- * statistics, or footer links beyond what the reference itself shows
- * (see the footer below — no Privacy/Terms/Support, since the reference
- * doesn't present them as real links and no such routes exist). No
- * "adaptive"/"AI" language anywhere — the test is fixed-order with
- * progressively increasing difficulty. */
+/** Marketing/informational landing page for the root route — a single,
+ * scroll-free hero screen (per the latest visual refinement: no stats
+ * strip, no footer, everything above the fold), reproducing the
+ * updated reference as closely as technically possible: a floating
+ * pill navbar, the layered product-visual concept, hand-drawn
+ * annotations, and an atmospheric background. Vertex Placement has no
+ * public self-serve flow — students only ever arrive via a one-time
+ * invitation link (see /docs/ROUTES.md) — so "Admin login" is the only
+ * functional control on the page. No invented customer names or
+ * statistics anywhere. No "adaptive"/"AI" language — the test is
+ * fixed-order with progressively increasing difficulty. */
 export default function Home() {
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-gradient-to-b from-white to-[oklch(0.97_0.012_292.7)]">
+    <div className="relative flex h-dvh flex-col overflow-y-auto overflow-x-hidden bg-gradient-to-b from-white to-[oklch(0.97_0.012_292.7)]">
       {/* Atmospheric background — soft violet glow + a faint abstract
        * "architecture" motif, standing in for the reference's layered
        * translucent shapes without a photographic/stock asset. */}
@@ -96,7 +86,7 @@ export default function Home() {
       </svg>
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-6 sm:px-10 xl:px-16">
-        <header className="flex items-center justify-between gap-4 py-6 sm:py-8">
+        <header className="mt-6 flex shrink-0 items-center justify-between gap-4 rounded-full border border-border bg-card/90 px-6 py-3 shadow-sm backdrop-blur-sm sm:mt-8 sm:px-8">
           <VertexWordmark />
           <Button
             nativeButton={false}
@@ -388,50 +378,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        <div className="border-t border-border" />
-
-        <div className="grid grid-cols-2 gap-y-6 py-8 sm:grid-cols-4 sm:gap-6">
-          {SPEC_ITEMS.map((item, index) => (
-            <div
-              key={item.label}
-              className={cn(
-                "flex flex-col gap-2 px-2 sm:border-l sm:border-border sm:pl-6",
-                index === 0 && "sm:border-l-0 sm:pl-0"
-              )}
-            >
-              <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
-                <item.icon className="size-4" />
-              </span>
-              <span
-                className={cn(
-                  "text-2xl font-semibold",
-                  item.accent ? "text-primary" : "text-foreground"
-                )}
-              >
-                {item.value}
-              </span>
-              <span className="text-xs text-muted-foreground">{item.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t border-border" />
-
-        <footer className="flex flex-col items-start justify-between gap-4 py-6 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2.5">
-            <VertexMark className="size-6" />
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-foreground">Vertex Placement</span>
-              <span className="text-xs text-muted-foreground">
-                Professional English placement testing for educational centers.
-              </span>
-            </div>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Vertex Placement. All rights reserved.
-          </span>
-        </footer>
       </div>
     </div>
   );
