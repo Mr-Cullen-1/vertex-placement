@@ -1,10 +1,10 @@
 import type {
-  AssignmentStatus,
   AttemptStatus,
   InvitationStatus,
   QuestionStatus,
   TestStatus,
 } from "@prisma/client";
+import type { AssignmentDisplayStatus } from "@/domain/placement/assignment-status";
 import { Badge, type badgeVariants } from "@/components/ui/badge";
 import type { VariantProps } from "class-variance-authority";
 
@@ -35,15 +35,18 @@ export function QuestionStatusBadge({ status }: { status: QuestionStatus }) {
   return <StatusBadge label={label} variant={variant} />;
 }
 
-const ASSIGNMENT_STATUS: Record<AssignmentStatus, { label: string; variant: Variant }> = {
+const ASSIGNMENT_STATUS: Record<AssignmentDisplayStatus, { label: string; variant: Variant }> = {
   PENDING: { label: "Pending", variant: "secondary" },
   IN_PROGRESS: { label: "In progress", variant: "warning" },
   COMPLETED: { label: "Completed", variant: "success" },
   EXPIRED: { label: "Expired", variant: "outline" },
   CANCELLED: { label: "Cancelled", variant: "outline" },
+  // Derived-only — see /domain/placement/assignment-status.ts. Not a
+  // persisted AssignmentStatus value.
+  REVOKED: { label: "Revoked", variant: "destructive" },
 };
 
-export function AssignmentStatusBadge({ status }: { status: AssignmentStatus }) {
+export function AssignmentStatusBadge({ status }: { status: AssignmentDisplayStatus }) {
   const { label, variant } = ASSIGNMENT_STATUS[status];
   return <StatusBadge label={label} variant={variant} />;
 }

@@ -6,6 +6,7 @@ import { AssignmentNotFoundError } from "@/server/errors";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, AttemptStatusBadge, TestStatusBadge } from "@/components/admin/status-badge";
+import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { InvitationPanel, type InvitationSummary } from "@/components/admin/assignments/invitation-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime, formatDurationSeconds } from "@/lib/format";
@@ -44,7 +45,7 @@ export default async function AssignmentDetailPage({
         description={assignment.test.title}
         backHref="/admin/assignments"
         backLabel="Assignments"
-        action={<AssignmentStatusBadge status={assignment.status} />}
+        action={<AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

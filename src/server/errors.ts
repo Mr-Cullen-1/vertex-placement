@@ -131,6 +131,20 @@ export class AssignmentNotFoundError extends DomainError {
   }
 }
 
+/** An assignment whose canonical attempt is already COMPLETED cannot be
+ * issued a new invitation — that would let a student start a second,
+ * unsupported attempt. Regenerating an invitation is explicitly NOT a
+ * retake (see /docs/PHASE_2F.md "Regeneration"); this is the service-layer
+ * enforcement of that rule, closing a gap the Phase 2B UI previously
+ * covered only by hiding the button. */
+export class AssignmentAlreadyCompletedError extends DomainError {
+  readonly code = "ASSIGNMENT_ALREADY_COMPLETED";
+  readonly httpStatus = 409;
+  constructor() {
+    super("This assignment is already completed — a new invitation would start an unsupported second attempt.");
+  }
+}
+
 // --- Attempt -------------------------------------------------------------
 
 export class AttemptNotFoundError extends DomainError {

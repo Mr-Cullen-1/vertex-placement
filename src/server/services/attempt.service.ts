@@ -659,6 +659,64 @@ export async function getAdminResultDetail(
   });
 }
 
+// --- Admin read: lean canonical-result summary (list views) --------------
+
+export interface AssignmentResultSummary {
+  attemptId: string;
+  rawScore: number;
+  totalQuestions: number;
+  percentage: number;
+  progression: ReturnType<typeof computeAnswerBreakdown>;
+}
+
+/** Same score + progression computation as `getAdminResultDetail` (reuses
+ * `computeAnswerBreakdown` directly — never a second implementation),
+ * without the per-question prompt/topic/text enrichment a list row
+ * doesn't render. For the Assignments list's Score/Progression columns
+ * (see /docs/PHASE_2F.md) — one call per COMPLETED assignment, which is
+ * fine at MVP scale (same acceptable-N+1 precedent as the existing
+ * candidate/assignment count computations, see /docs/PHASE_2B.md). Returns
+ * null if the assignment has no completed canonical attempt yet. */
+export async function getCanonicalResultSummaryForAssignment(
+  actor: Actor,
+  assignmentId: string
+): Promise<AssignmentResultSummary | null> {
+  assertPermission(actor, "result:read");
+
+  const attempt = await db.placementAttempt.findFirst({
+    where: {
+      assignmentId,
+      isCanonical: true,
+      status: { in: ["SUBMITTED", "AUTO_SUBMITTED"] },
+    },
+    include: { assignment: true, answers: true, result: true },
+  });
+  if (!attempt || !attempt.result) return null;
+
+  const questions = await db.question.findMany({
+    where: { testId: attempt.assignment.testId, status: "PUBLISHED" },
+    orderBy: { order: "asc" },
+    include: { options: true },
+  });
+  const progressionQuestions: ProgressionQuestionInput[] = questions.map((q) => ({
+    questionId: q.id,
+    order: q.order,
+    correctOptionId: q.options.find((o) => o.isCorrect)?.id ?? "",
+  }));
+  const progressionAnswers: ProgressionAnswerInput[] = attempt.answers.map((a) => ({
+    questionId: a.questionId,
+    selectedOptionId: a.selectedOptionId,
+  }));
+
+  return {
+    attemptId: attempt.id,
+    rawScore: attempt.result.rawScore,
+    totalQuestions: attempt.result.totalQuestions,
+    percentage: attempt.result.percentage,
+    progression: computeAnswerBreakdown(progressionQuestions, progressionAnswers),
+  };
+}
+
 // --- Shared internals ------------------------------------------------
 
 /** Resolves a plaintext token to its attempt's internal id, re-running

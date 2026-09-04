@@ -7,6 +7,7 @@ import { CandidateNotFoundError } from "@/server/errors";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
+import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -89,7 +90,7 @@ export default async function CandidateDetailPage({
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <AssignmentStatusBadge status={assignment.status} />
+                      <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(assignment.createdAt)}

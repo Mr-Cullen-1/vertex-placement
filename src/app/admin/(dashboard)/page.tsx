@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
+import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { formatDate } from "@/lib/format";
 
 /** Operational overview — every number here is a live count from the
@@ -89,7 +90,7 @@ export default async function AdminDashboardPage() {
                       <span className="hidden text-xs text-muted-foreground sm:inline">
                         {formatDate(assignment.createdAt)}
                       </span>
-                      <AssignmentStatusBadge status={assignment.status} />
+                      <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
                     </div>
                   </Link>
                 </li>

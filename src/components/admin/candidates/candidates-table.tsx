@@ -6,8 +6,10 @@ import { SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/admin/empty-state";
+import { AssignmentStatusBadge } from "@/components/admin/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatPercentage } from "@/lib/format";
+import type { AssignmentDisplayStatus } from "@/domain/placement/assignment-status";
 
 export interface CandidateRow {
   id: string;
@@ -19,6 +21,8 @@ export interface CandidateRow {
   createdAt: string;
   assignmentCount: number;
   completedCount: number;
+  latestAssignmentStatus: AssignmentDisplayStatus | null;
+  latestResult: { rawScore: number; totalQuestions: number; percentage: number } | null;
 }
 
 /** Client-side search only — deliberately not a server-driven filter,
@@ -58,7 +62,7 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
+        <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
           <Table>
             <TableHeader>
               <TableRow>
@@ -67,6 +71,8 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
                 <TableHead>Age</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Assignments</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Result</TableHead>
                 <TableHead>Added</TableHead>
               </TableRow>
             </TableHeader>
@@ -91,6 +97,25 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
                       <Badge variant="outline">
                         {c.completedCount}/{c.assignmentCount} completed
                       </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {c.latestAssignmentStatus ? (
+                      <AssignmentStatusBadge status={c.latestAssignmentStatus} />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {c.latestResult ? (
+                      <>
+                        {c.latestResult.rawScore}/{c.latestResult.totalQuestions}{" "}
+                        <span className="text-muted-foreground">
+                          ({formatPercentage(c.latestResult.percentage)})
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(c.createdAt)}</TableCell>

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import type { Actor } from "@/server/rbac";
 import { assertPermission } from "@/server/rbac";
 import {
+  AssignmentAlreadyCompletedError,
   AssignmentNotFoundError,
   InvitationAlreadyActiveError,
   InvitationNotFoundError,
@@ -44,6 +45,7 @@ export async function generateInvitation(
 
   const assignment = await db.placementAssignment.findUnique({ where: { id: assignmentId } });
   if (!assignment) throw new AssignmentNotFoundError();
+  if (assignment.status === "COMPLETED") throw new AssignmentAlreadyCompletedError();
 
   const existingActive = await db.placementInvitation.findFirst({
     where: { assignmentId, status: "ACTIVE" },
@@ -68,6 +70,7 @@ export async function regenerateInvitation(
 
   const assignment = await db.placementAssignment.findUnique({ where: { id: assignmentId } });
   if (!assignment) throw new AssignmentNotFoundError();
+  if (assignment.status === "COMPLETED") throw new AssignmentAlreadyCompletedError();
 
   const current = await db.placementInvitation.findFirst({
     where: { assignmentId, status: "ACTIVE" },

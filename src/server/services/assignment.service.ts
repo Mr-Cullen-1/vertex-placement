@@ -81,10 +81,21 @@ export async function getAssignment(actor: Actor, assignmentId: string) {
   return assignment;
 }
 
+/** Includes invitation status rows (not the full invitation record — no
+ * `tokenHash` crosses this boundary) and a minimal attempt summary (id/
+ * isCanonical/status only) so callers can derive display status (see
+ * /domain/placement/assignment-status.ts) and locate the canonical
+ * completed attempt (for the Score/Progression columns and the Excel
+ * export) without a second query per row. */
 export async function listAssignments(actor: Actor) {
   assertPermission(actor, "assignment:write");
   return db.placementAssignment.findMany({
-    include: { candidate: true, test: true },
+    include: {
+      candidate: true,
+      test: true,
+      invitations: { select: { status: true } },
+      attempts: { select: { id: true, isCanonical: true, status: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 }

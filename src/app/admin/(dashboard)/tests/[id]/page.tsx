@@ -10,6 +10,7 @@ import { TestNotFoundError } from "@/server/errors";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge, AssignmentStatusBadge } from "@/components/admin/status-badge";
+import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { TestLifecycleActions } from "@/components/admin/tests/test-lifecycle-actions";
 import { BandsManager } from "@/components/admin/bands/bands-manager";
 import { Button } from "@/components/ui/button";
@@ -127,7 +128,7 @@ export default async function TestDetailPage({
                           </Link>
                         </TableCell>
                         <TableCell>
-                          <AssignmentStatusBadge status={assignment.status} />
+                          <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {formatDate(assignment.createdAt)}
