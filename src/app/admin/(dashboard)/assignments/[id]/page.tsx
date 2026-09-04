@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, AttemptStatusBadge, TestStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { InvitationPanel, type InvitationSummary } from "@/components/admin/assignments/invitation-panel";
+import { ClipboardListIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime, formatDurationSeconds } from "@/lib/format";
 
@@ -41,6 +42,7 @@ export default async function AssignmentDetailPage({
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Assignment"
         title={`${assignment.candidate.firstName} ${assignment.candidate.lastName}`}
         description={assignment.test.title}
         backHref="/admin/assignments"
@@ -99,6 +101,7 @@ export default async function AssignmentDetailPage({
         <CardContent>
           {assignment.attempts.length === 0 ? (
             <EmptyState
+              icon={ClipboardListIcon}
               title="No attempt started yet"
               description="Nothing happens here until the candidate opens their invitation link."
             />

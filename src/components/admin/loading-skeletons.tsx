@@ -1,15 +1,21 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Skeletons approximate the real page's layout (header + table/cards)
+ * so there's minimal content shift once data arrives — see
+ * /docs/DESIGN_SYSTEM.md "Loading states". */
 export function ListSkeleton() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-8 w-28" />
+      <div className="flex items-end justify-between gap-4 border-b border-border/70 pb-5">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-7 w-48" />
+        </div>
+        <Skeleton className="h-9 w-32 rounded-lg" />
       </div>
-      <div className="flex flex-col gap-2 rounded-xl border border-border p-4">
+      <div className="flex flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-full" />
+          <Skeleton key={i} className="h-11 w-full rounded-none" />
         ))}
       </div>
     </div>
@@ -19,7 +25,10 @@ export function ListSkeleton() {
 export function DetailSkeleton() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
-      <Skeleton className="h-6 w-56" />
+      <div className="flex flex-col gap-2 border-b border-border/70 pb-5">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-7 w-56" />
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Skeleton className="h-28 w-full rounded-xl" />
         <Skeleton className="h-28 w-full rounded-xl" />

@@ -52,6 +52,7 @@ export default async function CandidatesPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Operations"
         title="Candidates"
         description="Everyone who has been or can be assigned a placement test."
         action={<CreateCandidateDialog />}

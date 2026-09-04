@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { ProgressionTrack } from "@/components/shared/progression-track";
 import { formatDateTime, formatPercentage } from "@/lib/format";
 
 /** Admin-only result detail — intentionally shows the answer key and
@@ -36,6 +36,7 @@ export default async function ResultDetailPage({
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Assessment report"
         title={`${result.candidate.firstName} ${result.candidate.lastName}`}
         description={result.testTitle}
       />
@@ -47,7 +48,7 @@ export default async function ResultDetailPage({
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-2 text-center">
             {result.level && <Badge>{result.level}</Badge>}
-            <div className="text-4xl font-semibold tracking-tight text-foreground">
+            <div className="text-5xl font-semibold tracking-tight text-foreground tabular-nums">
               {result.rawScore}
               <span className="text-lg font-normal text-muted-foreground"> / {result.totalQuestions}</span>
             </div>
@@ -132,28 +133,12 @@ export default async function ResultDetailPage({
                     : "None"}
                 </span>
               </div>
-              <ul className="flex flex-col gap-1.5">
-                {PROGRESSION_BANDS.map((band) => {
-                  const isCandidateBand = result.progression.progressionBand?.order === band.order;
-                  return (
-                    <li
-                      key={band.order}
-                      className={cn(
-                        "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm",
-                        isCandidateBand ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground"
-                      )}
-                    >
-                      <span>
-                        Questions {band.minQuestion}–{band.maxQuestion}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        {band.label}
-                        {isCandidateBand && <Badge variant="default">Candidate</Badge>}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="rounded-xl bg-muted/30 px-4 py-5">
+                <ProgressionTrack
+                  bands={PROGRESSION_BANDS}
+                  currentOrder={result.progression.progressionBand?.order ?? null}
+                />
+              </div>
               {result.progression.progressionBand === null && (
                 <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
                   No question was answered correctly — below the Beginner range. Teacher review

@@ -3,6 +3,7 @@ import { getActorOrThrow } from "@/lib/actor";
 import { getPlacementTest } from "@/server/services/placement-test.service";
 import { listQuestionsForTest } from "@/server/services/question.service";
 import { TestNotFoundError } from "@/server/errors";
+import { ListChecksIcon } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { QuestionFormDialog } from "@/components/admin/questions/question-form-dialog";
@@ -31,6 +32,7 @@ export default async function TestQuestionsPage({
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Question authoring"
         title={`Questions — ${test.title}`}
         description="Fixed progressive order — never randomized or adaptive. Only answer-option display order is randomized per attempt."
         backHref={`/admin/tests/${id}`}
@@ -47,6 +49,7 @@ export default async function TestQuestionsPage({
 
       {questions.length === 0 ? (
         <EmptyState
+          icon={ListChecksIcon}
           title="No questions yet"
           description={
             editable

@@ -17,8 +17,12 @@ export function PlacementStart({
   onContinue,
 }: PlacementStartProps) {
   return (
-    <div className="flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
-      <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
+    <div className="vertex-atmosphere relative flex h-dvh flex-col items-center justify-center overflow-hidden overflow-y-auto px-6 py-8">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-[-140px] left-1/2 -z-10 h-[420px] w-[560px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-3xl"
+      />
+      <div className="flex w-full max-w-md animate-page-in flex-col items-center gap-8 text-center">
         <VertexMark className="size-14" />
 
         <div className="flex flex-col gap-3">
@@ -32,17 +36,17 @@ export function PlacementStart({
         </div>
 
         <dl className="grid w-full grid-cols-2 gap-3">
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5">
+          <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5 shadow-xs">
             <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Duration
             </dt>
-            <dd className="text-2xl font-semibold text-foreground">{durationMinutes} min</dd>
+            <dd className="text-2xl font-semibold text-foreground tabular-nums">{durationMinutes} min</dd>
           </div>
-          <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5">
+          <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5 shadow-xs">
             <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Questions
             </dt>
-            <dd className="text-2xl font-semibold text-foreground">{totalQuestions}</dd>
+            <dd className="text-2xl font-semibold text-foreground tabular-nums">{totalQuestions}</dd>
           </div>
         </dl>
 

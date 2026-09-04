@@ -7,6 +7,7 @@ import { CandidateNotFoundError } from "@/server/errors";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
+import { SendIcon } from "lucide-react";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ export default async function CandidateDetailPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Candidate"
         title={`${candidate.firstName} ${candidate.lastName}`}
         backHref="/admin/candidates"
         backLabel="Candidates"
@@ -66,6 +68,7 @@ export default async function CandidateDetailPage({
         <CardContent>
           {assignments.length === 0 ? (
             <EmptyState
+              icon={SendIcon}
               title="No assignments yet"
               description="This candidate hasn't been assigned a placement test."
             />

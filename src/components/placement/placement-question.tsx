@@ -26,9 +26,9 @@ export function PlacementQuestion({
   onSelect,
 }: PlacementQuestionProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex animate-in flex-col gap-6 fade-in-0 slide-in-from-bottom-1 duration-200">
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-primary">
           Question {question.order} of {totalQuestions}
         </span>
         <h1 className="text-xl font-semibold leading-snug text-foreground sm:text-2xl">

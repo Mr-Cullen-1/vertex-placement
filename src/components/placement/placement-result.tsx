@@ -1,4 +1,6 @@
 import type { StudentResultSummary } from "@/domain/results/types";
+import { PROGRESSION_BANDS } from "@/domain/placement/progression";
+import { ProgressionTrack } from "@/components/shared/progression-track";
 import { VertexWordmark } from "./vertex-mark";
 
 /**
@@ -21,8 +23,8 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const { progression } = result;
 
   return (
-    <div className="flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
-      <div className="flex w-full max-w-md flex-col gap-8">
+    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
+      <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <VertexWordmark />
           <div className="flex flex-col gap-1">
@@ -33,13 +35,13 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-2 rounded-3xl border border-border bg-card px-8 py-10 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-3xl border border-border bg-card px-8 py-10 text-center shadow-sm">
           {result.level && (
             <span className="rounded-full bg-accent px-4 py-1 text-sm font-medium text-accent-foreground">
               {result.level}
             </span>
           )}
-          <div className="mt-2 text-5xl font-semibold tracking-tight text-foreground">
+          <div className="mt-2 text-5xl font-semibold tracking-tight text-foreground tabular-nums">
             {result.rawScore}
             <span className="text-2xl font-normal text-muted-foreground">
               {" "}
@@ -51,13 +53,20 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-accent/40 px-5 py-4 text-center">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Recommended progression
-          </p>
-          <p className="text-xl font-semibold text-foreground">
-            {progression.progressionBand ? progression.progressionBand.label : "Below Beginner"}
-          </p>
+        <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-accent/30 px-5 py-5 text-center">
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Recommended progression
+            </p>
+            <p className="text-xl font-semibold text-foreground">
+              {progression.progressionBand ? progression.progressionBand.label : "Below Beginner"}
+            </p>
+          </div>
+          <ProgressionTrack
+            bands={PROGRESSION_BANDS}
+            currentOrder={progression.progressionBand?.order ?? null}
+            compact
+          />
           <p className="text-sm text-muted-foreground">
             {progression.progressionBand
               ? `Your result indicates that the ${progression.progressionBand.label} progression may be a suitable starting point.`

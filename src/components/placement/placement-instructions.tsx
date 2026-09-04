@@ -27,8 +27,8 @@ export function PlacementInstructions({
   onBegin,
 }: PlacementInstructionsProps) {
   return (
-    <div className="flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
-      <div className="flex w-full max-w-md flex-col gap-8">
+    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
+      <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <VertexWordmark />
           <div className="flex flex-col gap-1.5">
@@ -41,10 +41,12 @@ export function PlacementInstructions({
           </div>
         </div>
 
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-xs">
           {RULES.map((rule) => (
             <li key={rule} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <CheckIcon className="size-3" />
+              </span>
               <span>{rule}</span>
             </li>
           ))}

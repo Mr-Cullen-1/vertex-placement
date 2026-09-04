@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ClipboardListIcon } from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
 import { listPlacementTests } from "@/server/services/placement-test.service";
 import { PageHeader } from "@/components/admin/page-header";
@@ -17,6 +18,7 @@ export default async function TestsPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Authoring"
         title="Placement tests"
         description="Test definitions available for assignment."
         action={
@@ -31,6 +33,7 @@ export default async function TestsPage() {
 
       {tests.length === 0 ? (
         <EmptyState
+          icon={ClipboardListIcon}
           title="No placement tests yet"
           description={
             isSuperAdmin

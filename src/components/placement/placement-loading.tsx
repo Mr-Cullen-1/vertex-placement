@@ -2,7 +2,7 @@ import { VertexWordmark } from "./vertex-mark";
 
 export function PlacementLoading({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="flex h-dvh flex-col items-center justify-center gap-6 overflow-y-auto px-4 text-center">
+    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center gap-6 overflow-y-auto px-4 text-center">
       <VertexWordmark />
       <div
         role="status"

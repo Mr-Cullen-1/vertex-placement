@@ -8,6 +8,7 @@ import { LogOutIcon, MenuIcon, XIcon } from "lucide-react";
 import type { UserRole } from "@prisma/client";
 import { signOutAction } from "@/server/actions/auth-actions";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { VertexMark } from "@/components/placement/vertex-mark";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV_ITEMS } from "./nav-items";
@@ -25,31 +26,57 @@ interface AdminShellProps {
  * each page/component instead (see /docs/PHASE_2B.md "RBAC"). */
 export function AdminShell({ user, children }: AdminShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close the drawer automatically on route change (e.g. a link inside
+  // it was followed) so it never lingers open over the new page. Adjusted
+  // during render (React's documented pattern for "reset state when a
+  // prop changes") rather than in an effect, which would cause an extra
+  // render pass — see https://react.dev/learn/you-might-not-need-an-effect.
+  const [priorPathname, setPriorPathname] = useState(pathname);
+  if (pathname !== priorPathname) {
+    setPriorPathname(pathname);
+    if (mobileNavOpen) setMobileNavOpen(false);
+  }
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
       <SidebarContent user={user} className="hidden md:flex" />
 
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation"
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileNavOpen(false)}
-          />
-          <SidebarContent
-            user={user}
-            className="relative z-10 flex w-72"
-            onNavigate={() => setMobileNavOpen(false)}
-            showCloseButton
-            onClose={() => setMobileNavOpen(false)}
-          />
-        </div>
-      )}
+      {/* Mobile drawer — always mounted (not conditionally rendered) so
+       * both the entrance and exit get a real transition instead of an
+       * instant pop; visibility is purely transform/opacity driven. */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 flex md:hidden",
+          !mobileNavOpen && "pointer-events-none"
+        )}
+        aria-hidden={!mobileNavOpen}
+      >
+        <button
+          type="button"
+          tabIndex={mobileNavOpen ? 0 : -1}
+          aria-label="Close navigation"
+          className={cn(
+            "absolute inset-0 bg-black/40 transition-opacity duration-200",
+            mobileNavOpen ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setMobileNavOpen(false)}
+        />
+        <SidebarContent
+          user={user}
+          className={cn(
+            "relative z-10 flex w-72 shadow-2xl transition-transform duration-200 ease-out",
+            mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+          onNavigate={() => setMobileNavOpen(false)}
+          showCloseButton
+          onClose={() => setMobileNavOpen(false)}
+        />
+      </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 md:hidden">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card/80 px-4 py-3 backdrop-blur-sm md:hidden">
           <div className="flex items-center gap-2">
             <VertexMark className="size-7" />
             <span className="text-sm font-semibold tracking-tight text-foreground">
@@ -60,13 +87,16 @@ export function AdminShell({ user, children }: AdminShellProps) {
             variant="outline"
             size="icon"
             aria-label="Open navigation"
+            aria-expanded={mobileNavOpen}
             onClick={() => setMobileNavOpen(true)}
           >
             <MenuIcon />
           </Button>
         </header>
 
-        <main className="min-w-0 flex-1 bg-background">{children}</main>
+        <main key={pathname} className="vertex-atmosphere min-w-0 flex-1 animate-page-in bg-background">
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -86,6 +116,14 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const initials =
+    user.name
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "A";
 
   return (
     <aside
@@ -96,7 +134,7 @@ function SidebarContent({
     >
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between gap-2 px-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <VertexMark className="size-7" />
             <span className="text-sm font-semibold tracking-tight">Vertex Placement</span>
           </div>
@@ -105,7 +143,7 @@ function SidebarContent({
               type="button"
               aria-label="Close navigation"
               onClick={onClose}
-              className="rounded-md p-1 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className="rounded-md p-1 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <XIcon className="size-4" />
             </button>
@@ -122,13 +160,28 @@ function SidebarContent({
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
+                className={cn(
+                  "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors duration-150",
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
+                    : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                )}
               >
-                <Icon className="size-4 shrink-0" />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute top-1/2 left-0 h-4.5 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary transition-opacity duration-150",
+                    active ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-md transition-colors duration-150",
+                    active ? "bg-sidebar-primary/15 text-sidebar-primary" : "text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <Icon className="size-4" />
+                </span>
                 {item.label}
               </Link>
             );
@@ -136,12 +189,19 @@ function SidebarContent({
         </nav>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-sidebar-border px-2 pt-4">
-        <div className="flex flex-col gap-0.5 overflow-hidden">
-          <span className="truncate text-sm font-medium">{user.name}</span>
-          <span className="truncate text-xs text-sidebar-foreground/60">{user.email}</span>
-          <span className="mt-0.5 text-xs text-sidebar-foreground/60">
-            {user.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
+      <div className="flex flex-col gap-3 border-t border-sidebar-border px-2 pt-4">
+        <div className="flex items-center gap-2.5 overflow-hidden rounded-lg px-1 py-1">
+          <Avatar size="sm" className="shrink-0 bg-sidebar-accent">
+            <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium">{user.name}</span>
+            <span className="truncate text-xs text-sidebar-foreground/55">{user.email}</span>
+          </div>
+          <span className="ml-auto shrink-0 rounded-full bg-sidebar-primary/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-sidebar-primary uppercase">
+            {user.role === "SUPER_ADMIN" ? "Super" : "Admin"}
           </span>
         </div>
         <form action={signOutAction}>
@@ -149,7 +209,7 @@ function SidebarContent({
             type="submit"
             variant="outline"
             size="sm"
-            className="w-full justify-start gap-2 border-sidebar-border bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="w-full justify-start gap-2 border-sidebar-border bg-transparent text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <LogOutIcon className="size-3.5" />
             Sign out

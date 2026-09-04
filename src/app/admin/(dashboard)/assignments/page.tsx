@@ -5,6 +5,7 @@ import { listCandidates } from "@/server/services/candidate.service";
 import { listPlacementTests } from "@/server/services/placement-test.service";
 import { getCanonicalResultSummaryForAssignment } from "@/server/services/attempt.service";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
+import { SendIcon } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, InvitationStatusBadge } from "@/components/admin/status-badge";
@@ -51,6 +52,7 @@ export default async function AssignmentsPage({
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Operations"
         title="Assignments"
         description="Candidate + test pairings, and the invitations issued for them."
         action={
@@ -68,6 +70,7 @@ export default async function AssignmentsPage({
 
       {assignments.length === 0 ? (
         <EmptyState
+          icon={SendIcon}
           title="No assignments yet"
           description="Create an assignment to send a candidate their invitation link."
         />

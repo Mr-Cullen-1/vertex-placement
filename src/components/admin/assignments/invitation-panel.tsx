@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckIcon, CopyIcon, RefreshCwIcon, XIcon } from "lucide-react";
+import { RefreshCwIcon, XIcon } from "lucide-react";
 import {
   generateInvitationAction,
   regenerateInvitationAction,
@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { InvitationStatusBadge } from "@/components/admin/status-badge";
+import { CopyField } from "@/components/shared/copy-field";
 import { formatDateTime } from "@/lib/format";
 
 export interface InvitationSummary {
@@ -55,7 +56,6 @@ export function InvitationPanel({
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const active = history.find((i) => i.status === "ACTIVE") ?? null;
   const studentUrl =
@@ -103,34 +103,14 @@ export function InvitationPanel({
     router.refresh();
   }
 
-  async function copyLink() {
-    if (!studentUrl) return;
-    try {
-      await navigator.clipboard.writeText(studentUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard API can be unavailable (permissions, non-secure
-      // context) — the link is still visible/selectable in the box.
-    }
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {studentUrl && (
-        <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-accent px-4 py-3">
+        <div className="flex flex-col gap-2 rounded-xl border border-primary/25 bg-accent/60 px-4 py-3 animate-page-in">
           <p className="text-xs font-medium text-accent-foreground">
             Shown once — copy it now. It cannot be retrieved again after you leave this page.
           </p>
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-background px-2.5 py-1.5 text-xs whitespace-nowrap text-foreground">
-              {studentUrl}
-            </code>
-            <Button type="button" size="sm" variant="outline" onClick={copyLink}>
-              {copied ? <CheckIcon /> : <CopyIcon />}
-              {copied ? "Copied" : "Copy"}
-            </Button>
-          </div>
+          <CopyField value={studentUrl} label="Invitation link copied" />
         </div>
       )}
 

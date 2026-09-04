@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRightIcon, ClipboardCheckIcon, ClipboardListIcon, SendIcon, UsersIcon } from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
 import { listPlacementTests } from "@/server/services/placement-test.service";
 import { listCandidates } from "@/server/services/candidate.service";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
+import { MetricCard } from "@/components/admin/metric-card";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { formatDate } from "@/lib/format";
@@ -34,15 +36,16 @@ export default async function AdminDashboardPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Overview"
         title="Dashboard"
-        description="Operational overview of Vertex Placement."
+        description="A live operational snapshot of Vertex Placement — every number here reflects real data."
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Candidates" value={candidates.length} />
-        <StatTile label="Active assignments" value={activeAssignments} />
-        <StatTile label="Completed attempts" value={completedAttempts} />
-        <StatTile label="Available tests" value={availableTests} />
+        <MetricCard label="Candidates" value={candidates.length} icon={UsersIcon} />
+        <MetricCard label="Active assignments" value={activeAssignments} icon={SendIcon} />
+        <MetricCard label="Completed attempts" value={completedAttempts} icon={ClipboardCheckIcon} />
+        <MetricCard label="Available tests" value={availableTests} icon={ClipboardListIcon} />
       </div>
 
       <Card>
@@ -52,6 +55,7 @@ export default async function AdminDashboardPage() {
         <CardContent>
           {isEmpty ? (
             <EmptyState
+              icon={UsersIcon}
               title="Nothing here yet"
               description="Create a candidate and an assignment to get started with Vertex Placement."
               action={
@@ -62,6 +66,7 @@ export default async function AdminDashboardPage() {
             />
           ) : recentAssignments.length === 0 ? (
             <EmptyState
+              icon={SendIcon}
               title="No assignments yet"
               description="Candidates exist, but no test has been assigned to anyone yet."
               action={
@@ -76,7 +81,7 @@ export default async function AdminDashboardPage() {
                 <li key={assignment.id}>
                   <Link
                     href={`/admin/assignments/${assignment.id}`}
-                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0 hover:opacity-80"
+                    className="group flex items-center justify-between gap-3 rounded-lg py-2.5 pr-1 pl-2 -mx-2 transition-colors first:pt-2.5 last:pb-2.5 hover:bg-muted/50"
                   >
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate text-sm font-medium text-foreground">
@@ -91,6 +96,7 @@ export default async function AdminDashboardPage() {
                         {formatDate(assignment.createdAt)}
                       </span>
                       <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
+                      <ChevronRightIcon className="size-4 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground" />
                     </div>
                   </Link>
                 </li>
@@ -100,16 +106,5 @@ export default async function AdminDashboardPage() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function StatTile({ label, value }: { label: string; value: number }) {
-  return (
-    <Card size="sm">
-      <CardContent className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <span className="text-2xl font-semibold tracking-tight text-foreground">{value}</span>
-      </CardContent>
-    </Card>
   );
 }

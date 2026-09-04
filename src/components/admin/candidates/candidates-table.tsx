@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, SearchXIcon, UsersIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -54,6 +54,7 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
 
       {filtered.length === 0 ? (
         <EmptyState
+          icon={candidates.length === 0 ? UsersIcon : SearchXIcon}
           title={candidates.length === 0 ? "No candidates yet" : "No matches"}
           description={
             candidates.length === 0

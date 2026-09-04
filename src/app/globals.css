@@ -31,6 +31,9 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-primary-soft: var(--primary-soft);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -70,10 +73,16 @@
   --muted-foreground: oklch(0.552 0.014 285);
   --accent: oklch(0.955 0.03 292.7);
   --accent-foreground: oklch(0.32 0.15 292.7);
+  /* A softer, lower-contrast wash of --primary — for restrained tonal
+     surfaces (metric card accents, soft icon chips) where the full
+     --accent tint would be too strong. */
+  --primary-soft: oklch(0.955 0.025 292.7);
   --success: oklch(0.64 0.17 149);
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.75 0.15 75);
   --warning-foreground: oklch(0.2 0.02 75);
+  --info: oklch(0.62 0.13 245);
+  --info-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.005 285);
   --input: oklch(0.92 0.005 285);
@@ -116,6 +125,9 @@
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.75 0.15 75);
   --warning-foreground: oklch(0.2 0.02 75);
+  --info: oklch(0.62 0.13 245);
+  --info-foreground: oklch(0.985 0 0);
+  --primary-soft: oklch(0.28 0.05 292.7);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -145,4 +157,68 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Product-wide motion language (Phase 2G) — subtle, fast (120–250ms),
+   never decorative-looping. Respected everywhere via this single rule
+   rather than per-component checks. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  /* A restrained, "felt not noticed" violet atmosphere for surfaces that
+     would otherwise be flat empty white (admin canvas, login, student
+     shell) — see /docs/DESIGN_SYSTEM.md "Background / atmosphere". */
+  .vertex-atmosphere {
+    background-image: radial-gradient(
+        640px circle at 12% -10%,
+        color-mix(in oklch, var(--primary) 7%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        520px circle at 100% 0%,
+        color-mix(in oklch, var(--primary) 5%, transparent),
+        transparent 55%
+      );
+  }
+
+  .animate-page-in {
+    animation: vertex-page-in 240ms ease-out;
+  }
+}
+
+@keyframes vertex-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A restrained alternative to Tailwind's default animate-pulse (which
+   dips to 50% opacity) for the critical-timer state — present but not
+   alarming, per /docs/DESIGN_SYSTEM.md "avoid unnecessary animation". */
+@keyframes vertex-soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.animate-soft-pulse {
+  animation: vertex-soft-pulse 1.8s ease-in-out infinite;
 }

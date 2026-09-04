@@ -71,10 +71,10 @@ export function PlacementTimer({ expiresAt, onExpire }: PlacementTimerProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-sm font-medium tabular-nums transition-colors",
+        "flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-sm font-medium tabular-nums transition-colors duration-300",
         state === "normal" && "border-border bg-card text-foreground",
         state === "warning" && "border-warning/40 bg-warning/10 text-warning-foreground",
-        state === "critical" && "animate-pulse border-destructive/40 bg-destructive/10 text-destructive"
+        state === "critical" && "animate-soft-pulse border-destructive/40 bg-destructive/10 text-destructive"
       )}
     >
       <ClockIcon className="size-4 shrink-0" />

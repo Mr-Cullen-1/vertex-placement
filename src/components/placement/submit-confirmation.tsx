@@ -1,5 +1,6 @@
 "use client";
 
+import { SendIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,10 @@ export function SubmitConfirmation({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
+        <DialogHeader className="items-center text-center sm:items-start sm:text-left">
+          <span className="flex size-10 items-center justify-center rounded-full bg-primary-soft text-primary">
+            <SendIcon className="size-4.5" />
+          </span>
           <DialogTitle>Submit your test?</DialogTitle>
           <DialogDescription>
             You have answered {answeredCount} of {totalQuestions} questions.

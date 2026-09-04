@@ -15,7 +15,7 @@ import { TestLifecycleActions } from "@/components/admin/tests/test-lifecycle-ac
 import { BandsManager } from "@/components/admin/bands/bands-manager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListChecksIcon } from "lucide-react";
+import { ListChecksIcon, SendIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate, formatDurationSeconds } from "@/lib/format";
 
@@ -48,6 +48,7 @@ export default async function TestDetailPage({
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
+        eyebrow="Test details"
         title={test.title}
         backHref="/admin/tests"
         backLabel="Tests"
@@ -104,6 +105,7 @@ export default async function TestDetailPage({
             <CardContent>
               {testAssignments.length === 0 ? (
                 <EmptyState
+                  icon={SendIcon}
                   title="No assignments for this test yet"
                   description="Create an assignment to send this test to a candidate."
                 />

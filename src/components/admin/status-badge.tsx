@@ -10,8 +10,18 @@ import type { VariantProps } from "class-variance-authority";
 
 type Variant = VariantProps<typeof badgeVariants>["variant"];
 
+/** Every status badge in the product carries the same small dot +
+ * label anatomy — one coherent status system rather than per-page
+ * ad-hoc badge styling (see /docs/DESIGN_SYSTEM.md "Status badges").
+ * Status is never color-only: the dot is `aria-hidden` and the label
+ * text is the thing screen readers and colorblind users rely on. */
 function StatusBadge({ label, variant }: { label: string; variant: Variant }) {
-  return <Badge variant={variant}>{label}</Badge>;
+  return (
+    <Badge variant={variant} className="gap-1.5">
+      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />
+      {label}
+    </Badge>
+  );
 }
 
 const TEST_STATUS: Record<TestStatus, { label: string; variant: Variant }> = {
