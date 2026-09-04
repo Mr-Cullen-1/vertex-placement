@@ -71,6 +71,39 @@ export async function createPublishedTestWithQuestions(superAdmin: Actor) {
   return { test: published, questions };
 }
 
+/** Builds and publishes a test with exactly `count` sequential questions
+ * (order 1..count), each with 4 options and option[0] ("A") correct —
+ * no difficulty/topic metadata, no bands. For Phase 2E progression tests
+ * that need specific question *orders* (e.g. "the highest correctly
+ * answered question is 18") rather than the small 4-question shape
+ * `createPublishedTestWithQuestions` provides. */
+export async function createPublishedTestWithNQuestions(superAdmin: Actor, count: number) {
+  const test = await createPlacementTest(superAdmin, {
+    title: `Progression Fixture (${count}q)`,
+    durationSeconds: 1800,
+    totalQuestionCount: count,
+  });
+
+  const questions = [];
+  for (let order = 1; order <= count; order++) {
+    const question = await createQuestion(superAdmin, test.id, {
+      order,
+      prompt: `Q${order}`,
+      options: [
+        { text: "A", isCorrect: true, order: 1 },
+        { text: "B", isCorrect: false, order: 2 },
+        { text: "C", isCorrect: false, order: 3 },
+        { text: "D", isCorrect: false, order: 4 },
+      ],
+    });
+    await publishQuestion(superAdmin, question.id);
+    questions.push(question);
+  }
+
+  const published = await publishPlacementTest(superAdmin, test.id);
+  return { test: published, questions };
+}
+
 /** Creates a candidate + assignment against `testId`, then issues an
  * invitation for it. Returns the plaintext token a student would use. */
 export async function createAssignmentWithInvitation(actor: Actor, testId: string) {

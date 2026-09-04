@@ -6,10 +6,19 @@ import { VertexWordmark } from "./vertex-mark";
  * confetti, no correct-answer review, no scoring-configuration detail
  * (see /docs/PRODUCT_RULES.md "Results"). Renders exactly what the
  * server returned; never recomputes or infers anything about the score.
+ *
+ * Placement guidance (`result.progression`) is presented as guidance,
+ * never certification — see /docs/PHASE_2E.md "Critical terminology".
+ * It is a SEPARATE concept from `result.level` (the existing, optional,
+ * admin-configured percentage-based PlacementBand, still shown above if
+ * set) — the two may both be present, absent, or disagree, and that's
+ * fine: one is an admin-defined score band, the other is descriptive
+ * question-progression guidance derived straight from the source.
  */
 export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const minutes = Math.floor(result.completionSeconds / 60);
   const seconds = result.completionSeconds % 60;
+  const { progression } = result;
 
   return (
     <div className="flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
@@ -42,6 +51,25 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           </p>
         </div>
 
+        <div className="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-accent/40 px-5 py-4 text-center">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Recommended progression
+          </p>
+          <p className="text-xl font-semibold text-foreground">
+            {progression.progressionBand ? progression.progressionBand.label : "Below Beginner"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {progression.progressionBand
+              ? `Your result indicates that the ${progression.progressionBand.label} progression may be a suitable starting point.`
+              : "We recommend a teacher review to confirm a suitable starting point."}
+          </p>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Placement is based on your performance across questions of increasing difficulty. Your
+          teacher or education center can use this result to confirm your starting level.
+        </p>
+
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-4 py-3">
             <dt className="text-xs text-muted-foreground">Completion time</dt>
@@ -52,6 +80,21 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-4 py-3">
             <dt className="text-xs text-muted-foreground">Questions</dt>
             <dd className="font-medium text-foreground">{result.totalQuestions}</dd>
+          </div>
+        </dl>
+
+        <dl className="grid grid-cols-3 gap-3 text-center text-sm">
+          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
+            <dt className="text-xs text-muted-foreground">Correct</dt>
+            <dd className="font-medium text-foreground">{progression.correctCount}</dd>
+          </div>
+          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
+            <dt className="text-xs text-muted-foreground">Incorrect</dt>
+            <dd className="font-medium text-foreground">{progression.incorrectCount}</dd>
+          </div>
+          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
+            <dt className="text-xs text-muted-foreground">Unanswered</dt>
+            <dd className="font-medium text-foreground">{progression.unansweredCount}</dd>
           </div>
         </dl>
 
@@ -72,6 +115,12 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
         )}
 
         <p className="text-center text-sm text-muted-foreground">{result.summary}</p>
+
+        {result.autoSubmitted && (
+          <p className="text-center text-xs text-muted-foreground">
+            Your test was submitted automatically when the time limit was reached.
+          </p>
+        )}
 
         <p className="text-center text-xs text-muted-foreground">
           Your result has been recorded. The center that invited you will follow up with next

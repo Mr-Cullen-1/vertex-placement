@@ -1,4 +1,5 @@
 import type { TopicPerformanceEntry } from "@/domain/scoring/types";
+import type { AnswerBreakdown } from "@/domain/placement/progression";
 import type { AdminResultDetail, QuestionAnalysisEntry, StudentResultSummary } from "./types";
 
 const STRONGEST_TOPICS_COUNT = 3;
@@ -12,6 +13,8 @@ export interface BuildStudentResultSummaryInput {
   percentage: number;
   completionSeconds: number;
   topicPerformance: readonly TopicPerformanceEntry[];
+  progression: AnswerBreakdown;
+  autoSubmitted: boolean;
 }
 
 export function buildStudentResultSummary(
@@ -32,6 +35,8 @@ export function buildStudentResultSummary(
     completionSeconds: input.completionSeconds,
     strongestTopics,
     summary: buildSummaryText(input),
+    progression: input.progression,
+    autoSubmitted: input.autoSubmitted,
   };
 }
 
@@ -53,9 +58,13 @@ export interface BuildAdminResultDetailInput {
   totalQuestions: number;
   percentage: number;
   completionSeconds: number;
+  startedAt: string;
+  completedAt: string;
+  isCanonical: boolean;
   status: AdminResultDetail["status"];
   difficultyProgression: AdminResultDetail["difficultyProgression"];
   topicPerformance: AdminResultDetail["topicPerformance"];
+  progression: AnswerBreakdown;
   questionAnalysis: readonly QuestionAnalysisEntry[];
 }
 
@@ -69,9 +78,13 @@ export function buildAdminResultDetail(input: BuildAdminResultDetailInput): Admi
     totalQuestions: input.totalQuestions,
     percentage: input.percentage,
     completionSeconds: input.completionSeconds,
+    startedAt: input.startedAt,
+    completedAt: input.completedAt,
+    isCanonical: input.isCanonical,
     status: input.status,
     difficultyProgression: input.difficultyProgression,
     topicPerformance: input.topicPerformance,
+    progression: input.progression,
     questionAnalysis: [...input.questionAnalysis].sort((a, b) => a.order - b.order),
   };
 }

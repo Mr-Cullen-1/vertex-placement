@@ -17,6 +17,11 @@ import { validateTokenAndLoad } from "@/server/services/invitation.service";
 import { buildOptionOrder } from "@/domain/attempts/option-order";
 import { computeAttemptExpiry, isPastDeadline } from "@/domain/attempts/timing";
 import { computeScoring, type ScoringQuestionInput } from "@/domain/scoring/engine";
+import {
+  computeAnswerBreakdown,
+  type ProgressionAnswerInput,
+  type ProgressionQuestionInput,
+} from "@/domain/placement/progression";
 import { hashInvitationToken } from "@/domain/tokens/token";
 import {
   buildAdminResultDetail,
@@ -336,6 +341,23 @@ async function finalizeAttempt(
   }));
 
   const scoring = computeScoring(scoringQuestions, scoringAnswers, bands);
+
+  // Placement GUIDANCE — a separate concern from score (see
+  // /domain/placement/progression.ts). Reuses the same `questions`/
+  // `answers` already fetched above; needs each question's fixed
+  // `order`, which scoringQuestions above deliberately omits (score
+  // itself must never depend on question order).
+  const progressionQuestions: ProgressionQuestionInput[] = questions.map((q) => ({
+    questionId: q.id,
+    order: q.order,
+    correctOptionId: q.options.find((o) => o.isCorrect)?.id ?? "",
+  }));
+  const progressionAnswers: ProgressionAnswerInput[] = answers.map((a) => ({
+    questionId: a.questionId,
+    selectedOptionId: a.selectedOptionId,
+  }));
+  const progression = computeAnswerBreakdown(progressionQuestions, progressionAnswers);
+
   const isCanonical = priorCanonical === null;
   const completionSeconds = Math.round((now.getTime() - attempt.startedAt.getTime()) / 1000);
 
@@ -386,6 +408,8 @@ async function finalizeAttempt(
     percentage: scoring.rawScore.percentage,
     completionSeconds,
     topicPerformance: scoring.topicPerformance,
+    progression,
+    autoSubmitted: finalStatus === "AUTO_SUBMITTED",
   });
 }
 
@@ -503,6 +527,7 @@ export async function getCompletedResultForToken(
     include: {
       attempt: {
         include: {
+          answers: true,
           result: { include: { placementBand: true } },
           assignment: { include: { candidate: true } },
         },
@@ -518,6 +543,25 @@ export async function getCompletedResultForToken(
   const candidate = attempt.assignment.candidate;
   const topicPerformance = attempt.result!.topicPerformance as unknown as TopicPerformanceEntry[];
 
+  // Placement guidance is re-derived fresh from the immutable
+  // answers/questions every time (never persisted) — see
+  // finalizeAttempt's comment and /docs/PHASE_2E.md.
+  const questions = await db.question.findMany({
+    where: { testId: attempt.assignment.testId, status: "PUBLISHED" },
+    orderBy: { order: "asc" },
+    include: { options: true },
+  });
+  const progressionQuestions: ProgressionQuestionInput[] = questions.map((q) => ({
+    questionId: q.id,
+    order: q.order,
+    correctOptionId: q.options.find((o) => o.isCorrect)?.id ?? "",
+  }));
+  const progressionAnswers: ProgressionAnswerInput[] = attempt.answers.map((a) => ({
+    questionId: a.questionId,
+    selectedOptionId: a.selectedOptionId,
+  }));
+  const progression = computeAnswerBreakdown(progressionQuestions, progressionAnswers);
+
   return buildStudentResultSummary({
     attemptId: attempt.id,
     candidateName: `${candidate.firstName} ${candidate.lastName}`,
@@ -527,6 +571,8 @@ export async function getCompletedResultForToken(
     percentage: attempt.result!.percentage,
     completionSeconds: attempt.result!.completionSeconds,
     topicPerformance,
+    progression,
+    autoSubmitted: attempt.status === "AUTO_SUBMITTED",
   });
 }
 
@@ -569,9 +615,21 @@ export async function getAdminResultDetail(
       difficultyBand: question.metadata?.difficultyBand ?? null,
       selectedOptionText: selectedOption?.text ?? null,
       correctOptionText: correctOption?.text ?? "",
+      isAnswered: selectedOptionId !== null,
       isCorrect: Boolean(selectedOption && correctOption && selectedOption.id === correctOption.id),
     };
   });
+
+  const progressionQuestions: ProgressionQuestionInput[] = questions.map((q) => ({
+    questionId: q.id,
+    order: q.order,
+    correctOptionId: q.options.find((o) => o.isCorrect)?.id ?? "",
+  }));
+  const progressionAnswers: ProgressionAnswerInput[] = attempt.answers.map((a) => ({
+    questionId: a.questionId,
+    selectedOptionId: a.selectedOptionId,
+  }));
+  const progression = computeAnswerBreakdown(progressionQuestions, progressionAnswers);
 
   return buildAdminResultDetail({
     attemptId: attempt.id,
@@ -588,11 +646,15 @@ export async function getAdminResultDetail(
     totalQuestions: attempt.result.totalQuestions,
     percentage: attempt.result.percentage,
     completionSeconds: attempt.result.completionSeconds,
+    startedAt: attempt.startedAt.toISOString(),
+    completedAt: (attempt.submittedAt ?? attempt.startedAt).toISOString(),
+    isCanonical: attempt.isCanonical,
     status: attempt.status as "SUBMITTED" | "AUTO_SUBMITTED",
     difficultyProgression:
       attempt.result.difficultyProgression as unknown as AdminResultDetail["difficultyProgression"],
     topicPerformance:
       attempt.result.topicPerformance as unknown as AdminResultDetail["topicPerformance"],
+    progression,
     questionAnalysis,
   });
 }

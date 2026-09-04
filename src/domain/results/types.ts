@@ -1,4 +1,5 @@
 import type { DifficultyProgressionEntry, TopicPerformanceEntry } from "@/domain/scoring/types";
+import type { AnswerBreakdown } from "@/domain/placement/progression";
 
 /**
  * Result *presentation* — deliberately separate from the scoring engine
@@ -23,6 +24,14 @@ export interface StudentResultSummary {
    * individual questions were right/wrong. */
   strongestTopics: { topic: string; percentage: number }[];
   summary: string;
+  /** Objective score (correct/incorrect/unanswered counts) plus
+   * descriptive placement GUIDANCE — never a certification. See
+   * /domain/placement/progression.ts. */
+  progression: AnswerBreakdown;
+  /** True if the timer, not the student, triggered submission — same
+   * scoring pipeline either way (see /docs/PHASE_2E.md "Manual vs auto
+   * submission"), shown only so the student understands what happened. */
+  autoSubmitted: boolean;
 }
 
 export interface QuestionAnalysisEntry {
@@ -33,6 +42,7 @@ export interface QuestionAnalysisEntry {
   difficultyBand: string | null;
   selectedOptionText: string | null;
   correctOptionText: string;
+  isAnswered: boolean;
   isCorrect: boolean;
 }
 
@@ -51,8 +61,12 @@ export interface AdminResultDetail {
   totalQuestions: number;
   percentage: number;
   completionSeconds: number;
+  startedAt: string;
+  completedAt: string;
+  isCanonical: boolean;
   status: "SUBMITTED" | "AUTO_SUBMITTED";
   difficultyProgression: DifficultyProgressionEntry[];
   topicPerformance: TopicPerformanceEntry[];
+  progression: AnswerBreakdown;
   questionAnalysis: QuestionAnalysisEntry[];
 }

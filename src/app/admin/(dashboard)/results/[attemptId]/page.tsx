@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
-import { CheckIcon, XIcon } from "lucide-react";
+import { CheckIcon, MinusIcon, XIcon } from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
 import { getAdminResultDetail } from "@/server/services/attempt.service";
 import { AttemptNotFoundError } from "@/server/errors";
+import { PROGRESSION_BANDS } from "@/domain/placement/progression";
 import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatPercentage } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { formatDateTime, formatPercentage } from "@/lib/format";
 
 /** Admin-only result detail — intentionally shows the answer key and
  * per-question correctness, which the student-facing result screen never
@@ -52,16 +54,46 @@ export default async function ResultDetailPage({
             <p className="text-sm text-muted-foreground">{formatPercentage(result.percentage)} correct</p>
             <dl className="mt-2 grid w-full grid-cols-2 gap-3 text-left text-xs">
               <div>
+                <dt className="text-muted-foreground">Answered</dt>
+                <dd className="font-medium text-foreground">
+                  {result.progression.answeredCount} / {result.totalQuestions}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-muted-foreground">Completion time</dt>
                 <dd className="font-medium text-foreground">
                   {minutes}m {seconds}s
                 </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Status</dt>
+                <dt className="text-muted-foreground">Correct</dt>
+                <dd className="font-medium text-foreground">{result.progression.correctCount}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Incorrect</dt>
+                <dd className="font-medium text-foreground">{result.progression.incorrectCount}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Unanswered</dt>
+                <dd className="font-medium text-foreground">{result.progression.unansweredCount}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Submission type</dt>
                 <dd className="font-medium text-foreground">
-                  {result.status === "AUTO_SUBMITTED" ? "Auto-submitted (time up)" : "Submitted"}
+                  {result.status === "AUTO_SUBMITTED" ? "Automatic (time limit)" : "Manual"}
                 </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Started</dt>
+                <dd className="font-medium text-foreground">{formatDateTime(result.startedAt)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Completed</dt>
+                <dd className="font-medium text-foreground">{formatDateTime(result.completedAt)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Canonical</dt>
+                <dd className="font-medium text-foreground">{result.isCanonical ? "Yes" : "No (superseded)"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Phone</dt>
@@ -71,11 +103,66 @@ export default async function ResultDetailPage({
                 <dt className="text-muted-foreground">Age</dt>
                 <dd className="font-medium text-foreground">{result.candidate.age}</dd>
               </div>
+              {result.candidate.email && (
+                <div>
+                  <dt className="text-muted-foreground">Email</dt>
+                  <dd className="font-medium text-foreground">{result.candidate.email}</dd>
+                </div>
+              )}
             </dl>
           </CardContent>
         </Card>
 
         <div className="flex flex-col gap-6 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Placement guidance</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <p className="text-xs text-muted-foreground">
+                Descriptive question-progression guidance from the source material — not an
+                official CEFR placement. Final level confirmation is at the education
+                center&apos;s discretion.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <span className="text-muted-foreground">Highest correctly answered question:</span>
+                <span className="font-medium text-foreground">
+                  {result.progression.highestCorrectQuestionOrder !== null
+                    ? `Q${result.progression.highestCorrectQuestionOrder}`
+                    : "None"}
+                </span>
+              </div>
+              <ul className="flex flex-col gap-1.5">
+                {PROGRESSION_BANDS.map((band) => {
+                  const isCandidateBand = result.progression.progressionBand?.order === band.order;
+                  return (
+                    <li
+                      key={band.order}
+                      className={cn(
+                        "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm",
+                        isCandidateBand ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground"
+                      )}
+                    >
+                      <span>
+                        Questions {band.minQuestion}–{band.maxQuestion}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        {band.label}
+                        {isCandidateBand && <Badge variant="default">Candidate</Badge>}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {result.progression.progressionBand === null && (
+                <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  No question was answered correctly — below the Beginner range. Teacher review
+                  recommended rather than an assumed starting level.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Topic performance</CardTitle>
@@ -145,10 +232,21 @@ export default async function ResultDetailPage({
                   <TableCell className="max-w-40 whitespace-normal">{q.selectedOptionText ?? "—"}</TableCell>
                   <TableCell className="max-w-40 whitespace-normal">{q.correctOptionText}</TableCell>
                   <TableCell>
-                    {q.isCorrect ? (
-                      <CheckIcon className="size-4 text-success" />
+                    {!q.isAnswered ? (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MinusIcon className="size-4" />
+                        Unanswered
+                      </span>
+                    ) : q.isCorrect ? (
+                      <span className="flex items-center gap-1 text-xs text-success">
+                        <CheckIcon className="size-4" />
+                        Correct
+                      </span>
                     ) : (
-                      <XIcon className="size-4 text-destructive" />
+                      <span className="flex items-center gap-1 text-xs text-destructive">
+                        <XIcon className="size-4" />
+                        Incorrect
+                      </span>
                     )}
                   </TableCell>
                 </TableRow>
