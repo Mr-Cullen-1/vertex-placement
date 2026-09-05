@@ -62,41 +62,44 @@ export default async function TestsPage() {
       ) : (
         <>
           <div className="hidden md:block">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Questions</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead aria-hidden="true" />
+                  <TableHead className="w-[38%]">Title</TableHead>
+                  <TableHead className="w-[15%]">Status</TableHead>
+                  <TableHead className="w-[15%]">Duration</TableHead>
+                  <TableHead className="w-[14%]">Questions</TableHead>
+                  <TableHead className="w-[13%]">Created</TableHead>
+                  <TableHead aria-hidden="true" className="w-8" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {tests.map((test) => (
                   <TableRow key={test.id}>
                     <TableCell className="whitespace-normal">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/admin/tests/${test.id}`} className="font-medium text-foreground hover:underline">
+                      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                        <Link
+                          href={`/admin/tests/${test.id}`}
+                          className="truncate font-medium text-foreground hover:underline"
+                        >
                           {test.title}
                         </Link>
                         {test.isPublicSelfService && (
-                          <Badge variant="info">
+                          <Badge variant="info" className="shrink-0">
                             <GlobeIcon />
                             Try Yourself
                           </Badge>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-normal">
                       <TestStatusBadge status={test.status} />
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="whitespace-normal text-muted-foreground">
                       {formatDurationSeconds(test.durationSeconds)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{test.totalQuestionCount}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(test.createdAt)}</TableCell>
+                    <TableCell className="whitespace-normal text-muted-foreground">{test.totalQuestionCount}</TableCell>
+                    <TableCell className="whitespace-normal text-muted-foreground">{formatDate(test.createdAt)}</TableCell>
                     <TableRowChevronCell />
                   </TableRow>
                 ))}

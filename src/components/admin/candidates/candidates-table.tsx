@@ -75,38 +75,45 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
         />
       ) : (
         <>
-          <div className="hidden md:block">
-            <Table>
+          {/* table-fixed + explicit column widths, same technique as the
+           * Assignments list (see /docs/DESIGN_SYSTEM.md "No horizontal
+           * scrolling") — content truncates/wraps inside its own cell
+           * instead of forcing the table wider than the viewport. Assignment
+           * count and Status are merged into one "Assignments" column
+           * (a completed-count badge plus the latest status directly under
+           * it) so a long name/email doesn't compete with two separate
+           * columns worth of width. */}
+          <div className="hidden lg:block">
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Assignments</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Result</TableHead>
-                  <TableHead>Added</TableHead>
-                  <TableHead aria-hidden="true" />
+                  <TableHead className="w-[24%]">Name</TableHead>
+                  <TableHead className="w-[28%]">Contact</TableHead>
+                  <TableHead className="w-[18%]">Assignments</TableHead>
+                  <TableHead className="w-[18%]">Result</TableHead>
+                  <TableHead className="w-[12%]">Added</TableHead>
+                  <TableHead aria-hidden="true" className="w-8" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell>
+                    <TableCell className="whitespace-normal">
                       <Link
                         href={`/admin/candidates/${c.id}`}
                         className={cn(
-                          "font-semibold hover:underline",
+                          "block truncate font-semibold hover:underline",
                           c.profileCompletedAt ? "text-foreground" : "text-muted-foreground italic"
                         )}
                       >
                         {candidateDisplayName(c)}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="whitespace-normal text-muted-foreground">
                       {c.profileCompletedAt ? (
-                        <div className="flex flex-col">
-                          <span>{c.phoneNumber}</span>
-                          <span className="text-xs">
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate">{c.phoneNumber}</span>
+                          <span className="truncate text-xs">
                             Age {c.age}
                             {c.email ? ` · ${c.email}` : ""}
                           </span>
@@ -115,23 +122,21 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
                         <span>—</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {c.assignmentCount === 0 ? (
-                        <span className="text-muted-foreground">None</span>
-                      ) : (
-                        <Badge variant="outline">
-                          {c.completedCount}/{c.assignmentCount} completed
-                        </Badge>
-                      )}
+                    <TableCell className="whitespace-normal">
+                      <div className="flex flex-col items-start gap-1">
+                        {c.assignmentCount === 0 ? (
+                          <span className="text-muted-foreground">None</span>
+                        ) : (
+                          <Badge variant="outline">
+                            {c.completedCount}/{c.assignmentCount} completed
+                          </Badge>
+                        )}
+                        {c.latestAssignmentStatus && (
+                          <AssignmentStatusBadge status={c.latestAssignmentStatus} />
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      {c.latestAssignmentStatus ? (
-                        <AssignmentStatusBadge status={c.latestAssignmentStatus} />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap font-medium text-foreground">
+                    <TableCell className="font-medium whitespace-normal text-foreground">
                       {c.latestResult ? (
                         <>
                           {c.latestResult.rawScore}/{c.latestResult.totalQuestions}{" "}
@@ -143,7 +148,9 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
                         <span className="font-normal text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(c.createdAt)}</TableCell>
+                    <TableCell className="whitespace-normal text-muted-foreground">
+                      {formatDate(c.createdAt)}
+                    </TableCell>
                     <TableRowChevronCell />
                   </TableRow>
                 ))}
@@ -151,7 +158,7 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
             </Table>
           </div>
 
-          <ul className="flex flex-col gap-2 md:hidden">
+          <ul className="flex flex-col gap-2 lg:hidden">
             {filtered.map((c) => (
               <li key={c.id}>
                 <MobileRecordCard

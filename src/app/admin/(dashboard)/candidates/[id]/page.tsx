@@ -11,6 +11,7 @@ import { IdCardIcon, SendIcon } from "lucide-react";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { MobileRecordCard } from "@/components/admin/mobile-record-card";
 import {
   Table,
   TableBody,
@@ -85,37 +86,54 @@ export default async function CandidateDetailPage({
               description="This candidate hasn't been assigned a placement test."
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Test</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead aria-hidden="true" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <div className="hidden sm:block">
+                <Table className="table-fixed">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50%]">Test</TableHead>
+                      <TableHead className="w-[25%]">Status</TableHead>
+                      <TableHead className="w-[17%]">Created</TableHead>
+                      <TableHead aria-hidden="true" className="w-8" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignments.map((assignment) => (
+                      <TableRow key={assignment.id}>
+                        <TableCell className="whitespace-normal">
+                          <Link
+                            href={`/admin/assignments/${assignment.id}`}
+                            className="block truncate font-medium text-foreground hover:underline"
+                          >
+                            {assignment.test.title}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="whitespace-normal">
+                          <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-muted-foreground">
+                          {formatDate(assignment.createdAt)}
+                        </TableCell>
+                        <TableRowChevronCell />
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <ul className="flex flex-col gap-2 sm:hidden">
                 {assignments.map((assignment) => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>
-                      <Link
-                        href={`/admin/assignments/${assignment.id}`}
-                        className="font-medium text-foreground hover:underline"
-                      >
-                        {assignment.test.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(assignment.createdAt)}
-                    </TableCell>
-                    <TableRowChevronCell />
-                  </TableRow>
+                  <li key={assignment.id}>
+                    <MobileRecordCard
+                      href={`/admin/assignments/${assignment.id}`}
+                      title={assignment.test.title}
+                      subtitle={formatDate(assignment.createdAt)}
+                      meta={<AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />}
+                    />
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
+              </ul>
+            </>
           )}
         </CardContent>
       </Card>

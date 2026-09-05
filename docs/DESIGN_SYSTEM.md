@@ -269,16 +269,33 @@ Candidates, and Assignments:
   `text-muted-foreground`; a scannable result/score value keeps
   `tabular-nums`-style weight (`font-medium text-foreground`) with its
   percentage qualifier muted.
-- **Mobile**: below each list's own breakpoint (`md:` for Tests/
-  Candidates, `xl:` for the wider 8-column Assignments table — visual
-  QA at 1024 showed its Progression/Created/Action columns clipping at
-  `lg:`, so its cutover sits one breakpoint higher than the other two),
-  the `<Table>` is replaced — not squeezed — by a `<ul>` of
-  `MobileRecordCard` (`src/components/admin/mobile-record-card.tsx`):
-  identity, a quiet subtitle, wrapped meta chips (status/score badges),
-  and a trailing chevron. One shared card primitive so all three lists
-  render the same "record" language on narrow viewports instead of
-  three hand-rolled layouts.
+- **Mobile**: below each list's own breakpoint, the `<Table>` is
+  replaced — not squeezed — by a `<ul>` of `MobileRecordCard`
+  (`src/components/admin/mobile-record-card.tsx`): identity, a quiet
+  subtitle, wrapped meta chips (status/score badges), and a trailing
+  chevron. One shared card primitive so every list renders the same
+  "record" language on narrow viewports instead of a hand-rolled layout
+  per page.
+- **Phase 2K responsive rewrite** (see "No horizontal scrolling"
+  below): the Assignments table's original 8-column layout (Candidate,
+  Test, Status, Invitation, Score, Level, Created, Action) produced a
+  real horizontal scrollbar at desktop widths — the thing this whole
+  system exists to avoid. Fixed at the root, not by wrapping it in
+  `overflow-x-auto`: dropped the Invitation column (still visible on
+  the assignment detail page), merged Score+Level into one "Result"
+  column, and folded the self-service origin badge under the candidate
+  name as secondary metadata instead of its own column — six columns
+  instead of eight. Every table in the app now also sets `table-fixed`
+  with explicit per-column `w-[%]` on `<TableHead>`, so a long value
+  truncates inside its own cell instead of growing the table — the
+  browser's default `table-layout: auto` sizes columns to their
+  widest *unwrapped* content, which is what silently reintroduces
+  overflow the moment `whitespace-nowrap` (`<TableCell>`'s default) or
+  an untruncated long string shows up in real data. With the trimmed
+  column set, the Assignments and Candidates tables' cutover to
+  `MobileRecordCard` moved from `xl:` back down to `lg:` — re-verified
+  by the same kind of visual QA that set `xl:` in Phase 2G.1, not
+  picked arbitrarily.
 - `TableRow` also carries a permanent (not just on-hover) 2px
   transparent left border that turns `primary/70` on hover — the same
   "left accent bar" language as the sidebar's active-nav indicator,
@@ -315,8 +332,18 @@ is `py-3`; row hover softened to `bg-muted/40` with a 150ms transition.
 The rounded/ring/surface shell (`rounded-xl bg-card ring-1
 ring-foreground/10`) lives on `<Table>` itself as of Phase 2G.1 — see
 "Data-list / table system" above for the shell, the hover-chevron
-affordance, and the mobile stacked-card fallback that replaced
-horizontal squeezing on the three record lists.
+affordance, and the mobile stacked-card fallback.
+
+`<TableHead>`/`<TableCell>` still default to `whitespace-nowrap`
+(short header labels and short values — a status word, a date, a
+score — genuinely shouldn't wrap mid-word), but every table that can
+receive a long free-text value (a name, an email, a test title)
+overrides that per-cell to `whitespace-normal` and pairs it with
+`table-fixed` + an explicit `w-[%]` on each `<TableHead>`, so the
+column's allocated width is a deliberate percentage rather than
+whatever the browser's auto layout derives from the widest unwrapped
+cell. See "No horizontal scrolling" and "Data-list / table system"
+above.
 
 ## Status badges
 
@@ -457,7 +484,14 @@ pure, reusable grid (the old built-in collapse-toggle button is gone;
 collapsing/expanding is now the drawer's job, not the grid's). Answered
 state is never color-only: a small check badge marks it independent of
 the accent tint; the current question gets a solid fill plus
-`aria-current="step"`, not just a border change.
+`aria-current="step"`, not just a border change. **Phase 2K**: each
+button is `aspect-square w-full` (not a fixed `size-9`) so it always
+exactly fills its CSS Grid track — a fixed pixel size could exceed a
+narrow track's computed width (the mobile `QuestionDrawer`'s grid,
+`max-w-xs`, was the case that actually triggered this) and force a
+horizontal scrollbar inside the drawer; see "No horizontal scrolling."
+The drawer's grid also dropped from 7 to 6 columns to match the
+sidebar's, for the same reason.
 
 **`SubmitConfirmation`** gained a compact Answered/Unanswered/Total stat
 row (replacing a sentence) and, when any question is unanswered, a
@@ -525,11 +559,59 @@ Defined once in `src/app/globals.css`:
 ## Responsive rules
 
 Unchanged from Phase 0/1's intent, reconfirmed in Phase 2G's browser
-pass: student test screen stays single-column at every breakpoint;
-admin tables scroll horizontally rather than compress illegibly; the
+pass: student test screen stays single-column at every breakpoint; the
 admin sidebar becomes a full off-canvas drawer below `md` with its own
 open/close transition; the question navigator gets a mobile-specific
 collapse (see above) for the real 70-question test.
+
+**Superseded in Phase 2K**: this section previously said "admin tables
+scroll horizontally rather than compress illegibly." That was the
+actual Phase 2G.1 decision, and it regressed — real data (a long test
+title, a long candidate name/email, an added origin badge) pushed the
+Assignments table wide enough to produce a visible horizontal
+scrollbar, which is exactly the pattern the next section now forbids.
+See "No horizontal scrolling" immediately below for the replacement
+rule, and "Data-list / table system" above for how each table was
+actually fixed.
+
+## No horizontal scrolling
+
+**Horizontal scrolling is not an accepted responsive pattern for
+standard Vertex Placement application UI** — not for a page, a table,
+a list, a card, or a form. Vertical scrolling is allowed and expected
+for long content; horizontal scrolling of structural content is a
+defect to fix, not a breakpoint to add `overflow-x-auto` around.
+
+When structured content no longer fits at a given width, in this
+order:
+
+1. Improve column/space allocation (truncate secondary text, wrap
+   where wrapping reads fine, combine related metadata into one
+   column, reduce padding) — see "Data-list / table system."
+2. Hide genuinely secondary columns/metadata at narrower widths.
+3. Switch the desktop table to `MobileRecordCard` — before overflow
+   would occur, not after, and at whatever breakpoint real visual QA
+   (not an arbitrary Tailwind default) shows is actually needed for
+   that specific table's column count and content.
+4. Never: let it scroll horizontally.
+
+**Enforcement**: `<Table>`'s own wrapper still carries `overflow-x-
+auto` as a last-resort safety net for content that's genuinely
+unbreakable (it should never actually engage once a table's columns
+are allocated correctly) — `src/app/layout.tsx`'s `<body>` and the
+admin shell's `<main>` (`src/components/admin/admin-shell.tsx`) both
+also set `overflow-x-hidden` as defense-in-depth, so a future
+regression clips instead of growing the whole document wider than the
+viewport. Neither of those is the fix itself — see item 1–3 above.
+
+**The one narrow exception**: `CopyField`'s value now truncates with
+an ellipsis (`title` attribute for the full value on hover) rather
+than scrolling — even a small, self-contained scroll region was
+judged not worth keeping once truncation covers the same need (the
+Copy button always copies the untruncated value regardless of what's
+visually shown). No current admin list/table/card/form has a
+legitimate exception — none has intrinsic horizontal content the way,
+say, a genuinely horizontal data visualization would.
 
 ## Accessibility
 

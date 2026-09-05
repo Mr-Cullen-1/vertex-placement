@@ -49,13 +49,13 @@ export function BandsManager({
         <ul className="flex flex-col gap-2">
           {bands.map((band) => (
             <li key={band.id} className="flex items-center justify-between gap-3 text-sm">
-              <div className="flex flex-col">
-                <span className="font-medium text-foreground">{band.label}</span>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-medium text-foreground">{band.label}</span>
                 {band.description && (
-                  <span className="text-xs text-muted-foreground">{band.description}</span>
+                  <span className="truncate text-xs text-muted-foreground">{band.description}</span>
                 )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 <span className="text-muted-foreground">
                   {band.minPercentage}–{band.maxPercentage}%
                 </span>

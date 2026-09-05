@@ -103,7 +103,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
          * "min-height: auto" trap). */}
         <main
           key={pathname}
-          className="vertex-atmosphere min-h-0 min-w-0 flex-1 overflow-y-auto animate-page-in bg-background"
+          className="vertex-atmosphere min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto animate-page-in bg-background"
         >
           {children}
         </main>

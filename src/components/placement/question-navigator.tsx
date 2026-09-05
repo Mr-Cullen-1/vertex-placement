@@ -49,7 +49,13 @@ export function QuestionNavigator({
               aria-current={isCurrent ? "step" : undefined}
               aria-label={`Question ${item.order}${item.answered ? ", answered" : ", not answered"}${isCurrent ? ", current" : ""}`}
               className={cn(
-                "relative flex size-9 items-center justify-center rounded-lg border text-xs font-medium tabular-nums transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                // `aspect-square w-full` (not a fixed `size-9`) so each
+                // button always exactly fills its grid track, whatever
+                // that computes to — never wider than the column, so it
+                // can never force the grid (or its scroll container)
+                // wider than the viewport. See /docs/DESIGN_SYSTEM.md
+                // "No horizontal scrolling".
+                "relative flex aspect-square w-full items-center justify-center rounded-lg border text-xs font-medium tabular-nums transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                 isCurrent && "border-primary bg-primary text-primary-foreground",
                 !isCurrent && item.answered && "border-primary/30 bg-accent text-foreground",
                 !isCurrent && !item.answered && "border-border bg-background text-muted-foreground hover:border-primary/40"

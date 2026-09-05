@@ -23,7 +23,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* Defense-in-depth only, not the fix itself — see
+       * /docs/DESIGN_SYSTEM.md "No horizontal scrolling": every page/
+       * table/list is responsible for fitting its own container; this
+       * just guarantees a regression can never grow the whole document
+       * wider than the viewport. */}
+      <body className="min-h-full flex flex-col overflow-x-hidden">{children}</body>
     </html>
   );
 }

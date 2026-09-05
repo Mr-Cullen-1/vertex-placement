@@ -39,7 +39,14 @@ export function CopyField({ value, className, label = "Copied to clipboard" }: C
         className
       )}
     >
-      <code className="min-w-0 flex-1 overflow-x-auto px-1.5 py-1 text-xs whitespace-nowrap text-foreground">
+      {/* Truncated with an ellipsis, not internally scrollable — the
+       * Copy button already copies the full value regardless of what's
+       * visible (see /docs/DESIGN_SYSTEM.md "No horizontal scrolling").
+       * `title` surfaces the full value on hover as a fallback. */}
+      <code
+        title={value}
+        className="block min-w-0 flex-1 truncate px-1.5 py-1 text-xs text-foreground"
+      >
         {value}
       </code>
       <Button type="button" size="sm" variant={copied ? "secondary" : "outline"} onClick={handleCopy} className="shrink-0">

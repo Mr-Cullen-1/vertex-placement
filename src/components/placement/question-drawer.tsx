@@ -69,7 +69,7 @@ export function QuestionDrawer({ open, onClose, testTitle, items, currentOrder, 
               onJump(order);
               onClose();
             }}
-            gridClassName="grid-cols-7"
+            gridClassName="grid-cols-6"
           />
         </div>
       </div>

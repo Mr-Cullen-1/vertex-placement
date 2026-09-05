@@ -14,6 +14,7 @@ import { getActorOrThrow } from "@/lib/actor";
 import { getAdminResultDetail } from "@/server/services/attempt.service";
 import { AttemptNotFoundError } from "@/server/errors";
 import { PROGRESSION_BANDS } from "@/domain/placement/progression";
+import type { QuestionAnalysisEntry } from "@/domain/results/types";
 import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
@@ -223,47 +224,96 @@ export default async function ResultDetailPage({
       <Card>
         <CardHeading icon={ListChecksIcon} title="Question analysis" description={`${result.questionAnalysis.length} questions`} />
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead>Selected</TableHead>
-                <TableHead>Correct answer</TableHead>
-                <TableHead>Result</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {result.questionAnalysis.map((q) => (
-                <TableRow key={q.questionId}>
-                  <TableCell className="text-muted-foreground">{q.order}</TableCell>
-                  <TableCell className="max-w-xs whitespace-normal">{q.prompt}</TableCell>
-                  <TableCell className="max-w-40 whitespace-normal">{q.selectedOptionText ?? "—"}</TableCell>
-                  <TableCell className="max-w-40 whitespace-normal">{q.correctOptionText}</TableCell>
-                  <TableCell>
-                    {!q.isAnswered ? (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MinusIcon className="size-4" />
-                        Unanswered
-                      </span>
-                    ) : q.isCorrect ? (
-                      <span className="flex items-center gap-1 text-xs text-success">
-                        <CheckIcon className="size-4" />
-                        Correct
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-xs text-destructive">
-                        <XIcon className="size-4" />
-                        Incorrect
-                      </span>
-                    )}
-                  </TableCell>
+          {/* Selected/Correct merged into one "Answer" column — with a
+           * long prompt and two full option strings, five independent
+           * columns can't stay readable AND fit the viewport at once
+           * (see /docs/DESIGN_SYSTEM.md "No horizontal scrolling"). Below
+           * `lg`, a stacked card per question replaces the table
+           * entirely rather than squeezing further. */}
+          <div className="hidden lg:block">
+            <Table className="table-fixed">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">#</TableHead>
+                  <TableHead className="w-[42%]">Question</TableHead>
+                  <TableHead className="w-[33%]">Answer</TableHead>
+                  <TableHead className="w-[15%]">Result</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {result.questionAnalysis.map((q) => (
+                  <TableRow key={q.questionId}>
+                    <TableCell className="whitespace-normal text-muted-foreground">{q.order}</TableCell>
+                    <TableCell className="whitespace-normal">{q.prompt}</TableCell>
+                    <TableCell className="whitespace-normal">
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span>
+                          <span className="text-muted-foreground">Selected: </span>
+                          {q.selectedOptionText ?? "—"}
+                        </span>
+                        <span>
+                          <span className="text-muted-foreground">Correct: </span>
+                          {q.correctOptionText}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-normal">
+                      <QuestionResultBadge q={q} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <ul className="flex flex-col gap-2 lg:hidden">
+            {result.questionAnalysis.map((q) => (
+              <li key={q.questionId} className="rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-medium text-muted-foreground">Q{q.order}</span>
+                  <QuestionResultBadge q={q} />
+                </div>
+                <p className="pt-1.5 text-sm text-foreground">{q.prompt}</p>
+                <div className="flex flex-col gap-1 pt-2 text-xs">
+                  <span>
+                    <span className="text-muted-foreground">Selected: </span>
+                    {q.selectedOptionText ?? "—"}
+                  </span>
+                  <span>
+                    <span className="text-muted-foreground">Correct: </span>
+                    {q.correctOptionText}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function QuestionResultBadge({ q }: { q: QuestionAnalysisEntry }) {
+  if (!q.isAnswered) {
+    return (
+      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        <MinusIcon className="size-4" />
+        Unanswered
+      </span>
+    );
+  }
+  if (q.isCorrect) {
+    return (
+      <span className="flex items-center gap-1 text-xs text-success">
+        <CheckIcon className="size-4" />
+        Correct
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs text-destructive">
+      <XIcon className="size-4" />
+      Incorrect
+    </span>
   );
 }

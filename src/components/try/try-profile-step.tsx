@@ -70,12 +70,16 @@ export function TryProfileStep({ email, onSuccess }: { email: string; onSuccess:
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 px-4 py-3">
-          <div className="flex flex-col">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
+          <div className="flex min-w-0 flex-col">
             <span className="text-xs text-muted-foreground">Email</span>
-            <span className="text-sm font-medium text-foreground">{email}</span>
+            <span className="truncate text-sm font-medium text-foreground" title={email}>
+              {email}
+            </span>
           </div>
-          <Badge variant="success">Verified</Badge>
+          <Badge variant="success" className="shrink-0">
+            Verified
+          </Badge>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
