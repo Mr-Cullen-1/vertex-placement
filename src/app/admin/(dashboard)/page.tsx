@@ -56,6 +56,7 @@ export default async function AdminDashboardPage() {
           icon={UsersIcon}
           tone="primary"
           hint={candidates.length > 0 ? `${assignedCandidateCount} assigned a test` : undefined}
+          href="/admin/candidates"
         />
         <MetricCard
           label="Active assignments"
@@ -63,6 +64,7 @@ export default async function AdminDashboardPage() {
           icon={SendIcon}
           tone="warning"
           hint={assignments.length > 0 ? `of ${assignments.length} total` : undefined}
+          href="/admin/assignments"
         />
         <MetricCard
           label="Completed attempts"
@@ -70,6 +72,7 @@ export default async function AdminDashboardPage() {
           icon={ClipboardCheckIcon}
           tone="success"
           hint={assignments.length > 0 ? `of ${assignments.length} total` : undefined}
+          href="/admin/assignments"
         />
         <MetricCard
           label="Available tests"
@@ -77,6 +80,7 @@ export default async function AdminDashboardPage() {
           icon={ClipboardListIcon}
           tone="info"
           hint={tests.length > 0 ? `of ${tests.length} total` : undefined}
+          href="/admin/tests"
         />
       </div>
 

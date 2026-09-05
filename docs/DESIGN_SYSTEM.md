@@ -5,6 +5,61 @@ original direction (below, in "History") still holds; this document now also
 records what Phase 2G and 2G.1 actually shipped so it can't drift out of sync
 with the real tokens/primitives in `src/`.
 
+## Result detail — placement semantics (Phase 2G.1 audit)
+
+A QA pass surfaced a specific attempt (4/70 correct, 66 unanswered,
+manual submission after ~1 minute) whose admin result page appeared to
+show the candidate had reached **Pre-Intermediate**. Audited the
+implementation before touching anything:
+
+- `result.level` (rendered as the top `Badge` in the Score card) comes
+  from `PlacementBand` — the **admin-configured, percentage-based**
+  mechanism (`src/server/services/attempt.service.ts`, `placementBand`
+  relation). This is the product's actual configurable placement
+  result (see `/docs/PRODUCT_RULES.md` "Scoring & placement").
+- The band that read "Pre-Intermediate" in the QA report is a
+  **different, unrelated field**: `result.progression.progressionBand`
+  (`src/domain/placement/progression.ts`), computed purely from the
+  **highest correctly-answered question number** — 66 unanswered
+  questions and 0 incorrect answers don't lower it, because the
+  function only ever looks at the single highest correct order (by
+  design — see the module's own doc comment, "never assumes a question
+  was answered correctly just because a later one was," and the
+  reverse is equally true: it never discounts a correct answer for
+  what surrounds it). This was already correctly implemented and
+  already documented as "descriptive guidance, never a certification"
+  — the bug was purely in how safely the *UI* communicated that.
+- **No scoring/progression logic was changed.** Fixed at the UI layer
+  only:
+  - The Score card's badge now carries a "Placement band" eyebrow
+    label so it reads as a distinct, named mechanism rather than an
+    unlabeled "the" result.
+  - The progression card is retitled "Question progression guidance"
+    with an explicit "Not an official placement" description in its
+    `CardHeading` (previously a single easy-to-skim caption below the
+    fold).
+  - A new conditional warning (`isThinEvidence` in the page, `answered
+    / total < 20%` and a band is present) renders when a band is being
+    shown on very sparse answering — exactly the QA scenario — stating
+    plainly that it "should not be treated as a reliable placement
+    signal." This is a presentation-only heuristic against
+    already-computed fields; it does not feed back into any stored
+    value.
+  - Removed **"Canonical: Yes"** from the visible Score panel —
+    `isCanonical` is internal dedup/superseding plumbing for a retake
+    path the product doesn't expose yet (see
+    `src/components/admin/assignments/invitation-panel.tsx`'s own
+    comment: a new invitation isn't offered once an assignment is
+    completed), so it was raw data-model terminology with no
+    operational meaning for today's admin. The field itself is
+    untouched in the domain/service layer.
+- **Open item, not resolved in Phase 2G.1**: whether `progressionBand`
+  should itself require some minimum answered-question threshold
+  before surfacing a band at all is a scoring/business-rule decision,
+  out of scope here per the instruction to fix UI semantics only. Flag
+  for a future phase if product wants that threshold enforced upstream
+  rather than only flagged in the UI.
+
 ## Phase 2G.1 — what changed
 
 Phase 2G unified the visual language product-wide; a real screen-by-screen
@@ -39,17 +94,40 @@ hierarchy, surface treatment, and the data-list/table language:
 - **`MetricCard`** gained `tone` (primary/success/warning/info — a
   differentiation cue between tiles, still semantic) and an optional `hint`
   for a real, already-derived qualifier (e.g. "12 assigned a test") — never a
-  fabricated delta.
+  fabricated delta. It also gained a real `href` (the prop existed but was
+  never wired up): when given, the whole tile is a `Link` to the relevant
+  list, rendered as `variant="interactive"` with a trailing arrow that fades
+  in on hover, plus a per-tone 1px top accent stripe — see "Surface hierarchy"
+  below.
+- **`TableRow`** gained a permanent (transparent-at-rest) 2px left border
+  that turns violet on hover — a color-only change, so it never shifts
+  layout — reusing the sidebar's own active-indicator language for row
+  hover. `last:border-0` was narrowed to `last:border-b-0` so the last row
+  keeps this left accent instead of losing it along with its bottom border.
 - **`EmptyState`** dropped the dashed border for a quieter tinted surface and
   shrank its vertical padding — intentional, not a large empty box.
-- Admin login (`src/app/admin/login/page.tsx`) redesigned: an "Admin
-  workspace" eyebrow pill, a second ambient glow, icon-affordance email/lock
-  fields, and a footer line — still a small, focused authentication surface,
-  not a marketing page.
+- Admin login (`src/app/admin/login/page.tsx`) redesigned twice: an initial
+  centered-card pass, then replaced by the **approved** fullscreen split
+  environment — brand panel (left) and sign-in form (right) divided by a
+  faded vertical rule, collapsing to one stacked column with no divider
+  below ~900px. Reuses the permanently-dark `--sidebar*` tokens (see "Admin
+  shell") rather than a new palette; adds a password show/hide toggle and a
+  decorative progression-band motif (split top/bottom around the brand block
+  so labels never overlap it). Do not redesign this again without a shared
+  design-system change forcing a small adjustment.
 - The Tests page's import action is labeled **"Import"** (was "Import
   Language Hub test") — it's the future general import entry point; the
   dialog's own content still names the Language Hub source explicitly. No
   import architecture or business logic changed.
+- **Test/Candidate detail `Stat` chips** — the bare `dt`/`dd` metadata pairs
+  (Status/Duration/Questions/Created, Phone/Age/Email/Added) now sit in a
+  `bg-muted/40` rounded chip each (a Level 3 inset — see "Surface hierarchy")
+  instead of floating as plain text directly on the card.
+- **Admin shell scroll architecture fixed** — see "Admin shell" below; this
+  was a layout defect (the sidebar scrolled away with long page content),
+  not a stylistic change.
+- **Result detail placement semantics** — see "Result detail — placement
+  semantics (Phase 2G.1 audit)" above.
 
 ## Visual philosophy
 
@@ -137,6 +215,24 @@ A real hierarchy now, not one radius reused everywhere:
 prop for this — used wherever a card is itself a click target, never on
 purely informational cards.
 
+## Surface hierarchy (Level 0–3)
+
+A named hierarchy for "how deep is this surface," so a new page reaches
+for the right layer instead of another ad-hoc gray box:
+
+| Level | Role | Implementation |
+| --- | --- | --- |
+| **0 — page background** | The canvas everything sits on. | `bg-background` + `.vertex-atmosphere` (the restrained violet radial-gradient utility) on `<main>`. |
+| **1 — primary content surface** | A section's main card. | `Card` default — `bg-card`, `shadow-xs`, `ring-1 ring-foreground/10`, `rounded-xl`. |
+| **2 — interactive / emphasized surface** | A card that's itself a click target, or one representing a configuration/lifecycle area. | `Card variant="interactive"` (hover lift + `ring-primary/25`) or `variant="tinted"` (restrained violet-wash `color-mix` surface — Placement bands, Invitation). `MetricCard`'s per-tone top accent stripe and `TableRow`'s hover-only left accent border are the same idea applied to a tile/row instead of a card. |
+| **3 — subtle inset / metadata area** | A quiet region *inside* a Level 1/2 surface — a stat chip, a disclaimer strip, an empty state. | `bg-muted/30`–`bg-muted/50` insets with `rounded-lg`, no additional ring/shadow (a Level 3 surface never competes with its parent's border). Examples: the `Stat` chips on Test/Candidate detail, `EmptyState`, the `ProgressionTrack` container. |
+
+Rule of thumb: never stack two Level 1+ surfaces directly (a card
+inside a card) — nest a Level 3 inset instead. Never make everything
+violet: Level 2's tint/accent is reserved for the one or two surfaces
+per page that are genuinely configuration, delivery-lifecycle, or
+click-target areas.
+
 ## Cards
 
 Variants: `default`, `interactive` (hover lift/border — only when the
@@ -174,13 +270,22 @@ Candidates, and Assignments:
   `tabular-nums`-style weight (`font-medium text-foreground`) with its
   percentage qualifier muted.
 - **Mobile**: below each list's own breakpoint (`md:` for Tests/
-  Candidates, `lg:` for the wider Assignments table), the `<Table>` is
-  replaced — not squeezed — by a `<ul>` of `MobileRecordCard`
-  (`src/components/admin/mobile-record-card.tsx`): identity, a quiet
-  subtitle, wrapped meta chips (status/score badges), and a trailing
-  chevron. One shared card primitive so all three lists render the same
-  "record" language on narrow viewports instead of three hand-rolled
-  layouts.
+  Candidates, `xl:` for the wider 8-column Assignments table — visual
+  QA at 1024 showed its Progression/Created/Action columns clipping at
+  `lg:`, so its cutover sits one breakpoint higher than the other two),
+  the `<Table>` is replaced — not squeezed — by a `<ul>` of
+  `MobileRecordCard` (`src/components/admin/mobile-record-card.tsx`):
+  identity, a quiet subtitle, wrapped meta chips (status/score badges),
+  and a trailing chevron. One shared card primitive so all three lists
+  render the same "record" language on narrow viewports instead of
+  three hand-rolled layouts.
+- `TableRow` also carries a permanent (not just on-hover) 2px
+  transparent left border that turns `primary/70` on hover — the same
+  "left accent bar" language as the sidebar's active-nav indicator,
+  reused here so a row's hover state reads as more than a flat
+  background tint. The border is always present (just transparent at
+  rest) specifically so its color-only change on hover never shifts
+  layout.
 
 ## Buttons
 
@@ -244,6 +349,20 @@ Phase 0/1 (persistent dark sidebar, off-canvas drawer below `md`), with:
 - **Atmosphere**: `<main>` also carries `.vertex-atmosphere`, the same
   restrained violet-radial-gradient treatment used on the login and
   student screens, so the admin canvas is felt rather than flat white.
+- **Scroll architecture (Phase 2G.1 fix)**: the shell root is a fixed
+  `h-dvh overflow-hidden` (was `min-h-dvh`, which only sets a floor —
+  with no fixed height, a tall page (e.g. Result detail's Question
+  analysis table) grew the whole flex row taller than the viewport and
+  the *document* scrolled, dragging the sidebar along with it). Only
+  `<main>` now scrolls (`overflow-y-auto`); the sidebar and the mobile
+  topbar stay put for the viewport height, profile/sign-out included.
+  This requires `min-h-0` on both the content column and `<main>` — the
+  classic flexbox trap where a flex child's default `min-height: auto`
+  makes it grow to fit its content instead of honoring
+  `overflow-y-auto`. Dialogs are unaffected (their portal renders to
+  `document.body`, outside this container, so `position: fixed`
+  dialogs/popovers still position against the viewport regardless of
+  the shell's own overflow).
 
 ## Student assessment UI
 

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import {
+  AlertTriangleIcon,
   BarChart3Icon,
   CheckIcon,
   CompassIcon,
@@ -42,6 +43,17 @@ export default async function ResultDetailPage({
   const minutes = Math.floor(result.completionSeconds / 60);
   const seconds = result.completionSeconds % 60;
 
+  // Heuristic UI-only caution — never fed back into scoring/progression
+  // logic. `progressionBand` is derived purely from the HIGHEST correctly
+  // answered question order (see /domain/placement/progression.ts); with
+  // very little of the test actually answered, a single lucky correct
+  // answer can surface a mid-test band even though almost nothing was
+  // attempted. Flag that specific situation rather than silently
+  // presenting the band as if it reflected the whole attempt. See
+  // /docs/DESIGN_SYSTEM.md "Result detail — placement semantics".
+  const answeredRatio = result.totalQuestions > 0 ? result.progression.answeredCount / result.totalQuestions : 0;
+  const isThinEvidence = result.progression.progressionBand !== null && answeredRatio < 0.2;
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
@@ -54,7 +66,14 @@ export default async function ResultDetailPage({
         <Card className="lg:col-span-1">
           <CardHeading icon={TrophyIcon} title="Score" />
           <CardContent className="flex flex-col items-center gap-2 text-center">
-            {result.level && <Badge>{result.level}</Badge>}
+            {result.level && (
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                  Placement band
+                </span>
+                <Badge>{result.level}</Badge>
+              </div>
+            )}
             <div className="text-5xl font-semibold tracking-tight text-foreground tabular-nums">
               {result.rawScore}
               <span className="text-lg font-normal text-muted-foreground"> / {result.totalQuestions}</span>
@@ -100,10 +119,6 @@ export default async function ResultDetailPage({
                 <dd className="font-medium text-foreground">{formatDateTime(result.completedAt)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Canonical</dt>
-                <dd className="font-medium text-foreground">{result.isCanonical ? "Yes" : "No (superseded)"}</dd>
-              </div>
-              <div>
                 <dt className="text-muted-foreground">Phone</dt>
                 <dd className="font-medium text-foreground">{result.candidate.phoneNumber}</dd>
               </div>
@@ -123,13 +138,12 @@ export default async function ResultDetailPage({
 
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
-            <CardHeading icon={CompassIcon} title="Placement guidance" />
+            <CardHeading
+              icon={CompassIcon}
+              title="Question progression guidance"
+              description="Not an official placement — teacher discretion applies"
+            />
             <CardContent className="flex flex-col gap-4">
-              <p className="text-xs text-muted-foreground">
-                Descriptive question-progression guidance from the source material — not an
-                official CEFR placement. Final level confirmation is at the education
-                center&apos;s discretion.
-              </p>
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-muted-foreground">Highest correctly answered question:</span>
                 <span className="font-medium text-foreground">
@@ -144,6 +158,16 @@ export default async function ResultDetailPage({
                   currentOrder={result.progression.progressionBand?.order ?? null}
                 />
               </div>
+              {isThinEvidence && (
+                <div className="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2.5 text-xs text-warning-foreground ring-1 ring-warning/25">
+                  <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+                  <p>
+                    Only {result.progression.answeredCount} of {result.totalQuestions} questions
+                    were answered. This band reflects very limited evidence and should not be
+                    treated as a reliable placement signal.
+                  </p>
+                </div>
+              )}
               {result.progression.progressionBand === null && (
                 <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
                   No question was answered correctly — below the Beginner range. Teacher review

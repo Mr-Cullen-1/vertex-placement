@@ -40,7 +40,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col md:flex-row">
+    <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       <SidebarContent user={user} className="hidden md:flex" />
 
       {/* Mobile drawer — always mounted (not conditionally rendered) so
@@ -75,7 +75,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card/80 px-4 py-3 backdrop-blur-sm md:hidden">
           <div className="flex items-center gap-2">
             <VertexMark className="size-7" />
@@ -94,7 +94,17 @@ export function AdminShell({ user, children }: AdminShellProps) {
           </Button>
         </header>
 
-        <main key={pathname} className="vertex-atmosphere min-w-0 flex-1 animate-page-in bg-background">
+        {/* The scroll container. The shell itself is a fixed 100dvh with
+         * `overflow-hidden` (see the root div above) so the sidebar and
+         * mobile topbar stay put — only this element scrolls. `min-h-0`
+         * on both this wrapper and `<main>` is required for a flex child
+         * to actually shrink and hand scrolling to `overflow-y-auto`
+         * instead of growing to fit all content (the classic flexbox
+         * "min-height: auto" trap). */}
+        <main
+          key={pathname}
+          className="vertex-atmosphere min-h-0 min-w-0 flex-1 overflow-y-auto animate-page-in bg-background"
+        >
           {children}
         </main>
       </div>
