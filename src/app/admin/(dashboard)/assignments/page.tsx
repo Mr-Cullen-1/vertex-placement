@@ -9,6 +9,8 @@ import { SendIcon } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, InvitationStatusBadge } from "@/components/admin/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { GlobeIcon } from "lucide-react";
 import { MobileRecordCard } from "@/components/admin/mobile-record-card";
 import { NewAssignmentDialog } from "@/components/admin/assignments/new-assignment-dialog";
 import { ExportWorkbookButton } from "@/components/admin/assignments/export-workbook-button";
@@ -110,17 +112,25 @@ export default async function AssignmentsPage({
                   return (
                     <TableRow key={assignment.id}>
                       <TableCell>
-                        <Link
-                          href={`/admin/assignments/${assignment.id}`}
-                          className={cn(
-                            "font-semibold hover:underline",
-                            assignment.candidate.profileCompletedAt
-                              ? "text-foreground"
-                              : "text-muted-foreground italic"
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/assignments/${assignment.id}`}
+                            className={cn(
+                              "font-semibold hover:underline",
+                              assignment.candidate.profileCompletedAt
+                                ? "text-foreground"
+                                : "text-muted-foreground italic"
+                            )}
+                          >
+                            {candidateDisplayName(assignment.candidate)}
+                          </Link>
+                          {assignment.origin === "SELF_SERVICE" && (
+                            <Badge variant="info">
+                              <GlobeIcon />
+                              Self-service
+                            </Badge>
                           )}
-                        >
-                          {candidateDisplayName(assignment.candidate)}
-                        </Link>
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{assignment.test.title}</TableCell>
                       <TableCell>
@@ -193,6 +203,12 @@ export default async function AssignmentsPage({
                     meta={
                       <>
                         <AssignmentStatusBadge status={displayStatus} />
+                        {assignment.origin === "SELF_SERVICE" && (
+                          <Badge variant="info">
+                            <GlobeIcon />
+                            Self-service
+                          </Badge>
+                        )}
                         {result && (
                           <span className="text-xs font-medium text-foreground">
                             {result.rawScore}/{result.totalQuestions} ({formatPercentage(result.percentage)})

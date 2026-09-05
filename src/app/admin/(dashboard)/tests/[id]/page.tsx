@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge, AssignmentStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { TestLifecycleActions } from "@/components/admin/tests/test-lifecycle-actions";
+import { PublicSelfServiceToggle } from "@/components/admin/tests/public-self-service-toggle";
 import { BandsManager } from "@/components/admin/bands/bands-manager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
@@ -100,6 +101,13 @@ export default async function TestDetailPage({
               )}
               {test.sourceAttribution && (
                 <p className="text-xs text-muted-foreground">Source: {test.sourceAttribution}</p>
+              )}
+              {isSuperAdmin && (
+                <PublicSelfServiceToggle
+                  testId={test.id}
+                  status={test.status}
+                  isPublic={test.isPublicSelfService}
+                />
               )}
               {test.status === "DRAFT" && publishedQuestionCount === 0 && (
                 <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning-foreground">

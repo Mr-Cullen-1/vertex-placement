@@ -546,9 +546,29 @@ export async function getCompletedResultForToken(
     throw new AttemptNotFoundError();
   }
 
-  const { attempt } = invitation;
+  return buildStudentResultSummaryFromCompletedAttempt(invitation.attempt);
+}
+
+type CompletedAttemptForSummary = Prisma.PlacementAttemptGetPayload<{
+  include: {
+    answers: true;
+    result: { include: { placementBand: true } };
+    assignment: { include: { candidate: true } };
+  };
+}>;
+
+/** Shared by `getCompletedResultForToken` (invitation-token-authorized,
+ * the admin-assigned flow) and `getCompletedResultForAttemptId` below
+ * (session-authorized, the Phase 2J public self-service flow) — one
+ * place builds a student-facing result from a completed attempt, however
+ * the caller established it's allowed to see it. */
+async function buildStudentResultSummaryFromCompletedAttempt(
+  attempt: CompletedAttemptForSummary
+): Promise<StudentResultSummary> {
+  if (!attempt.result) throw new AttemptNotFoundError();
+
   const candidate = attempt.assignment.candidate;
-  const topicPerformance = attempt.result!.topicPerformance as unknown as TopicPerformanceEntry[];
+  const topicPerformance = attempt.result.topicPerformance as unknown as TopicPerformanceEntry[];
 
   // Placement guidance is re-derived fresh from the immutable
   // answers/questions every time (never persisted) — see
@@ -572,15 +592,35 @@ export async function getCompletedResultForToken(
   return buildStudentResultSummary({
     attemptId: attempt.id,
     candidateName: `${candidate.firstName} ${candidate.lastName}`,
-    level: attempt.result!.placementBand?.label ?? null,
-    rawScore: attempt.result!.rawScore,
-    totalQuestions: attempt.result!.totalQuestions,
-    percentage: attempt.result!.percentage,
-    completionSeconds: attempt.result!.completionSeconds,
+    level: attempt.result.placementBand?.label ?? null,
+    rawScore: attempt.result.rawScore,
+    totalQuestions: attempt.result.totalQuestions,
+    percentage: attempt.result.percentage,
+    completionSeconds: attempt.result.completionSeconds,
     topicPerformance,
     progression,
     autoSubmitted: attempt.status === "AUTO_SUBMITTED",
   });
+}
+
+/** Session-authorized counterpart to `getCompletedResultForToken` — for
+ * Phase 2J's public self-service flow, which has no invitation token to
+ * present once an attempt is complete (only the verified-email session,
+ * see /lib/self-serve-session.ts). Never exposed as a Server Action
+ * directly — `self-serve.service.ts` calls this only for an `attemptId`
+ * it already resolved from an assignment it independently verified
+ * belongs to the caller's own self-service candidate. */
+export async function getCompletedResultForAttemptId(attemptId: string): Promise<StudentResultSummary> {
+  const attempt = await db.placementAttempt.findUnique({
+    where: { id: attemptId },
+    include: {
+      answers: true,
+      result: { include: { placementBand: true } },
+      assignment: { include: { candidate: true } },
+    },
+  });
+  if (!attempt || !attempt.result) throw new AttemptNotFoundError();
+  return buildStudentResultSummaryFromCompletedAttempt(attempt);
 }
 
 // --- Admin read: full result detail --------------------------------------

@@ -188,3 +188,90 @@ export class ValidationError extends DomainError {
     super(message);
   }
 }
+
+// --- Public self-service ("Try Yourself", Phase 2J) --------------------
+
+export class PublicTestUnavailableError extends DomainError {
+  readonly code = "PUBLIC_TEST_UNAVAILABLE";
+  readonly httpStatus = 409;
+  constructor() {
+    super("Self-service placement isn't available right now.");
+  }
+}
+
+export class EmailDeliveryError extends DomainError {
+  readonly code = "EMAIL_DELIVERY_FAILED";
+  readonly httpStatus = 502;
+  constructor() {
+    super("We couldn't send your verification code. Please try again in a moment.");
+  }
+}
+
+export class ResendCooldownError extends DomainError {
+  readonly code = "RESEND_COOLDOWN";
+  readonly httpStatus = 429;
+  constructor(public readonly retryAfterSeconds: number) {
+    super(`Please wait ${retryAfterSeconds}s before requesting another code.`);
+  }
+}
+
+export class InvalidVerificationCodeError extends DomainError {
+  readonly code = "INVALID_VERIFICATION_CODE";
+  readonly httpStatus = 400;
+  constructor() {
+    super("That code isn't correct. Please check it and try again.");
+  }
+}
+
+export class VerificationCodeExpiredError extends DomainError {
+  readonly code = "VERIFICATION_CODE_EXPIRED";
+  readonly httpStatus = 410;
+  constructor() {
+    super("This code has expired. Request a new one.");
+  }
+}
+
+export class TooManyVerificationAttemptsError extends DomainError {
+  readonly code = "TOO_MANY_VERIFICATION_ATTEMPTS";
+  readonly httpStatus = 429;
+  constructor() {
+    super("Too many incorrect attempts. Request a new code.");
+  }
+}
+
+export class RateLimitedError extends DomainError {
+  readonly code = "RATE_LIMITED";
+  readonly httpStatus = 429;
+  constructor(message = "Too many requests. Please try again later.") {
+    super(message);
+  }
+}
+
+export class SelfServeSessionRequiredError extends DomainError {
+  readonly code = "SELF_SERVE_SESSION_REQUIRED";
+  readonly httpStatus = 401;
+  constructor() {
+    super("Please verify your email again.");
+  }
+}
+
+export class PublicAttemptLimitReachedError extends DomainError {
+  readonly code = "PUBLIC_ATTEMPT_LIMIT_REACHED";
+  readonly httpStatus = 409;
+  constructor() {
+    super("You've used both of your free placement attempts.");
+  }
+}
+
+/** A concurrent request (double-click, two tabs) already started the
+ * one active attempt this identity is allowed to have — see
+ * self-serve.service.ts "Concurrency". Not a real failure: the caller
+ * should simply re-check eligibility, which will now report
+ * `IN_PROGRESS`. */
+export class PublicAttemptAlreadyStartingError extends DomainError {
+  readonly code = "PUBLIC_ATTEMPT_ALREADY_STARTING";
+  readonly httpStatus = 409;
+  constructor() {
+    super("Your assessment is starting in another tab. Please refresh.");
+  }
+}

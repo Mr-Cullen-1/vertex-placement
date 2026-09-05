@@ -55,6 +55,15 @@ model PlacementTest {
   durationSeconds    Int        @default(1800) // 30 minutes, server-authoritative
   totalQuestionCount Int        @default(70)
 
+  // Phase 2J — Try Yourself: exactly one PUBLISHED test may be designated
+  // as the public self-service entry point (see /docs/PHASE_2J_TRY_YOURSELF.md
+  // "Public test selection"). Enforced with a partial unique index in the
+  // migration (`WHERE "isPublicSelfService" = true`), not just application
+  // logic, so a concurrent double-toggle can never leave two tests public
+  // at once. Deliberately NOT "newest"/"first published"/a hard-coded ID —
+  // an explicit Super-Admin choice, changeable at any time.
+  isPublicSelfService Boolean @default(false)
+
   createdByUserId String
   createdBy       User   @relation("TestCreatedBy", fields: [createdByUserId], references: [id])
 
@@ -240,9 +249,72 @@ model Candidate {
   updatedAt DateTime @updatedAt
 
   assignments PlacementAssignment[]
+  publicIdentity PublicIdentity?
 
   @@index([phoneNumber])
   @@map("candidates")
+}
+
+// ============================================================
+// PUBLIC SELF-SERVICE ("Try Yourself") — Phase 2J. A verified email is a
+// fundamentally different actor than an admin-created Candidate or an
+// authenticated admin User: no password, no invitation link handed to
+// them by staff. See /docs/PHASE_2J_TRY_YOURSELF.md for the full design.
+// ============================================================
+
+// The 1:1, permanent mapping from a verified public email to the ONE
+// Candidate that owns it. Created once, at first successful
+// verification. Deliberately a SEPARATE table from `Candidate.email`
+// (which is admin-entered, unvalidated, and may legitimately collide
+// with a self-service visitor's address) — this is the only place
+// "verified email -> candidate identity" is decided, so an admin-created
+// candidate that happens to share an email string is never silently
+// merged into a self-service identity, and vice versa.
+model PublicIdentity {
+  id              String   @id @default(cuid())
+  normalizedEmail String   @unique
+  candidateId     String   @unique
+  candidate       Candidate @relation(fields: [candidateId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("public_identities")
+}
+
+// A short-lived, single-purpose one-time code proving control of an
+// email address. The code itself is never persisted in plaintext — only
+// its SHA-256 hash — matching the invitation-token security model (see
+// domain/tokens/token.ts). `attempts` guards against brute force
+// (max 5 per issued code, enforced in self-serve.service.ts);
+// `consumedAt` makes a successful verification single-use.
+model PublicVerificationCode {
+  id              String    @id @default(cuid())
+  normalizedEmail String
+  codeHash        String
+  expiresAt       DateTime
+  consumedAt      DateTime?
+  attempts        Int       @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([normalizedEmail, createdAt])
+  @@map("public_verification_codes")
+}
+
+// Generic sliding-window abuse-protection ledger shared by every public
+// self-service endpoint (code request, code verify, attempt start) —
+// see rate-limit.service.ts. `bucket` encodes both the action and the
+// identifier it's scoped to, e.g. "verify-request:email:a@b.com" or
+// "verify-request:ip:203.0.113.4". Deliberately DB-backed rather than a
+// new Redis/Upstash dependency — Postgres is already the system's one
+// source of truth, and MVP volume does not justify new infrastructure.
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  bucket    String
+  createdAt DateTime @default(now())
+
+  @@index([bucket, createdAt])
+  @@map("rate_limit_events")
 }
 
 // ============================================================
@@ -259,8 +331,20 @@ enum AssignmentStatus {
   CANCELLED
 }
 
+// Phase 2J — which surface created this assignment. Admin-visible origin
+// indicator (see /docs/PHASE_2J_TRY_YOURSELF.md "Admin visibility") and
+// the scope for the public quota/one-active-attempt rules. Defaulted to
+// ADMIN so every historical row is correctly attributed with zero
+// backfill.
+enum AssignmentOrigin {
+  ADMIN
+  SELF_SERVICE
+}
+
 // One PlacementAssignment = one intended test-taking engagement for one
-// candidate against one test. This is the "session" an Admin creates.
+// candidate against one test. This is the "session" an Admin creates —
+// or, as of Phase 2J, that the public self-service flow creates on a
+// visitor's behalf (see `origin` below).
 model PlacementAssignment {
   id     String        @id @default(cuid())
   testId String
@@ -269,10 +353,14 @@ model PlacementAssignment {
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id])
 
-  status AssignmentStatus @default(PENDING)
+  status AssignmentStatus  @default(PENDING)
+  origin AssignmentOrigin  @default(ADMIN)
 
-  createdByUserId String
-  createdBy       User   @relation("AssignmentCreatedBy", fields: [createdByUserId], references: [id])
+  // Nullable as of Phase 2J: a SELF_SERVICE assignment has no admin actor
+  // behind it — there is no User row to attribute it to. Every ADMIN-origin
+  // assignment (all pre-Phase-2J rows included) still always has one.
+  createdByUserId String?
+  createdBy       User?   @relation("AssignmentCreatedBy", fields: [createdByUserId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -320,8 +408,9 @@ model PlacementInvitation {
   regeneratedFrom   PlacementInvitation? @relation("InvitationRegeneration", fields: [regeneratedFromId], references: [id])
   regeneratedTo     PlacementInvitation? @relation("InvitationRegeneration")
 
-  createdByUserId String
-  createdBy       User   @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id])
+  // Nullable as of Phase 2J — see PlacementAssignment.createdByUserId.
+  createdByUserId String?
+  createdBy       User?   @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id])
 
   createdAt DateTime  @default(now())
   usedAt    DateTime?

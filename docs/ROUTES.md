@@ -8,8 +8,9 @@ scaffolded in Phase 0 plus the shape planned for Phase 1+ — routes marked
 
 | Route | Purpose | Auth |
 | --- | --- | --- |
-| `/` | Placeholder landing page | none |
+| `/` | Landing page — "Try Yourself" and "Admin login" CTAs | none |
 | `/placement/[token]` | Student entry point — full flow, implemented in Phase 2A. See below. | none — gated by token validity, not by login |
+| `/try` | Public self-service ("Try Yourself") entry point — implemented in Phase 2J. See [PHASE_2J_TRY_YOURSELF.md](./PHASE_2J_TRY_YOURSELF.md). | none — gated by a verified-email session cookie, distinct from `/admin` login |
 
 ### Student flow (implemented in Phase 2A)
 
@@ -111,3 +112,7 @@ if that call never arrives.
   underlying attempt's `expiresAt`) must be re-checked on every mutating
   action, not just on first load, since a student could sit on the page
   past the attempt deadline.
+- `/try` (Phase 2J) also has no `proxy.ts` gating — it's a second,
+  intentionally distinct unauthenticated session (a verified-email cookie,
+  never Auth.js's admin session), re-derived server-side on every action; see
+  [PHASE_2J_TRY_YOURSELF.md](./PHASE_2J_TRY_YOURSELF.md) "Session behavior".

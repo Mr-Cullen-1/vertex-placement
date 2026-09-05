@@ -7,6 +7,8 @@ import {
   createPlacementTest,
   publishPlacementTest,
   updatePlacementTest,
+  setPublicSelfServiceTest,
+  clearPublicSelfServiceTest,
   type CreateTestInput,
   type UpdateTestInput,
 } from "@/server/services/placement-test.service";
@@ -41,5 +43,21 @@ export async function archivePlacementTestAction(testId: string) {
   return runAction(async () => {
     const actor = await getActorOrThrow();
     return archivePlacementTest(actor, testId);
+  });
+}
+
+/** Phase 2J: designates `testId` as the one test `/try` launches — see
+ * /docs/PHASE_2J_TRY_YOURSELF.md "Public test selection". */
+export async function setPublicSelfServiceTestAction(testId: string) {
+  return runAction(async () => {
+    const actor = await getActorOrThrow();
+    return setPublicSelfServiceTest(actor, testId);
+  });
+}
+
+export async function clearPublicSelfServiceTestAction(testId: string) {
+  return runAction(async () => {
+    const actor = await getActorOrThrow();
+    return clearPublicSelfServiceTest(actor, testId);
   });
 }

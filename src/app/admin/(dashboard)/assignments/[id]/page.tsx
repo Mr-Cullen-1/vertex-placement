@@ -8,8 +8,9 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, AttemptStatusBadge, TestStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { InvitationPanel, type InvitationSummary } from "@/components/admin/assignments/invitation-panel";
-import { BarChart3Icon, ClipboardListIcon, IdCardIcon, LinkIcon, TrophyIcon } from "lucide-react";
+import { BarChart3Icon, ClipboardListIcon, GlobeIcon, IdCardIcon, LinkIcon, TrophyIcon } from "lucide-react";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { candidateDisplayName, formatDateTime, formatDurationSeconds } from "@/lib/format";
 
 const COMPLETED_ATTEMPT_STATUSES = new Set(["SUBMITTED", "AUTO_SUBMITTED"]);
@@ -47,7 +48,17 @@ export default async function AssignmentDetailPage({
         description={assignment.test.title}
         backHref="/admin/assignments"
         backLabel="Assignments"
-        action={<AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />}
+        action={
+          <div className="flex items-center gap-2">
+            {assignment.origin === "SELF_SERVICE" && (
+              <Badge variant="info">
+                <GlobeIcon />
+                Self-service
+              </Badge>
+            )}
+            <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
+          </div>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

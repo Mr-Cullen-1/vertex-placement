@@ -97,6 +97,43 @@ export async function regenerateInvitation(
   return toIssuedInvitation(created, plaintext);
 }
 
+/**
+ * Phase 2J — the public self-service counterpart to `generateInvitation`/
+ * `regenerateInvitation`. No `Actor`/RBAC check, for the same reason as
+ * `assignment.service.ts`'s `createSelfServiceAssignment` — never exposed
+ * as a Server Action directly, only called from `self-serve.service.ts`.
+ */
+export async function createSelfServiceInvitation(assignmentId: string): Promise<IssuedInvitation> {
+  const { plaintext, hash } = generateInvitationToken();
+  const invitation = await db.placementInvitation.create({
+    data: { assignmentId, tokenHash: hash, createdByUserId: null },
+  });
+  return toIssuedInvitation(invitation, plaintext);
+}
+
+/** Recovery path for a self-service assignment left PENDING with an
+ * invitation whose plaintext was lost (e.g. the server crashed between
+ * issuing it and starting the attempt) — safe specifically because no
+ * `PlacementAttempt` exists yet for this assignment (see
+ * /docs/PHASE_2J_TRY_YOURSELF.md "Concurrency": regenerating is only ever
+ * safe before an attempt has started, exactly the existing admin-flow
+ * invariant `regenerateInvitation` itself relies on). */
+export async function regenerateSelfServiceInvitation(assignmentId: string): Promise<IssuedInvitation> {
+  const current = await db.placementInvitation.findFirst({
+    where: { assignmentId, status: "ACTIVE" },
+  });
+  if (!current) throw new InvitationNotFoundError();
+
+  const { plaintext, hash } = generateInvitationToken();
+  const created = await db.$transaction(async (tx) => {
+    await tx.placementInvitation.update({ where: { id: current.id }, data: { status: "REVOKED" } });
+    return tx.placementInvitation.create({
+      data: { assignmentId, tokenHash: hash, createdByUserId: null, regeneratedFromId: current.id },
+    });
+  });
+  return toIssuedInvitation(created, plaintext);
+}
+
 export async function revokeInvitation(actor: Actor, invitationId: string) {
   assertPermission(actor, "invitation:write");
   const invitation = await db.placementInvitation.findUnique({ where: { id: invitationId } });

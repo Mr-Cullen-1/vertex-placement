@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ClipboardListIcon } from "lucide-react";
+import { ClipboardListIcon, GlobeIcon } from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
 import { listPlacementTests } from "@/server/services/placement-test.service";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge } from "@/components/admin/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { MobileRecordCard } from "@/components/admin/mobile-record-card";
 import { CreateTestDialog } from "@/components/admin/tests/create-test-dialog";
 import { ImportTestDialog } from "@/components/admin/tests/import-test-dialog";
@@ -76,9 +77,17 @@ export default async function TestsPage() {
                 {tests.map((test) => (
                   <TableRow key={test.id}>
                     <TableCell className="whitespace-normal">
-                      <Link href={`/admin/tests/${test.id}`} className="font-medium text-foreground hover:underline">
-                        {test.title}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/tests/${test.id}`} className="font-medium text-foreground hover:underline">
+                          {test.title}
+                        </Link>
+                        {test.isPublicSelfService && (
+                          <Badge variant="info">
+                            <GlobeIcon />
+                            Try Yourself
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <TestStatusBadge status={test.status} />

@@ -88,6 +88,52 @@ export async function createAssignment(actor: Actor, input: CreateAssignmentInpu
   });
 }
 
+/**
+ * Phase 2J — the public self-service counterpart to `createAssignment`.
+ * No `Actor`/RBAC check: there is no admin behind a Try Yourself
+ * assignment (see /docs/PHASE_2J_TRY_YOURSELF.md "Architecture
+ * decisions"). Never exposed as a Server Action directly — only
+ * `self-serve.service.ts` calls this, after independently establishing
+ * the caller owns `candidateId` via their verified-email session. The
+ * partial unique index `placement_assignments_one_active_self_service_key`
+ * (candidateId, WHERE origin=SELF_SERVICE AND status IN (PENDING,
+ * IN_PROGRESS)) is the concurrency backstop — callers must catch a P2002
+ * here and treat it as "an active assignment already exists," not a
+ * genuine failure.
+ */
+export async function createSelfServiceAssignment(testId: string, candidateId: string) {
+  return db.placementAssignment.create({
+    data: {
+      testId,
+      candidateId,
+      origin: "SELF_SERVICE",
+      createdByUserId: null,
+    },
+    include: { candidate: true, test: true },
+  });
+}
+
+/** The one active (PENDING or IN_PROGRESS) self-service assignment for a
+ * candidate, if any — mirrors the invariant the partial unique index
+ * enforces. Null when the candidate has none in flight. */
+export async function findActiveSelfServiceAssignment(candidateId: string) {
+  return db.placementAssignment.findFirst({
+    where: { candidateId, origin: "SELF_SERVICE", status: { in: ["PENDING", "IN_PROGRESS"] } },
+    include: { test: true },
+  });
+}
+
+/** Every COMPLETED self-service assignment for a candidate — the basis
+ * for the free-attempt quota (see /docs/PHASE_2J_TRY_YOURSELF.md
+ * "Quota implementation"). Scoped by `origin` defensively — a
+ * self-service candidate should never structurally receive an ADMIN
+ * assignment, but this keeps quota correct even if that ever changed. */
+export async function countCompletedSelfServiceAssignments(candidateId: string): Promise<number> {
+  return db.placementAssignment.count({
+    where: { candidateId, origin: "SELF_SERVICE", status: "COMPLETED" },
+  });
+}
+
 export async function getAssignment(actor: Actor, assignmentId: string) {
   assertPermission(actor, "assignment:write");
   const assignment = await db.placementAssignment.findUnique({

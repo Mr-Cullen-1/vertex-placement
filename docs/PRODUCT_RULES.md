@@ -177,6 +177,27 @@ to a Telegram group via a bot, using an event/service architecture
 Placement remains the source of truth. Not implemented in Phase 0 — only
 the architecture is designed.
 
+## Public self-service ("Try Yourself")
+
+See [PHASE_2J_TRY_YOURSELF.md](./PHASE_2J_TRY_YOURSELF.md) for the full
+design. Summary of the product rules it implements:
+
+- A visitor verifies an email (6-digit code, 10-minute expiry) before
+  entering any personal details — email-first, not registration.
+- A verified email maps to exactly ONE `Candidate`, forever (`PublicIdentity`
+  table) — never a new one per visit, and never merged with an unrelated
+  admin-created candidate that happens to share the same email string.
+- Exactly **two free completed attempts** per verified identity. Opening the
+  test, refreshing, or resuming never consumes one — only a successful
+  submission does. At most one active (not-yet-completed) attempt at a time,
+  enforced at the database level.
+- Exactly one `PlacementTest` may be designated the public entry point at a
+  time (`isPublicSelfService`), set explicitly by a Super Admin — never the
+  newest/first-published/a hard-coded test.
+- A public attempt uses the exact same Test Runner, scoring engine, and
+  `PlacementBand` mechanism as an admin-assigned attempt — no second
+  implementation of any of those exists.
+
 ## Excel export
 
 Admin gets a standard export; Super Admin gets a full export. Planned

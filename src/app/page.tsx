@@ -57,12 +57,14 @@ const SELECTED_OPTION_INDEX = 1;
  * strip, no footer, everything above the fold), reproducing the
  * updated reference as closely as technically possible: a floating
  * pill navbar, the layered product-visual concept, hand-drawn
- * annotations, and an atmospheric background. Vertex Placement has no
- * public self-serve flow — students only ever arrive via a one-time
- * invitation link (see /docs/ROUTES.md) — so "Admin login" is the only
- * functional control on the page. No invented customer names or
- * statistics anywhere. No "adaptive"/"AI" language — the test is
- * fixed-order with progressively increasing difficulty. */
+ * annotations, and an atmospheric background. Phase 2J added a "Try
+ * Yourself" CTA (public self-service placement — see
+ * /docs/PHASE_2J_TRY_YOURSELF.md) alongside the existing "Admin login"
+ * control; a targeted addition to the existing hero/action hierarchy,
+ * not a redesign — same branding, typography, motion, and responsive
+ * behavior as before. No invented customer names or statistics anywhere.
+ * No "adaptive"/"AI" language — the test is fixed-order with
+ * progressively increasing difficulty. */
 export default function Home() {
   return (
     <div className="relative flex h-dvh flex-col overflow-y-auto overflow-x-hidden bg-gradient-to-b from-white to-[oklch(0.97_0.012_292.7)]">
@@ -88,14 +90,24 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-6 sm:px-10 xl:px-16">
         <header className="mt-6 flex shrink-0 items-center justify-between gap-4 rounded-full border border-border bg-card/90 px-6 py-3 shadow-sm backdrop-blur-sm sm:mt-8 sm:px-8">
           <VertexWordmark />
-          <Button
-            nativeButton={false}
-            render={<Link href="/admin/login" />}
-            className="rounded-full px-5 shadow-lg shadow-primary/25"
-          >
-            Admin login
-            <ArrowRightIcon />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href="/admin/login" />}
+              className="rounded-full px-5"
+            >
+              Admin login
+            </Button>
+            <Button
+              nativeButton={false}
+              render={<Link href="/try" />}
+              className="rounded-full px-5 shadow-lg shadow-primary/25"
+            >
+              Try Yourself
+              <ArrowRightIcon />
+            </Button>
+          </div>
         </header>
 
         <section className="grid flex-1 grid-cols-1 items-center gap-16 py-6 xl:grid-cols-[1fr_1.5fr] xl:gap-10 xl:py-10">
@@ -130,15 +142,26 @@ export default function Home() {
               ))}
             </div>
 
-            <Button
-              size="lg"
-              nativeButton={false}
-              render={<Link href="/admin/login" />}
-              className="rounded-full px-6 shadow-lg shadow-primary/25"
-            >
-              Admin login
-              <ArrowRightIcon />
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                size="lg"
+                nativeButton={false}
+                render={<Link href="/try" />}
+                className="rounded-full px-6 shadow-lg shadow-primary/25"
+              >
+                Try Yourself
+                <ArrowRightIcon />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href="/admin/login" />}
+                className="rounded-full px-6"
+              >
+                Admin login
+              </Button>
+            </div>
           </div>
 
           <div className="relative hidden w-full xl:block">

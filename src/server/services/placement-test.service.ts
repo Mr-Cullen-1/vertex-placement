@@ -99,3 +99,46 @@ async function requireTest(testId: string) {
   if (!test) throw new TestNotFoundError();
   return test;
 }
+
+// --- Phase 2J: public self-service ("Try Yourself") test selection ------
+//
+// Exactly one PUBLISHED test may be designated the public entry point —
+// never the newest/first-published/a hard-coded ID (see
+// /docs/PHASE_2J_TRY_YOURSELF.md "Public test selection"). Super Admin
+// only, same as every other test-configuration action.
+
+/** Marks `testId` as the public test, unmarking any previously-public
+ * test in the same transaction. The partial unique index
+ * `placement_tests_one_public_self_service_key` is still the ultimate
+ * backstop against a concurrent double-toggle leaving two tests public;
+ * this transaction is what makes that the common case rather than the
+ * only line of defense. */
+export async function setPublicSelfServiceTest(actor: Actor, testId: string) {
+  assertPermission(actor, "test:write");
+  const test = await requireTest(testId);
+  if (test.status !== "PUBLISHED") {
+    throw new InvalidTestStateError("Only a PUBLISHED test can be used for Try Yourself.");
+  }
+  return db.$transaction(async (tx) => {
+    await tx.placementTest.updateMany({
+      where: { isPublicSelfService: true, id: { not: testId } },
+      data: { isPublicSelfService: false },
+    });
+    return tx.placementTest.update({ where: { id: testId }, data: { isPublicSelfService: true } });
+  });
+}
+
+export async function clearPublicSelfServiceTest(actor: Actor, testId: string) {
+  assertPermission(actor, "test:write");
+  await requireTest(testId);
+  return db.placementTest.update({ where: { id: testId }, data: { isPublicSelfService: false } });
+}
+
+/** Public, unauthenticated read — used by `/try`. Filters on
+ * `status: "PUBLISHED"` as well as the flag itself, so a test that was
+ * archived after being marked public is correctly treated as "no public
+ * test configured" (a controlled unavailable state) without requiring
+ * every archive path to remember to also clear the flag. */
+export async function getPublicSelfServiceTest() {
+  return db.placementTest.findFirst({ where: { isPublicSelfService: true, status: "PUBLISHED" } });
+}

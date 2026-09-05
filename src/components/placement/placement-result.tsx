@@ -22,6 +22,12 @@ import { VertexWordmark } from "./vertex-mark";
  * evidence") and /docs/PRODUCT_RULES.md "Scoring & placement". Never
  * reintroduce a placement-band-like label here derived from anything
  * other than `result.level`.
+ *
+ * Phase 2J: reached by both an admin-invited candidate AND a public
+ * "Try Yourself" visitor (/docs/PHASE_2J_TRY_YOURSELF.md "Shared Test
+ * Runner") — the two closing lines were reworded to stop assuming "the
+ * center that invited you" exists. The only change this feature made to
+ * this file; no layout/logic change, no "if public" branch.
  */
 export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const minutes = Math.floor(result.completionSeconds / 60);
@@ -60,7 +66,7 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Your teacher or education center can use this result to confirm your starting level.
+          This result reflects your total correct answers on this assessment.
         </p>
 
         <dl className="grid grid-cols-2 gap-3 text-sm">
@@ -115,10 +121,7 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           </p>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          Your result has been recorded. The center that invited you will follow up with next
-          steps.
-        </p>
+        <p className="text-center text-xs text-muted-foreground">Your result has been recorded.</p>
       </div>
     </div>
   );
