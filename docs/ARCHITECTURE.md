@@ -291,29 +291,54 @@ models):
 
 ## Import architecture
 
+Implemented as of Phase 2H (a generic JSON pipeline alongside the
+Phase 2D Language Hub dataset — no format is special-cased at the
+persistence layer):
+
 ```
-Source file (PDF | XLSX | JSON | DOCX)
-  -> format-specific parser -> NormalizedQuestion[] (single shared shape)
+Source (uploaded .json file | the verified Language Hub constant)
+  -> format-specific parser -> ImportedTestDraft (single shared shape —
+     title, duration, questions[], placementBands[] — see
+     /docs/TEST_IMPORT_FORMAT.md and src/domain/import/types.ts)
   -> validation -> ImportValidationIssue[] (ERROR blocks import, WARNING doesn't)
-  -> preview (shown to Super Admin, nothing persisted as real content yet)
-  -> confirm -> Question + Option + QuestionMetadata rows created as DRAFT,
-     tagged with importJobId for traceability
-  -> explicit publish action -> Question.status DRAFT -> PUBLISHED
+  -> preview (shown to Super Admin, nothing persisted yet)
+  -> confirm -> persistImportedTest (import.service.ts): ONE transaction
+     creates PlacementTest (DRAFT) + Question/Option/QuestionMetadata rows
+     (PUBLISHED) + PlacementBand rows + an ImportJob row (IMPORTED),
+     tagged with importJobId for traceability — or nothing at all, on
+     any failure
+  -> explicit publish action -> PlacementTest.status DRAFT -> PUBLISHED
 ```
 
 `ImportJob` (see DATABASE.md) tracks this pipeline's state
 (`UPLOADED -> PARSING -> PARSED -> VALIDATED -> IMPORTED`, or
-`VALIDATION_FAILED` / `FAILED`). The critical invariant: **imported content
-is never auto-published.** `IMPORTED` only means rows exist as `DRAFT`;
-publishing a test is a separate, explicit Super Admin action. Each format's
-parser only needs to implement `(fileBuffer) => NormalizedQuestion[]`
-(`src/domain/import/types.ts`) — everything downstream of that is
-format-agnostic.
+`VALIDATION_FAILED` / `FAILED`; only `UPLOADED` and `IMPORTED` are
+actually written today — the intermediate states exist for a future
+asynchronous/queued import path, not the current synchronous one). The
+critical invariant: **imported content is never auto-published as a
+test** — `IMPORTED` only means the `PlacementTest` row exists as
+`DRAFT`; publishing it is a separate, explicit Super Admin action, and
+`assignment.service.ts`/`attempt.service.ts` both gate on
+`PlacementTest.status`, never on any imported question's own status.
+Imported *questions* are created `PUBLISHED` (not `DRAFT`) — deliberate,
+not a deviation: their content already passed structural validation
+(and, for Language Hub, manual verification against the source), and
+gating safety at the question level would force publishing every
+question one at a time with no product benefit, since the test itself
+already can't be assigned or attempted while DRAFT. See
+`persistImportedTest`'s doc comment in `import.service.ts` for the full
+reasoning.
 
-Still not implemented as of Phase 1: no parsers, no upload endpoint, no
-preview UI. The 70 source questions are not imported — question content
-in Phase 1 is created directly through `question.service.ts` (used by
-tests and the seed's development-only sample test).
+Each format's parser only needs to produce an `ImportedTestDraft`
+(`src/domain/import/types.ts`) — everything downstream (validation,
+preview shape, the transactional write) is format-agnostic and shared.
+Phase 2H ships one new parser, `src/domain/import/sources/generic-json.ts`
+(JSON only, per /docs/TEST_IMPORT_FORMAT.md); PDF/XLSX/DOCX parsers
+remain unimplemented; the Language Hub PDF's own "parser" is a
+manually-transcribed constant (`sources/language-hub-2019.ts`) wrapped
+into the same `ImportedTestDraft` shape, since a PDF's inline blanks
+aren't recoverable via automated text/layout extraction — see that
+file's own doc comment.
 
 ## Telegram integration architecture
 

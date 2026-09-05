@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge } from "@/components/admin/status-badge";
 import { MobileRecordCard } from "@/components/admin/mobile-record-card";
 import { CreateTestDialog } from "@/components/admin/tests/create-test-dialog";
-import { ImportLanguageHubDialog } from "@/components/admin/tests/import-language-hub-dialog";
+import { ImportTestDialog } from "@/components/admin/tests/import-test-dialog";
 import {
   Table,
   TableBody,
@@ -33,7 +33,7 @@ export default async function TestsPage() {
         action={
           isSuperAdmin ? (
             <div className="flex flex-wrap items-center gap-2">
-              <ImportLanguageHubDialog />
+              <ImportTestDialog />
               <CreateTestDialog />
             </div>
           ) : undefined
@@ -52,7 +52,7 @@ export default async function TestsPage() {
           action={
             isSuperAdmin ? (
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <ImportLanguageHubDialog />
+                <ImportTestDialog />
                 <CreateTestDialog />
               </div>
             ) : undefined

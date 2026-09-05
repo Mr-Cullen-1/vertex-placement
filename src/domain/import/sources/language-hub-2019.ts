@@ -15,10 +15,10 @@ import type { NormalizedQuestion } from "../types";
  * recover blank position from raw PDF content — this is a structural
  * limitation of the source format, not a shortcut. This module instead
  * holds a manually-transcribed, verified dataset for this ONE specific,
- * known source document. `parseLanguageHub2019Pdf` (see parser.ts)
- * implements the existing `QuestionParser` contract around it so the
- * import pipeline still goes through the same normalize -> validate ->
- * preview -> confirm stages a different source format would.
+ * known source document — `import.service.ts` wraps it in an
+ * `ImportedTestDraft` (see /domain/import/types.ts) so it goes through
+ * the exact same validate -> preview -> confirm pipeline a different
+ * source format (e.g. the generic JSON importer) would.
  *
  * Example item 0 (the worked example in the source) is intentionally
  * excluded — it is instructional, not a real test item.
