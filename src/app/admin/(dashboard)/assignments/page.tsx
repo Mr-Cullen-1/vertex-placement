@@ -9,10 +9,18 @@ import { SendIcon } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, InvitationStatusBadge } from "@/components/admin/status-badge";
+import { MobileRecordCard } from "@/components/admin/mobile-record-card";
 import { NewAssignmentDialog } from "@/components/admin/assignments/new-assignment-dialog";
 import { ExportWorkbookButton } from "@/components/admin/assignments/export-workbook-button";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { formatDate, formatPercentage } from "@/lib/format";
 
 export default async function AssignmentsPage({
@@ -75,91 +83,121 @@ export default async function AssignmentsPage({
           description="Create an assignment to send a candidate their invitation link."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Candidate</TableHead>
-                <TableHead>Test</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Invitation</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Progression</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignments.map((assignment) => {
-                const displayStatus = displayStatusForAssignment(assignment);
-                const latestInvitation = assignment.invitations[0] ?? null;
-                const result = resultsByAssignmentId.get(assignment.id);
+        <>
+          <div className="hidden xl:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Candidate</TableHead>
+                  <TableHead>Test</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Invitation</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Progression</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assignments.map((assignment) => {
+                  const displayStatus = displayStatusForAssignment(assignment);
+                  const latestInvitation = assignment.invitations[0] ?? null;
+                  const result = resultsByAssignmentId.get(assignment.id);
 
-                return (
-                  <TableRow key={assignment.id}>
-                    <TableCell>
-                      <Link
-                        href={`/admin/assignments/${assignment.id}`}
-                        className="font-medium text-foreground hover:underline"
-                      >
-                        {assignment.candidate.firstName} {assignment.candidate.lastName}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{assignment.test.title}</TableCell>
-                    <TableCell>
-                      <AssignmentStatusBadge status={displayStatus} />
-                    </TableCell>
-                    <TableCell>
-                      {latestInvitation ? (
-                        <InvitationStatusBadge status={latestInvitation.status} />
-                      ) : (
-                        <span className="text-muted-foreground">None</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {result ? (
-                        <>
-                          {result.rawScore}/{result.totalQuestions}{" "}
-                          <span className="text-muted-foreground">
-                            ({formatPercentage(result.percentage)})
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {result ? result.progression.progressionBand?.label ?? "Below Beginner" : "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(assignment.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          nativeButton={false}
-                          render={<Link href={`/admin/assignments/${assignment.id}`} />}
+                  return (
+                    <TableRow key={assignment.id}>
+                      <TableCell>
+                        <Link
+                          href={`/admin/assignments/${assignment.id}`}
+                          className="font-semibold text-foreground hover:underline"
                         >
-                          View
-                        </Button>
-                        {displayStatus === "COMPLETED" && result && (
+                          {assignment.candidate.firstName} {assignment.candidate.lastName}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{assignment.test.title}</TableCell>
+                      <TableCell>
+                        <AssignmentStatusBadge status={displayStatus} />
+                      </TableCell>
+                      <TableCell>
+                        {latestInvitation ? (
+                          <InvitationStatusBadge status={latestInvitation.status} />
+                        ) : (
+                          <span className="text-muted-foreground">None</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-medium text-foreground">
+                        {result ? (
+                          <>
+                            {result.rawScore}/{result.totalQuestions}{" "}
+                            <span className="font-normal text-muted-foreground">
+                              ({formatPercentage(result.percentage)})
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-normal text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {result ? result.progression.progressionBand?.label ?? "Below Beginner" : "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{formatDate(assignment.createdAt)}</TableCell>
+                      <TableCell className="text-right">
+                        {displayStatus === "COMPLETED" && result ? (
                           <Button
                             size="sm"
-                            variant="outline"
                             nativeButton={false}
                             render={<Link href={`/admin/results/${result.attemptId}`} />}
                           >
                             Result
                           </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            nativeButton={false}
+                            render={<Link href={`/admin/assignments/${assignment.id}`} />}
+                          >
+                            View
+                          </Button>
                         )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <ul className="flex flex-col gap-2 xl:hidden">
+            {assignments.map((assignment) => {
+              const displayStatus = displayStatusForAssignment(assignment);
+              const result = resultsByAssignmentId.get(assignment.id);
+              return (
+                <li key={assignment.id}>
+                  <MobileRecordCard
+                    href={
+                      displayStatus === "COMPLETED" && result
+                        ? `/admin/results/${result.attemptId}`
+                        : `/admin/assignments/${assignment.id}`
+                    }
+                    title={`${assignment.candidate.firstName} ${assignment.candidate.lastName}`}
+                    subtitle={assignment.test.title}
+                    meta={
+                      <>
+                        <AssignmentStatusBadge status={displayStatus} />
+                        {result && (
+                          <span className="text-xs font-medium text-foreground">
+                            {result.rawScore}/{result.totalQuestions} ({formatPercentage(result.percentage)})
+                          </span>
+                        )}
+                      </>
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </div>
   );

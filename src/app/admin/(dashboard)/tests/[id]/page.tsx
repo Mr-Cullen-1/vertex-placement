@@ -14,9 +14,18 @@ import { displayStatusForAssignment } from "@/domain/placement/assignment-status
 import { TestLifecycleActions } from "@/components/admin/tests/test-lifecycle-actions";
 import { BandsManager } from "@/components/admin/bands/bands-manager";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListChecksIcon, SendIcon } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { FileTextIcon, LayersIcon, ListChecksIcon, SendIcon } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowChevronCell,
+} from "@/components/ui/table";
 import { formatDate, formatDurationSeconds } from "@/lib/format";
 
 export default async function TestDetailPage({
@@ -63,7 +72,12 @@ export default async function TestDetailPage({
               <ListChecksIcon />
               Questions
             </Button>
-            {isSuperAdmin && <TestLifecycleActions test={test} />}
+            {isSuperAdmin && (
+              <>
+                <Separator orientation="vertical" className="h-5" />
+                <TestLifecycleActions test={test} />
+              </>
+            )}
           </div>
         }
       />
@@ -71,9 +85,7 @@ export default async function TestDetailPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Test information</CardTitle>
-            </CardHeader>
+            <CardHeading icon={FileTextIcon} title="Test information" />
             <CardContent className="flex flex-col gap-4">
               <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <Stat label="Status">
@@ -90,7 +102,7 @@ export default async function TestDetailPage({
                 <p className="text-xs text-muted-foreground">Source: {test.sourceAttribution}</p>
               )}
               {test.status === "DRAFT" && publishedQuestionCount === 0 && (
-                <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
                   This test has no published questions yet, so it can&apos;t be published. Add
                   and publish at least one question first.
                 </p>
@@ -99,9 +111,7 @@ export default async function TestDetailPage({
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Assignments</CardTitle>
-            </CardHeader>
+            <CardHeading icon={SendIcon} title="Assignments" description={`${testAssignments.length} for this test`} />
             <CardContent>
               {testAssignments.length === 0 ? (
                 <EmptyState
@@ -116,6 +126,7 @@ export default async function TestDetailPage({
                       <TableHead>Candidate</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
+                      <TableHead aria-hidden="true" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -135,6 +146,7 @@ export default async function TestDetailPage({
                         <TableCell className="text-muted-foreground">
                           {formatDate(assignment.createdAt)}
                         </TableCell>
+                        <TableRowChevronCell />
                       </TableRow>
                     ))}
                   </TableBody>
@@ -144,10 +156,8 @@ export default async function TestDetailPage({
           </Card>
         </div>
 
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Placement bands</CardTitle>
-          </CardHeader>
+        <Card variant="tinted" className="h-fit">
+          <CardHeading icon={LayersIcon} title="Placement bands" description="Scoring configuration" />
           <CardContent>
             {isSuperAdmin ? (
               <BandsManager testId={id} bands={bands} locked={test.status === "ARCHIVED"} />

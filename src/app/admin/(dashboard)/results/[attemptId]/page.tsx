@@ -1,12 +1,21 @@
 import { notFound } from "next/navigation";
-import { CheckIcon, MinusIcon, XIcon } from "lucide-react";
+import {
+  BarChart3Icon,
+  CheckIcon,
+  CompassIcon,
+  LayersIcon,
+  ListChecksIcon,
+  MinusIcon,
+  TrophyIcon,
+  XIcon,
+} from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
 import { getAdminResultDetail } from "@/server/services/attempt.service";
 import { AttemptNotFoundError } from "@/server/errors";
 import { PROGRESSION_BANDS } from "@/domain/placement/progression";
 import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProgressionTrack } from "@/components/shared/progression-track";
 import { formatDateTime, formatPercentage } from "@/lib/format";
@@ -43,9 +52,7 @@ export default async function ResultDetailPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Score</CardTitle>
-          </CardHeader>
+          <CardHeading icon={TrophyIcon} title="Score" />
           <CardContent className="flex flex-col items-center gap-2 text-center">
             {result.level && <Badge>{result.level}</Badge>}
             <div className="text-5xl font-semibold tracking-tight text-foreground tabular-nums">
@@ -116,9 +123,7 @@ export default async function ResultDetailPage({
 
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Placement guidance</CardTitle>
-            </CardHeader>
+            <CardHeading icon={CompassIcon} title="Placement guidance" />
             <CardContent className="flex flex-col gap-4">
               <p className="text-xs text-muted-foreground">
                 Descriptive question-progression guidance from the source material — not an
@@ -149,9 +154,7 @@ export default async function ResultDetailPage({
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Topic performance</CardTitle>
-            </CardHeader>
+            <CardHeading icon={LayersIcon} title="Topic performance" />
             <CardContent>
               {result.topicPerformance.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No topic metadata on this test&apos;s questions.</p>
@@ -171,9 +174,7 @@ export default async function ResultDetailPage({
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Difficulty progression</CardTitle>
-            </CardHeader>
+            <CardHeading icon={BarChart3Icon} title="Difficulty progression" />
             <CardContent>
               {result.difficultyProgression.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No difficulty-band metadata on this test&apos;s questions.</p>
@@ -195,9 +196,7 @@ export default async function ResultDetailPage({
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Question analysis</CardTitle>
-        </CardHeader>
+        <CardHeading icon={ListChecksIcon} title="Question analysis" description={`${result.questionAnalysis.length} questions`} />
         <CardContent>
           <Table>
             <TableHeader>

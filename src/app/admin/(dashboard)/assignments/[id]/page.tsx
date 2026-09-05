@@ -8,8 +8,8 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge, AttemptStatusBadge, TestStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { InvitationPanel, type InvitationSummary } from "@/components/admin/assignments/invitation-panel";
-import { ClipboardListIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3Icon, ClipboardListIcon, IdCardIcon, LinkIcon, TrophyIcon } from "lucide-react";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { formatDateTime, formatDurationSeconds } from "@/lib/format";
 
 const COMPLETED_ATTEMPT_STATUSES = new Set(["SUBMITTED", "AUTO_SUBMITTED"]);
@@ -52,9 +52,7 @@ export default async function AssignmentDetailPage({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card size="sm">
-          <CardHeader>
-            <CardTitle>Candidate</CardTitle>
-          </CardHeader>
+          <CardHeading icon={IdCardIcon} title="Candidate" />
           <CardContent className="flex flex-col gap-1 text-sm">
             <Link href={`/admin/candidates/${assignment.candidate.id}`} className="font-medium text-foreground hover:underline">
               {assignment.candidate.firstName} {assignment.candidate.lastName}
@@ -68,9 +66,7 @@ export default async function AssignmentDetailPage({
         </Card>
 
         <Card size="sm">
-          <CardHeader>
-            <CardTitle>Test</CardTitle>
-          </CardHeader>
+          <CardHeading icon={ClipboardListIcon} title="Test" />
           <CardContent className="flex flex-col gap-1 text-sm">
             <Link href={`/admin/tests/${assignment.test.id}`} className="font-medium text-foreground hover:underline">
               {assignment.test.title}
@@ -81,10 +77,8 @@ export default async function AssignmentDetailPage({
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Invitation</CardTitle>
-        </CardHeader>
+      <Card variant="tinted">
+        <CardHeading icon={LinkIcon} title="Invitation" description="Access lifecycle for this assignment" />
         <CardContent>
           <InvitationPanel
             assignmentId={assignment.id}
@@ -95,9 +89,7 @@ export default async function AssignmentDetailPage({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Attempts</CardTitle>
-        </CardHeader>
+        <CardHeading icon={BarChart3Icon} title="Attempts" description="Assessment activity for this assignment" />
         <CardContent>
           {assignment.attempts.length === 0 ? (
             <EmptyState
@@ -106,26 +98,37 @@ export default async function AssignmentDetailPage({
               description="Nothing happens here until the candidate opens their invitation link."
             />
           ) : (
-            <ul className="flex flex-col divide-y divide-border text-sm">
-              {assignment.attempts.map((attempt) => (
-                <li key={attempt.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-                  <div className="flex flex-col gap-0.5">
-                    <AttemptStatusBadge status={attempt.status} />
-                    <span className="text-xs text-muted-foreground">
-                      Started {formatDateTime(attempt.startedAt)}
-                      {attempt.submittedAt ? ` · Submitted ${formatDateTime(attempt.submittedAt)}` : ""}
-                    </span>
-                  </div>
-                  {COMPLETED_ATTEMPT_STATUSES.has(attempt.status) && (
-                    <Link
-                      href={`/admin/results/${attempt.id}`}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      View result
-                    </Link>
-                  )}
-                </li>
-              ))}
+            <ul className="flex flex-col gap-2">
+              {assignment.attempts.map((attempt) => {
+                const completed = COMPLETED_ATTEMPT_STATUSES.has(attempt.status);
+                return (
+                  <li
+                    key={attempt.id}
+                    className={
+                      completed
+                        ? "flex items-center justify-between gap-3 rounded-xl bg-success/5 p-3 ring-1 ring-success/15"
+                        : "flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 ring-1 ring-border/60"
+                    }
+                  >
+                    <div className="flex flex-col gap-1">
+                      <AttemptStatusBadge status={attempt.status} />
+                      <span className="text-xs text-muted-foreground">
+                        Started {formatDateTime(attempt.startedAt)}
+                        {attempt.submittedAt ? ` · Submitted ${formatDateTime(attempt.submittedAt)}` : ""}
+                      </span>
+                    </div>
+                    {completed && (
+                      <Link
+                        href={`/admin/results/${attempt.id}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                      >
+                        <TrophyIcon className="size-4" />
+                        View result
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>

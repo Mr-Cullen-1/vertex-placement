@@ -1,10 +1,17 @@
 import Link from "next/link";
-import { ChevronRightIcon, ClipboardCheckIcon, ClipboardListIcon, SendIcon, UsersIcon } from "lucide-react";
+import {
+  ActivityIcon,
+  ChevronRightIcon,
+  ClipboardCheckIcon,
+  ClipboardListIcon,
+  SendIcon,
+  UsersIcon,
+} from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
 import { listPlacementTests } from "@/server/services/placement-test.service";
 import { listCandidates } from "@/server/services/candidate.service";
 import { listAssignments } from "@/server/services/assignment.service";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -29,6 +36,7 @@ export default async function AdminDashboardPage() {
   ).length;
   const completedAttempts = assignments.filter((a) => a.status === "COMPLETED").length;
   const availableTests = tests.filter((t) => t.status === "PUBLISHED").length;
+  const assignedCandidateCount = new Set(assignments.map((a) => a.candidateId)).size;
   const recentAssignments = assignments.slice(0, 6);
 
   const isEmpty = candidates.length === 0 && assignments.length === 0;
@@ -42,16 +50,38 @@ export default async function AdminDashboardPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <MetricCard label="Candidates" value={candidates.length} icon={UsersIcon} />
-        <MetricCard label="Active assignments" value={activeAssignments} icon={SendIcon} />
-        <MetricCard label="Completed attempts" value={completedAttempts} icon={ClipboardCheckIcon} />
-        <MetricCard label="Available tests" value={availableTests} icon={ClipboardListIcon} />
+        <MetricCard
+          label="Candidates"
+          value={candidates.length}
+          icon={UsersIcon}
+          tone="primary"
+          hint={candidates.length > 0 ? `${assignedCandidateCount} assigned a test` : undefined}
+        />
+        <MetricCard
+          label="Active assignments"
+          value={activeAssignments}
+          icon={SendIcon}
+          tone="warning"
+          hint={assignments.length > 0 ? `of ${assignments.length} total` : undefined}
+        />
+        <MetricCard
+          label="Completed attempts"
+          value={completedAttempts}
+          icon={ClipboardCheckIcon}
+          tone="success"
+          hint={assignments.length > 0 ? `of ${assignments.length} total` : undefined}
+        />
+        <MetricCard
+          label="Available tests"
+          value={availableTests}
+          icon={ClipboardListIcon}
+          tone="info"
+          hint={tests.length > 0 ? `of ${tests.length} total` : undefined}
+        />
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Recent activity</CardTitle>
-        </CardHeader>
+        <CardHeading icon={ActivityIcon} title="Recent activity" description="The latest assignments across the system." />
         <CardContent>
           {isEmpty ? (
             <EmptyState

@@ -5,9 +5,18 @@ import { listPlacementTests } from "@/server/services/placement-test.service";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { TestStatusBadge } from "@/components/admin/status-badge";
+import { MobileRecordCard } from "@/components/admin/mobile-record-card";
 import { CreateTestDialog } from "@/components/admin/tests/create-test-dialog";
 import { ImportLanguageHubDialog } from "@/components/admin/tests/import-language-hub-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowChevronCell,
+} from "@/components/ui/table";
 import { formatDate, formatDurationSeconds } from "@/lib/format";
 
 export default async function TestsPage() {
@@ -37,7 +46,7 @@ export default async function TestsPage() {
           title="No placement tests yet"
           description={
             isSuperAdmin
-              ? "Create a test to start assigning it to candidates, or import the Language Hub placement test."
+              ? "Create a test to start assigning it to candidates, or import a test."
               : "No placement test has been created yet. A Super Admin needs to create one."
           }
           action={
@@ -50,36 +59,55 @@ export default async function TestsPage() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Questions</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tests.map((test) => (
-                <TableRow key={test.id}>
-                  <TableCell className="whitespace-normal">
-                    <Link href={`/admin/tests/${test.id}`} className="font-medium text-foreground hover:underline">
-                      {test.title}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <TestStatusBadge status={test.status} />
-                  </TableCell>
-                  <TableCell>{formatDurationSeconds(test.durationSeconds)}</TableCell>
-                  <TableCell>{test.totalQuestionCount}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(test.createdAt)}</TableCell>
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Questions</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead aria-hidden="true" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {tests.map((test) => (
+                  <TableRow key={test.id}>
+                    <TableCell className="whitespace-normal">
+                      <Link href={`/admin/tests/${test.id}`} className="font-medium text-foreground hover:underline">
+                        {test.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <TestStatusBadge status={test.status} />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDurationSeconds(test.durationSeconds)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{test.totalQuestionCount}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(test.createdAt)}</TableCell>
+                    <TableRowChevronCell />
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <ul className="flex flex-col gap-2 md:hidden">
+            {tests.map((test) => (
+              <li key={test.id}>
+                <MobileRecordCard
+                  href={`/admin/tests/${test.id}`}
+                  title={test.title}
+                  subtitle={`${formatDurationSeconds(test.durationSeconds)} · ${test.totalQuestionCount} questions · ${formatDate(test.createdAt)}`}
+                  trailing={<TestStatusBadge status={test.status} />}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

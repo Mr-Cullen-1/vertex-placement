@@ -15,7 +15,7 @@ interface EmptyStateProps {
  * substitute for real content. */
 export function EmptyState({ title, description, action, icon: Icon = InboxIcon }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl bg-muted/30 px-6 py-10 text-center ring-1 ring-border/60">
       <span className="flex size-11 items-center justify-center rounded-full bg-primary-soft text-primary">
         <Icon className="size-5" />
       </span>

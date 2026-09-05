@@ -103,7 +103,7 @@ export function ImportLanguageHubDialog() {
     >
       <DialogTrigger render={<Button variant="outline" size="sm" />}>
         <DownloadIcon />
-        Import Language Hub test
+        Import
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>

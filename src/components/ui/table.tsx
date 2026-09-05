@@ -1,13 +1,24 @@
 import * as React from "react"
+import { ChevronRightIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/** The shell every admin list previously repeated by hand
+ * (`overflow-x-auto rounded-xl ring-1 ring-foreground/10`) now lives on
+ * the primitive itself — one data-surface shell, not a per-page wrapper.
+ * See /docs/DESIGN_SYSTEM.md "Tables". */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto overflow-y-hidden rounded-xl bg-card ring-1 ring-foreground/10"
+    >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full caption-bottom text-sm [&_tr>:first-child]:pl-4 [&_tr>:last-child]:pr-4",
+          className
+        )}
         {...props}
       />
     </div>
@@ -18,7 +29,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b [&_tr]:border-border", className)}
+      className={cn("bg-muted/50 [&_tr]:border-b [&_tr]:border-border", className)}
       {...props}
     />
   )
@@ -49,11 +60,26 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-border transition-colors duration-150 hover:bg-muted/40 data-[state=selected]:bg-muted",
+        "group/row border-b border-border transition-colors duration-150 last:border-0 hover:bg-muted/40 data-[state=selected]:bg-muted",
         className
       )}
       {...props}
     />
+  )
+}
+
+/**
+ * Trailing "this row is clickable" affordance — a chevron that's
+ * invisible at rest and fades in on row hover, reusing the exact
+ * treatment the Dashboard's Recent Activity list introduced in Phase
+ * 2G. Give it a header-less final `<TableHead />` counterpart so the
+ * column count still lines up.
+ */
+function TableRowChevronCell({ className }: { className?: string }) {
+  return (
+    <TableCell className={cn("w-8 pl-0", className)}>
+      <ChevronRightIcon className="size-4 text-muted-foreground/0 transition-colors duration-150 group-hover/row:text-muted-foreground" />
+    </TableCell>
   )
 }
 
@@ -97,6 +123,7 @@ export {
   TableFooter,
   TableHead,
   TableRow,
+  TableRowChevronCell,
   TableCell,
   TableCaption,
 }

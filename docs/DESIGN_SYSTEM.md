@@ -1,9 +1,55 @@
 # Design System — Vertex Placement
 
-Authoritative as of Phase 2G (product-wide premium UI/UX redesign). Phase 0's
+Authoritative as of Phase 2G.1 (premium EdTech admin refinement). Phase 0's
 original direction (below, in "History") still holds; this document now also
-records what the redesign actually shipped so it can't drift out of sync with
-the real tokens/primitives in `src/`.
+records what Phase 2G and 2G.1 actually shipped so it can't drift out of sync
+with the real tokens/primitives in `src/`.
+
+## Phase 2G.1 — what changed
+
+Phase 2G unified the visual language product-wide; a real screen-by-screen
+pass afterward found the admin console still read as "clean SaaS template"
+rather than a premium EdTech product — plain bordered cards, spreadsheet-like
+lists, a generic login, and a dashboard that didn't communicate system state
+at a glance. Phase 2G.1 is a **refinement** of the same system (no new
+palette, no new tokens beyond what's noted below), focused entirely on
+hierarchy, surface treatment, and the data-list/table language:
+
+- **`CardHeading`** (`src/components/ui/card.tsx`) — the icon-chip + title
+  (+ description) + action header now used by every section card
+  (Test information, Assignments, Placement bands, Candidate, Test,
+  Invitation, Attempts, Score, Placement guidance, Topic performance,
+  Difficulty progression, Question analysis). One primitive instead of a
+  bare `<CardHeader><CardTitle>` repeated on every page — see "Cards" below.
+- **`Card` `variant="tinted"`** — a restrained violet-wash surface (`color-mix`
+  against `--card`/`--primary`, never a new token) for a card that represents
+  configuration or a delivery/access lifecycle rather than plain informational
+  content: Placement bands (Test detail) and Invitation (Assignment detail).
+- **Table shell moved into the primitive** (`src/components/ui/table.tsx`) —
+  every list previously repeated `overflow-x-auto rounded-xl ring-1
+  ring-foreground/10` by hand; it's now built into `<Table>` itself, plus a
+  `bg-muted/50` header surface and a `TableRowChevronCell` (the same
+  fade-in-on-hover chevron the Dashboard's Recent Activity list introduced in
+  Phase 2G, now shared by every list table).
+- **`MobileRecordCard`** (`src/components/admin/mobile-record-card.tsx`) — the
+  stacked-record surface Tests/Candidates/Assignments render below their
+  table breakpoint, so narrow viewports get real cards (identity, quiet
+  secondary line, scannable meta chips, chevron) instead of a horizontally
+  squeezed table. See "Data-list / table system" below.
+- **`MetricCard`** gained `tone` (primary/success/warning/info — a
+  differentiation cue between tiles, still semantic) and an optional `hint`
+  for a real, already-derived qualifier (e.g. "12 assigned a test") — never a
+  fabricated delta.
+- **`EmptyState`** dropped the dashed border for a quieter tinted surface and
+  shrank its vertical padding — intentional, not a large empty box.
+- Admin login (`src/app/admin/login/page.tsx`) redesigned: an "Admin
+  workspace" eyebrow pill, a second ambient glow, icon-affordance email/lock
+  fields, and a footer line — still a small, focused authentication surface,
+  not a marketing page.
+- The Tests page's import action is labeled **"Import"** (was "Import
+  Language Hub test") — it's the future general import entry point; the
+  dialog's own content still names the Language Hub source explicitly. No
+  import architecture or business logic changed.
 
 ## Visual philosophy
 
@@ -93,10 +139,48 @@ purely informational cards.
 
 ## Cards
 
-Variants in practical use: standard (Card default), metric
-(`MetricCard`), result (student/admin result cards), and the student
-answer-option "card" (a large, fully-clickable `role="radio"` button,
-unchanged anatomy from Phase 0 — still never a small radio + label).
+Variants: `default`, `interactive` (hover lift/border — only when the
+card itself is a click target), and `tinted` (Phase 2G.1 — a restrained
+violet-wash surface via `color-mix`, for a configuration or
+delivery/lifecycle card, never a purely informational one). Practical
+uses beyond a plain section card: metric (`MetricCard`), result
+(student/admin result cards), and the student answer-option "card" (a
+large, fully-clickable `role="radio"` button, unchanged anatomy from
+Phase 0 — still never a small radio + label).
+
+Every section card's header should be `CardHeading` (icon chip + title
++ optional description/action, with its own bottom rule) rather than a
+bare `<CardHeader><CardTitle>` — introduced in Phase 2G.1 specifically
+so "Test information," "Candidate," "Invitation," "Score," etc. all
+read as labeled product surfaces with one shared anatomy.
+
+## Data-list / table system
+
+Introduced in Phase 2G.1 to replace the "spreadsheet" feel of Tests,
+Candidates, and Assignments:
+
+- `<Table>` itself now carries the rounded/ring/surface shell — pages
+  no longer wrap it in a repeated `overflow-x-auto rounded-xl ring-1
+  ring-foreground/10` div.
+- `TableRowChevronCell` — a trailing, header-less column whose chevron
+  is invisible at rest and fades in on row hover (`group/row`), reusing
+  the exact affordance the Dashboard's Recent Activity list established
+  in Phase 2G. Add it as the last `<TableHead aria-hidden="true" />` /
+  `<TableRowChevronCell />` pair on any clickable list.
+- Column hierarchy: the row's primary identity (a candidate's name, a
+  test's title) is `font-semibold`/`font-medium` and a `Link`; secondary
+  context (contact details, a test title on the Assignments list) is
+  `text-muted-foreground`; a scannable result/score value keeps
+  `tabular-nums`-style weight (`font-medium text-foreground`) with its
+  percentage qualifier muted.
+- **Mobile**: below each list's own breakpoint (`md:` for Tests/
+  Candidates, `lg:` for the wider Assignments table), the `<Table>` is
+  replaced — not squeezed — by a `<ul>` of `MobileRecordCard`
+  (`src/components/admin/mobile-record-card.tsx`): identity, a quiet
+  subtitle, wrapped meta chips (status/score badges), and a trailing
+  chevron. One shared card primitive so all three lists render the same
+  "record" language on narrow viewports instead of three hand-rolled
+  layouts.
 
 ## Buttons
 
@@ -119,13 +203,15 @@ every form's local field-rendering logic.
 
 ## Tables
 
-`src/components/ui/table.tsx`: header cells are now `uppercase
-tracking-wide font-semibold` (small caps read as more "authored," less
-like a raw data dump); row padding grew from `py-2.5` to `py-3`; row
-hover softened to `bg-muted/40` with a 150ms transition. Every admin
-list still wraps its `<Table>` in the same `overflow-x-auto rounded-xl
-ring-1 ring-foreground/10` container — horizontal scroll on narrow
-viewports, never column compression that makes data illegible.
+`src/components/ui/table.tsx`: header cells are `uppercase
+tracking-wide font-semibold` on a `bg-muted/50` header surface (small
+caps read as more "authored," less like a raw data dump); row padding
+is `py-3`; row hover softened to `bg-muted/40` with a 150ms transition.
+The rounded/ring/surface shell (`rounded-xl bg-card ring-1
+ring-foreground/10`) lives on `<Table>` itself as of Phase 2G.1 — see
+"Data-list / table system" above for the shell, the hover-chevron
+affordance, and the mobile stacked-card fallback that replaced
+horizontal squeezing on the three record lists.
 
 ## Status badges
 

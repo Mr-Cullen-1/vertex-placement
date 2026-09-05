@@ -7,11 +7,19 @@ import { CandidateNotFoundError } from "@/server/errors";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
-import { SendIcon } from "lucide-react";
+import { IdCardIcon, SendIcon } from "lucide-react";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableRowChevronCell,
+} from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 
 export default async function CandidateDetailPage({
@@ -48,9 +56,7 @@ export default async function CandidateDetailPage({
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Candidate information</CardTitle>
-        </CardHeader>
+        <CardHeading icon={IdCardIcon} title="Candidate information" />
         <CardContent>
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat label="Phone" value={candidate.phoneNumber} />
@@ -62,9 +68,7 @@ export default async function CandidateDetailPage({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Assignments</CardTitle>
-        </CardHeader>
+        <CardHeading icon={SendIcon} title="Assignments" description={`${assignments.length} total`} />
         <CardContent>
           {assignments.length === 0 ? (
             <EmptyState
@@ -79,6 +83,7 @@ export default async function CandidateDetailPage({
                   <TableHead>Test</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead aria-hidden="true" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -98,6 +103,7 @@ export default async function CandidateDetailPage({
                     <TableCell className="text-muted-foreground">
                       {formatDate(assignment.createdAt)}
                     </TableCell>
+                    <TableRowChevronCell />
                   </TableRow>
                 ))}
               </TableBody>
