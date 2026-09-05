@@ -117,9 +117,9 @@ export default async function CandidateDetailPage({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg bg-muted/40 p-3">
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted/40 p-3">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium text-foreground">{value}</dd>
+      <dd className="text-sm font-medium break-words text-foreground">{value}</dd>
     </div>
   );
 }
