@@ -4,7 +4,7 @@ import { assertPermission, hasPermission } from "@/server/rbac";
 import { listCandidates } from "@/server/services/candidate.service";
 import { listAssignments } from "@/server/services/assignment.service";
 import { getAdminResultDetail } from "@/server/services/attempt.service";
-import { formatDateTime } from "@/lib/format";
+import { candidateDisplayName, formatDateTime } from "@/lib/format";
 
 /**
  * Excel export — implements the workbook shape `src/domain/export/types.ts`
@@ -15,9 +15,12 @@ import { formatDateTime } from "@/lib/format";
  * existing `export:standard`/`export:full` permissions (unchanged RBAC).
  *
  * One workbook, not one file per candidate. Every number in it comes from
- * `getAdminResultDetail` (Phase 2E) — score and progression are never
+ * `getAdminResultDetail` (Phase 2E) — score and placement are never
  * recomputed here, only formatted into rows. No `tokenHash`, no session/
- * auth internals, no invitation plaintext ever enters a cell.
+ * auth internals, no invitation plaintext ever enters a cell. The
+ * question-position-derived progression signal is deliberately excluded
+ * (admin-diagnostic-only, never shown as if authoritative outside the
+ * Result Detail page — see the P0 scoring-semantics fix).
  */
 
 const COMPLETED_ATTEMPT_STATUSES = new Set(["SUBMITTED", "AUTO_SUBMITTED"]);
@@ -49,7 +52,7 @@ export async function exportPlacementWorkbook(actor: Actor): Promise<ExportedWor
     { header: "Score", key: "score", width: 10 },
     { header: "Total", key: "total", width: 10 },
     { header: "Percentage", key: "percentage", width: 12 },
-    { header: "Progression", key: "progression", width: 20 },
+    { header: "Placement band", key: "level", width: 20 },
     { header: "Submission type", key: "submissionType", width: 18 },
     { header: "Started", key: "startedAt", width: 20 },
     { header: "Completed", key: "completedAt", width: 20 },
@@ -100,7 +103,13 @@ export async function exportPlacementWorkbook(actor: Actor): Promise<ExportedWor
       score: detail.rawScore,
       total: detail.totalQuestions,
       percentage: Math.round(detail.percentage * 100) / 100,
-      progression: detail.progression.progressionBand?.label ?? "Below Beginner",
+      // The OFFICIAL placement (configured PlacementBand, matched on
+      // total correct score) — never the question-position-derived
+      // progression signal, which is admin-diagnostic only and stays out
+      // of the export entirely to avoid it being read as authoritative
+      // once outside the app's surrounding context (see P0 fix,
+      // /docs/PRODUCT_RULES.md "Scoring & placement").
+      level: detail.level ?? "—",
       submissionType: detail.status === "AUTO_SUBMITTED" ? "Automatic (time limit)" : "Manual",
       startedAt: formatDateTime(detail.startedAt),
       completedAt: formatDateTime(detail.completedAt),
@@ -159,13 +168,25 @@ function buildCandidatesSheet(
 
   for (const c of candidates) {
     const own = assignments.filter((a) => a.candidateId === c.id);
-    const base = {
-      name: `${c.firstName} ${c.lastName}`,
-      phone: c.phoneNumber,
-      age: c.age,
-      email: c.email ?? "",
-      createdAt: formatDateTime(c.createdAt),
-    };
+    // A candidate an Admin created for a "new candidate" assignment has no
+    // details yet until the student opens their invitation — never
+    // export the empty-string/zero placeholders as if they were real
+    // (see /docs/PRODUCT_RULES.md "Candidate ownership").
+    const base = c.profileCompletedAt
+      ? {
+          name: candidateDisplayName(c),
+          phone: c.phoneNumber,
+          age: c.age,
+          email: c.email ?? "",
+          createdAt: formatDateTime(c.createdAt),
+        }
+      : {
+          name: candidateDisplayName(c),
+          phone: "—",
+          age: "—",
+          email: "—",
+          createdAt: formatDateTime(c.createdAt),
+        };
     if (own.length === 0) {
       sheet.addRow({ ...base, assignment: "—" });
     } else {

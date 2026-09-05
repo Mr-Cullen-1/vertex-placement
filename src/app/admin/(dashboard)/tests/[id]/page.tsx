@@ -26,7 +26,7 @@ import {
   TableRow,
   TableRowChevronCell,
 } from "@/components/ui/table";
-import { formatDate, formatDurationSeconds } from "@/lib/format";
+import { candidateDisplayName, formatDate, formatDurationSeconds } from "@/lib/format";
 
 export default async function TestDetailPage({
   params,
@@ -135,9 +135,13 @@ export default async function TestDetailPage({
                         <TableCell>
                           <Link
                             href={`/admin/assignments/${assignment.id}`}
-                            className="font-medium text-foreground hover:underline"
+                            className={
+                              assignment.candidate.profileCompletedAt
+                                ? "font-medium text-foreground hover:underline"
+                                : "font-medium text-muted-foreground italic hover:underline"
+                            }
                           >
-                            {assignment.candidate.firstName} {assignment.candidate.lastName}
+                            {candidateDisplayName(assignment.candidate)}
                           </Link>
                         </TableCell>
                         <TableCell>

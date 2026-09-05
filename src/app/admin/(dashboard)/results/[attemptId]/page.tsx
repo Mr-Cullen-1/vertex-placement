@@ -138,12 +138,13 @@ export default async function ResultDetailPage({
 
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
-            <CardHeading
-              icon={CompassIcon}
-              title="Question progression guidance"
-              description="Not an official placement — teacher discretion applies"
-            />
+            <CardHeading icon={CompassIcon} title="Question progression evidence" description="Diagnostic only" />
             <CardContent className="flex flex-col gap-4">
+              <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                This does not determine placement. Official placement is the <strong>Placement
+                band</strong> above, based on total correct score — never on which specific
+                question was answered correctly.
+              </p>
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-muted-foreground">Highest correctly answered question:</span>
                 <span className="font-medium text-foreground">

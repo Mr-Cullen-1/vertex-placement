@@ -17,7 +17,8 @@ import {
   TableRow,
   TableRowChevronCell,
 } from "@/components/ui/table";
-import { formatDate, formatPercentage } from "@/lib/format";
+import { candidateDisplayName, formatDate, formatPercentage } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { AssignmentDisplayStatus } from "@/domain/placement/assignment-status";
 
 export interface CandidateRow {
@@ -27,6 +28,7 @@ export interface CandidateRow {
   phoneNumber: string;
   age: number;
   email: string | null;
+  profileCompletedAt: string | null;
   createdAt: string;
   assignmentCount: number;
   completedCount: number;
@@ -92,19 +94,26 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
                     <TableCell>
                       <Link
                         href={`/admin/candidates/${c.id}`}
-                        className="font-semibold text-foreground hover:underline"
+                        className={cn(
+                          "font-semibold hover:underline",
+                          c.profileCompletedAt ? "text-foreground" : "text-muted-foreground italic"
+                        )}
                       >
-                        {c.firstName} {c.lastName}
+                        {candidateDisplayName(c)}
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      <div className="flex flex-col">
-                        <span>{c.phoneNumber}</span>
-                        <span className="text-xs">
-                          Age {c.age}
-                          {c.email ? ` · ${c.email}` : ""}
-                        </span>
-                      </div>
+                      {c.profileCompletedAt ? (
+                        <div className="flex flex-col">
+                          <span>{c.phoneNumber}</span>
+                          <span className="text-xs">
+                            Age {c.age}
+                            {c.email ? ` · ${c.email}` : ""}
+                          </span>
+                        </div>
+                      ) : (
+                        <span>—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {c.assignmentCount === 0 ? (
@@ -147,8 +156,12 @@ export function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) 
               <li key={c.id}>
                 <MobileRecordCard
                   href={`/admin/candidates/${c.id}`}
-                  title={`${c.firstName} ${c.lastName}`}
-                  subtitle={`${c.phoneNumber} · Age ${c.age}${c.email ? ` · ${c.email}` : ""}`}
+                  title={candidateDisplayName(c)}
+                  subtitle={
+                    c.profileCompletedAt
+                      ? `${c.phoneNumber} · Age ${c.age}${c.email ? ` · ${c.email}` : ""}`
+                      : undefined
+                  }
                   meta={
                     <>
                       {c.latestAssignmentStatus && <AssignmentStatusBadge status={c.latestAssignmentStatus} />}

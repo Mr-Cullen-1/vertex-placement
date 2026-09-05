@@ -1,6 +1,4 @@
 import type { StudentResultSummary } from "@/domain/results/types";
-import { PROGRESSION_BANDS } from "@/domain/placement/progression";
-import { ProgressionTrack } from "@/components/shared/progression-track";
 import { VertexWordmark } from "./vertex-mark";
 
 /**
@@ -9,13 +7,21 @@ import { VertexWordmark } from "./vertex-mark";
  * (see /docs/PRODUCT_RULES.md "Results"). Renders exactly what the
  * server returned; never recomputes or infers anything about the score.
  *
- * Placement guidance (`result.progression`) is presented as guidance,
- * never certification — see /docs/PHASE_2E.md "Critical terminology".
- * It is a SEPARATE concept from `result.level` (the existing, optional,
- * admin-configured percentage-based PlacementBand, still shown above if
- * set) — the two may both be present, absent, or disagree, and that's
- * fine: one is an admin-defined score band, the other is descriptive
- * question-progression guidance derived straight from the source.
+ * OFFICIAL PLACEMENT (`result.level`) is the only placement signal shown
+ * here — it is the admin-configured, percentage-based `PlacementBand`
+ * match against the candidate's TOTAL correct score, never influenced by
+ * which specific question was answered correctly. `result.progression`
+ * (question-order-derived "highest correctly-answered question")
+ * previously also rendered here as "Recommended progression" — removed
+ * (P0 fix) after it produced results like "4/70 correct" showing
+ * "Advanced" purely because a single late, harder question happened to
+ * be answered correctly. That signal is real and still computed (its
+ * objective answered/correct/incorrect/unanswered counts are still shown
+ * below), but the question-position-derived band label is now admin-only
+ * diagnostic — see the Result Detail page ("Question progression
+ * evidence") and /docs/PRODUCT_RULES.md "Scoring & placement". Never
+ * reintroduce a placement-band-like label here derived from anything
+ * other than `result.level`.
  */
 export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const minutes = Math.floor(result.completionSeconds / 60);
@@ -53,30 +59,8 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-accent/30 px-5 py-5 text-center">
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              Recommended progression
-            </p>
-            <p className="text-xl font-semibold text-foreground">
-              {progression.progressionBand ? progression.progressionBand.label : "Below Beginner"}
-            </p>
-          </div>
-          <ProgressionTrack
-            bands={PROGRESSION_BANDS}
-            currentOrder={progression.progressionBand?.order ?? null}
-            compact
-          />
-          <p className="text-sm text-muted-foreground">
-            {progression.progressionBand
-              ? `Your result indicates that the ${progression.progressionBand.label} progression may be a suitable starting point.`
-              : "We recommend a teacher review to confirm a suitable starting point."}
-          </p>
-        </div>
-
         <p className="text-center text-xs text-muted-foreground">
-          Placement is based on your performance across questions of increasing difficulty. Your
-          teacher or education center can use this result to confirm your starting level.
+          Your teacher or education center can use this result to confirm your starting level.
         </p>
 
         <dl className="grid grid-cols-2 gap-3 text-sm">

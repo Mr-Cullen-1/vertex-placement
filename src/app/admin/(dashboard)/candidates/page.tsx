@@ -41,6 +41,7 @@ export default async function CandidatesPage() {
       phoneNumber: c.phoneNumber,
       age: c.age,
       email: c.email,
+      profileCompletedAt: c.profileCompletedAt?.toISOString() ?? null,
       createdAt: c.createdAt.toISOString(),
       assignmentCount: own.length,
       completedCount: own.filter((a) => displayStatusForAssignment(a) === "COMPLETED").length,

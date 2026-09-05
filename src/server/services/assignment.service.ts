@@ -29,10 +29,21 @@ const createAssignmentSchema = z
     testId: z.string().min(1),
     candidateId: z.string().min(1).optional(),
     candidate: candidateInputSchema.optional(),
+    // Phase 2J: an Admin creating an assignment for a brand-new candidate
+    // no longer supplies that candidate's personal details up front — the
+    // candidate provides them via the invitation token, the first time
+    // they open it (see /docs/PRODUCT_RULES.md "Candidate ownership").
+    // `candidate` (full details) is kept, not removed, for any existing
+    // caller that still wants to create a fully-specified candidate in
+    // one step; the admin UI (NewAssignmentDialog) now only ever sends
+    // `newCandidate: true`.
+    newCandidate: z.literal(true).optional(),
   })
-  .refine((input) => Boolean(input.candidateId) !== Boolean(input.candidate), {
-    message: "Provide exactly one of candidateId or candidate.",
-  });
+  .refine(
+    (input) => [Boolean(input.candidateId), Boolean(input.candidate), Boolean(input.newCandidate)]
+      .filter(Boolean).length === 1,
+    { message: "Provide exactly one of candidateId, candidate, or newCandidate." }
+  );
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;
 
 /** A test can only be assigned once it's PUBLISHED — a DRAFT test has no
@@ -51,7 +62,18 @@ export async function createAssignment(actor: Actor, input: CreateAssignmentInpu
       const candidate = await tx.candidate.findUnique({ where: { id: candidateId } });
       if (!candidate) throw new CandidateNotFoundError();
     } else if (data.candidate) {
-      const candidate = await tx.candidate.create({ data: data.candidate });
+      const candidate = await tx.candidate.create({
+        data: { ...data.candidate, profileCompletedAt: new Date() },
+      });
+      candidateId = candidate.id;
+    } else if (data.newCandidate) {
+      // Placeholder only — never a fake display name. Every consumer
+      // must render this candidate via `candidateDisplayName`
+      // (src/lib/format.ts), which checks `profileCompletedAt` (left
+      // null here) rather than trusting firstName/lastName directly.
+      const candidate = await tx.candidate.create({
+        data: { firstName: "", lastName: "", phoneNumber: "", age: 0, email: null, profileCompletedAt: null },
+      });
       candidateId = candidate.id;
     }
 

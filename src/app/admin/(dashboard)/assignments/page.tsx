@@ -21,7 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate, formatPercentage } from "@/lib/format";
+import { candidateDisplayName, formatDate, formatPercentage } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export default async function AssignmentsPage({
   searchParams,
@@ -38,7 +39,9 @@ export default async function AssignmentsPage({
 
   const candidateOptions = candidates.map((c) => ({
     id: c.id,
-    label: `${c.firstName} ${c.lastName} — ${c.phoneNumber}`,
+    label: c.profileCompletedAt
+      ? `${c.firstName} ${c.lastName} — ${c.phoneNumber}`
+      : `${candidateDisplayName(c)} (added ${formatDate(c.createdAt)})`,
   }));
   const publishedTests = tests
     .filter((t) => t.status === "PUBLISHED")
@@ -93,7 +96,7 @@ export default async function AssignmentsPage({
                   <TableHead>Status</TableHead>
                   <TableHead>Invitation</TableHead>
                   <TableHead>Score</TableHead>
-                  <TableHead>Progression</TableHead>
+                  <TableHead>Level</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -109,9 +112,14 @@ export default async function AssignmentsPage({
                       <TableCell>
                         <Link
                           href={`/admin/assignments/${assignment.id}`}
-                          className="font-semibold text-foreground hover:underline"
+                          className={cn(
+                            "font-semibold hover:underline",
+                            assignment.candidate.profileCompletedAt
+                              ? "text-foreground"
+                              : "text-muted-foreground italic"
+                          )}
                         >
-                          {assignment.candidate.firstName} {assignment.candidate.lastName}
+                          {candidateDisplayName(assignment.candidate)}
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{assignment.test.title}</TableCell>
@@ -138,7 +146,7 @@ export default async function AssignmentsPage({
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {result ? result.progression.progressionBand?.label ?? "Below Beginner" : "—"}
+                        {result ? result.level ?? "—" : "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{formatDate(assignment.createdAt)}</TableCell>
                       <TableCell className="text-right">
@@ -180,7 +188,7 @@ export default async function AssignmentsPage({
                         ? `/admin/results/${result.attemptId}`
                         : `/admin/assignments/${assignment.id}`
                     }
-                    title={`${assignment.candidate.firstName} ${assignment.candidate.lastName}`}
+                    title={candidateDisplayName(assignment.candidate)}
                     subtitle={assignment.test.title}
                     meta={
                       <>

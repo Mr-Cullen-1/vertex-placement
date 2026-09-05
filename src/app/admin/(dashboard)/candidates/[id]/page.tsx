@@ -20,7 +20,7 @@ import {
   TableRow,
   TableRowChevronCell,
 } from "@/components/ui/table";
-import { formatDate } from "@/lib/format";
+import { candidateDisplayName, formatDate } from "@/lib/format";
 
 export default async function CandidateDetailPage({
   params,
@@ -40,12 +40,13 @@ export default async function CandidateDetailPage({
 
   const allAssignments = await listAssignments(actor);
   const assignments = allAssignments.filter((a) => a.candidateId === id);
+  const isPending = !candidate.profileCompletedAt;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
         eyebrow="Candidate"
-        title={`${candidate.firstName} ${candidate.lastName}`}
+        title={candidateDisplayName(candidate)}
         backHref="/admin/candidates"
         backLabel="Candidates"
         action={
@@ -58,12 +59,19 @@ export default async function CandidateDetailPage({
       <Card>
         <CardHeading icon={IdCardIcon} title="Candidate information" />
         <CardContent>
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Stat label="Phone" value={candidate.phoneNumber} />
-            <Stat label="Age" value={String(candidate.age)} />
-            <Stat label="Email" value={candidate.email ?? "—"} />
-            <Stat label="Added" value={formatDate(candidate.createdAt)} />
-          </dl>
+          {isPending ? (
+            <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+              Awaiting student details — this candidate hasn&apos;t opened their invitation and
+              entered their information yet.
+            </p>
+          ) : (
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Stat label="Phone" value={candidate.phoneNumber} />
+              <Stat label="Age" value={String(candidate.age)} />
+              <Stat label="Email" value={candidate.email ?? "—"} />
+              <Stat label="Added" value={formatDate(candidate.createdAt)} />
+            </dl>
+          )}
         </CardContent>
       </Card>
 

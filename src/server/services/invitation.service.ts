@@ -178,15 +178,21 @@ export interface CandidateInfo {
   email: string | null;
 }
 
-/** Phase 2A addition: the candidate row behind an assignment is created
- * by an Admin (see /docs/DATABASE.md), but the student confirms/corrects
- * their own details before starting — e.g. the admin may only have had a
- * phone number on hand, or a name was mistyped. Token-authorized, same
- * security model as every other student-facing operation: the token
- * proves the caller may act on THIS assignment's candidate, nothing more
- * (never an arbitrary candidateId from the client). Allowed any time the
- * invitation is still ACTIVE — see /docs/PHASE_2A.md ("Candidate
- * confirmation step") for why this doesn't also gate on attempt state. */
+/** The candidate row behind an assignment is created by an Admin (see
+ * /docs/DATABASE.md), but as of Phase 2J an Admin creating one for a new
+ * candidate no longer supplies personal details up front — this is where
+ * the candidate provides them for the first time (`profileCompletedAt`
+ * was null), completing that placeholder row in place. It's also still
+ * used for an existing/already-complete candidate correcting a mistake,
+ * unchanged from Phase 2A — either way this UPDATES the one candidate row
+ * already linked to the assignment; it never creates a second one, and
+ * PlacementFlow only routes an ALREADY-complete candidate here at all if
+ * they choose to revisit it. Token-authorized, same security model as
+ * every other student-facing operation: the token proves the caller may
+ * act on THIS assignment's candidate, nothing more (never an arbitrary
+ * candidateId from the client). Allowed any time the invitation is still
+ * ACTIVE — see /docs/PHASE_2A.md ("Candidate confirmation step") for why
+ * this doesn't also gate on attempt state. */
 export async function updateCandidateForToken(
   plaintextToken: string,
   input: z.infer<typeof candidateInputSchema>
@@ -202,6 +208,12 @@ export async function updateCandidateForToken(
       phoneNumber: data.phoneNumber,
       age: data.age,
       email: data.email ?? null,
+      // Marks the candidate's own profile complete — idempotent (safe to
+      // call again on an already-complete candidate, e.g. an existing
+      // candidate editing their details before starting) and never
+      // creates a second candidate row; it always updates the one
+      // already linked to this assignment (see the function doc above).
+      profileCompletedAt: new Date(),
     },
   });
 

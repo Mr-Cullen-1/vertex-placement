@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { MetricCard } from "@/components/admin/metric-card";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
-import { formatDate } from "@/lib/format";
+import { candidateDisplayName, formatDate } from "@/lib/format";
 
 /** Operational overview — every number here is a live count from the
  * database, never mock analytics (see /docs/PHASE_2B.md "Dashboard" and
@@ -118,8 +118,14 @@ export default async function AdminDashboardPage() {
                     className="group flex items-center justify-between gap-3 rounded-lg py-2.5 pr-1 pl-2 -mx-2 transition-colors first:pt-2.5 last:pb-2.5 hover:bg-muted/50"
                   >
                     <div className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm font-medium text-foreground">
-                        {assignment.candidate.firstName} {assignment.candidate.lastName}
+                      <span
+                        className={
+                          assignment.candidate.profileCompletedAt
+                            ? "truncate text-sm font-medium text-foreground"
+                            : "truncate text-sm font-medium text-muted-foreground italic"
+                        }
+                      >
+                        {candidateDisplayName(assignment.candidate)}
                       </span>
                       <span className="truncate text-xs text-muted-foreground">
                         {assignment.test.title}

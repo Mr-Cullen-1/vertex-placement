@@ -21,7 +21,14 @@ interface CandidateLike {
 }
 
 type FlowState =
-  | { phase: "welcome"; testTitle: string; durationSeconds: number; totalQuestions: number; candidate: CandidateLike }
+  | {
+      phase: "welcome";
+      testTitle: string;
+      durationSeconds: number;
+      totalQuestions: number;
+      candidate: CandidateLike;
+      candidateProfileComplete: boolean;
+    }
   | { phase: "candidate-form"; testTitle: string; durationSeconds: number; totalQuestions: number; candidate: CandidateLike }
   | {
       phase: "instructions";
@@ -46,6 +53,7 @@ function deriveInitialState(initial: ActionResult<PlacementStatus>): FlowState {
         durationSeconds: initial.data.durationSeconds,
         totalQuestions: initial.data.totalQuestions,
         candidate: initial.data.candidate,
+        candidateProfileComplete: initial.data.candidateProfileComplete,
       };
     case "IN_PROGRESS":
       return {
@@ -83,7 +91,20 @@ export function PlacementFlow({
           testTitle={state.testTitle}
           durationMinutes={Math.round(state.durationSeconds / 60)}
           totalQuestions={state.totalQuestions}
-          onContinue={() => setState({ ...state, phase: "candidate-form" })}
+          onContinue={() => {
+            const { testTitle, durationSeconds, totalQuestions } = state;
+            // Phase 2J: a candidate who has already provided their own
+            // details (or was created with full details up front) skips
+            // straight to instructions — never a duplicate "confirm your
+            // details" step. Only a candidate whose profile is still
+            // pending sees the details form (see /docs/PRODUCT_RULES.md
+            // "Candidate ownership").
+            if (state.candidateProfileComplete) {
+              setState({ phase: "instructions", testTitle, durationSeconds, totalQuestions, starting: false, error: null });
+            } else {
+              setState({ phase: "candidate-form", testTitle, durationSeconds, totalQuestions, candidate: state.candidate });
+            }
+          }}
         />
       );
 

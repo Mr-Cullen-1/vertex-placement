@@ -10,7 +10,7 @@ import { displayStatusForAssignment } from "@/domain/placement/assignment-status
 import { InvitationPanel, type InvitationSummary } from "@/components/admin/assignments/invitation-panel";
 import { BarChart3Icon, ClipboardListIcon, IdCardIcon, LinkIcon, TrophyIcon } from "lucide-react";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
-import { formatDateTime, formatDurationSeconds } from "@/lib/format";
+import { candidateDisplayName, formatDateTime, formatDurationSeconds } from "@/lib/format";
 
 const COMPLETED_ATTEMPT_STATUSES = new Set(["SUBMITTED", "AUTO_SUBMITTED"]);
 
@@ -43,7 +43,7 @@ export default async function AssignmentDetailPage({
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
         eyebrow="Assignment"
-        title={`${assignment.candidate.firstName} ${assignment.candidate.lastName}`}
+        title={candidateDisplayName(assignment.candidate)}
         description={assignment.test.title}
         backHref="/admin/assignments"
         backLabel="Assignments"
@@ -54,13 +54,24 @@ export default async function AssignmentDetailPage({
         <Card size="sm">
           <CardHeading icon={IdCardIcon} title="Candidate" />
           <CardContent className="flex flex-col gap-1 text-sm">
-            <Link href={`/admin/candidates/${assignment.candidate.id}`} className="font-medium text-foreground hover:underline">
-              {assignment.candidate.firstName} {assignment.candidate.lastName}
+            <Link
+              href={`/admin/candidates/${assignment.candidate.id}`}
+              className={
+                assignment.candidate.profileCompletedAt
+                  ? "font-medium text-foreground hover:underline"
+                  : "font-medium text-muted-foreground italic hover:underline"
+              }
+            >
+              {candidateDisplayName(assignment.candidate)}
             </Link>
-            <span className="text-muted-foreground">{assignment.candidate.phoneNumber}</span>
-            <span className="text-muted-foreground">Age {assignment.candidate.age}</span>
-            {assignment.candidate.email && (
-              <span className="text-muted-foreground">{assignment.candidate.email}</span>
+            {assignment.candidate.profileCompletedAt && (
+              <>
+                <span className="text-muted-foreground">{assignment.candidate.phoneNumber}</span>
+                <span className="text-muted-foreground">Age {assignment.candidate.age}</span>
+                {assignment.candidate.email && (
+                  <span className="text-muted-foreground">{assignment.candidate.email}</span>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

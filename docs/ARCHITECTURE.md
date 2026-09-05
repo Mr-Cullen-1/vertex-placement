@@ -281,13 +281,44 @@ models):
   `QuestionMetadata` (band/topic tags) crossed with correctness, snapshotted
   as JSON on `PlacementResult` at scoring time so historical results don't
   shift if metadata is edited later.
-- **Placement band** (the level label shown to everyone) — a *lookup*
-  against `PlacementBand` rows that a Super Admin configures per test
-  (`minPercentage`/`maxPercentage`/`label`). Nothing in the codebase
-  hard-codes CEFR boundaries or a specific level name — the source material
-  doesn't define official ones, so that mapping is business configuration,
-  not code. A test with no configured bands simply has no
-  `placementBandId` on its results until one is added.
+- **Placement band** (the OFFICIAL level label shown to everyone) — a
+  *lookup* against `PlacementBand` rows that a Super Admin configures per
+  test (`minPercentage`/`maxPercentage`/`label`), matched against
+  `rawScore.percentage` (`matchPlacementBand`, `scoring/engine.ts`) —
+  **the only input, ever; question position never affects this match.**
+  Nothing in the codebase hard-codes CEFR boundaries or a specific level
+  name — the source material doesn't define official ones, so that
+  mapping is business configuration, not code. A test with no configured
+  bands simply has no `placementBandId` on its results until one is
+  added — this is never silently substituted with a different signal
+  (see the P0 fix below).
+- **Single canonical resolver, by construction**: `computeScoring` runs
+  exactly once, at attempt finalization (`finalizeAttempt`,
+  `attempt.service.ts`), and its `placementBand` match is persisted as a
+  snapshot on `PlacementResult.placementBandId`. Every later
+  reader — `buildStudentResultSummary`, `getAdminResultDetail`,
+  `getCanonicalResultSummaryForAssignment` (the Assignments list),
+  `export.service.ts` — reads that same persisted `placementBand.label`
+  (exposed as `level`); none of them recomputes a placement independently
+  or derives one from anything else. There has never been a second,
+  competing "official level" implementation to reconcile.
+- **Question progression** (`src/domain/placement/progression.ts`,
+  `computeAnswerBreakdown`'s `progressionBand` — the highest correctly-
+  answered question number, mapped through the source's own fixed
+  six question-number ranges) is a deliberately SEPARATE, ADMIN-ONLY
+  diagnostic signal — never persisted (recomputed from
+  `PlacementAnswer` + `Question.order` on every read), and never a
+  placement. **P0 fix**: it was previously also rendered on the
+  student-facing result screen ("Recommended progression"), which could
+  show a high-sounding band from a single lucky late-question answer
+  regardless of how few questions were correct overall — since a test
+  with no configured `PlacementBand` has `level = null`, this was, in
+  practice, the *only* placement-shaped signal a student ever saw for
+  such a test. Removed from the student result entirely (see
+  `placement-result.tsx`'s doc comment and
+  `/docs/PRODUCT_RULES.md` "Scoring & placement"); admin surfaces that
+  keep it now label it "Question progression evidence... does not
+  determine placement."
 
 ## Import architecture
 

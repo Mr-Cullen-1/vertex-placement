@@ -305,7 +305,16 @@ describe("Phase 2E — persistence and immutability after completion", () => {
 });
 
 describe("Phase 2E — existing PlacementBand mechanism is unaffected", () => {
-  it("the old percentage-based `level` and new question-progression guidance coexist without conflict", async () => {
+  it("`level` (official, score-based) and `progression.progressionBand` (diagnostic, question-position-based) remain independently computed at the data layer", async () => {
+    // P0 fix (see /docs/PRODUCT_RULES.md "Scoring & placement"): these two
+    // are allowed to disagree in the DATA the service layer returns —
+    // that's still true and still intentional (one is percentage-of-total,
+    // the other is question-order-derived diagnostic evidence). What
+    // changed is the STUDENT-FACING UI, which no longer renders
+    // `progression.progressionBand` at all (only `level`) specifically
+    // because showing both invited exactly this kind of disagreement to
+    // be misread as two conflicting placements. See
+    // placement-result.tsx's doc comment.
     const superAdmin = await createUser("SUPER_ADMIN");
     const { test } = await createPublishedTestWithQuestions(superAdmin); // has 2 configured bands
     const { invitation } = await createAssignmentWithInvitation(superAdmin, test.id);

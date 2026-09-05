@@ -260,7 +260,11 @@ describe("O/P/Q — export authorization and content", () => {
     expect(resultsSheet.rowCount).toBeGreaterThan(1);
 
     const resultsHeader = resultsSheet.getRow(1).values as unknown[];
-    expect(resultsHeader).toContain("Progression");
+    // The OFFICIAL placement (Placement band), never the question-
+    // position-derived progression signal — see the P0 scoring-semantics
+    // fix (/docs/PRODUCT_RULES.md "Scoring & placement").
+    expect(resultsHeader).toContain("Placement band");
+    expect(resultsHeader).not.toContain("Progression");
     expect(resultsHeader).toContain("Score");
 
     const firstDataRow = resultsSheet.getRow(2).values as unknown[];
@@ -304,6 +308,9 @@ describe("R — completed assignment links to the Phase 2E result system", () =>
     });
     expect(summary!.attemptId).toBe(attempt.id);
     expect(summary!.rawScore).toBeGreaterThan(0);
+    // Official placement — percentage-based, from the fixture's
+    // configured PlacementBand (all-correct -> 100% -> "Advanced").
+    expect(summary!.level).toBe("Advanced");
     expect(summary!.progression.progressionBand).not.toBeNull();
   });
 

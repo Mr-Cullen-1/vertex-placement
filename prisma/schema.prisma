@@ -214,6 +214,18 @@ model ImportJob {
 // CANDIDATES — never authenticate; identified only by invitation token.
 // ============================================================
 
+// Phase 2J: an Admin creating an assignment for a brand-new candidate no
+// longer enters that candidate's personal details — the candidate enters
+// their own, via the invitation token, the first time they open it (see
+// /docs/PRODUCT_RULES.md "Candidate ownership"). Until then,
+// firstName/lastName/phoneNumber/age hold empty-string/zero placeholders
+// (never a fake display name like "Unknown" or "Guest" — the UI must
+// gate on `profileCompletedAt` and show "Awaiting student details"
+// instead of rendering these placeholders). `profileCompletedAt` is the
+// single source of truth for "has this candidate provided their own
+// details yet" — null means pending, a timestamp means complete (set the
+// moment the candidate submits their details, or immediately for a
+// candidate an Admin still creates with full details up front).
 model Candidate {
   id          String  @id @default(cuid())
   firstName   String
@@ -221,6 +233,8 @@ model Candidate {
   phoneNumber String
   age         Int
   email       String?
+
+  profileCompletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

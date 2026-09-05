@@ -2,8 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { PlusIcon } from "lucide-react";
-import { candidateInputSchema, type CandidateInput } from "@/domain/candidate/schema";
+import { PlusIcon, UserPlusIcon } from "lucide-react";
 import { createAssignmentAction } from "@/server/actions/assignment-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 
@@ -29,9 +27,6 @@ export interface TestOption {
   title: string;
 }
 
-type RawCandidateValues = { firstName: string; lastName: string; phoneNumber: string; age: string; email: string };
-const EMPTY_CANDIDATE: RawCandidateValues = { firstName: "", lastName: "", phoneNumber: "", age: "", email: "" };
-
 interface NewAssignmentDialogProps {
   candidates: CandidateOption[];
   publishedTests: TestOption[];
@@ -39,10 +34,19 @@ interface NewAssignmentDialogProps {
   autoOpen?: boolean;
 }
 
-/** Candidate + Test -> Assignment, per the operational flow in
+/**
+ * Candidate + Test -> Assignment, per the operational flow in
  * /docs/PHASE_2B.md ("Assignment + invitation"). Only PUBLISHED tests are
  * offered — createAssignment rejects anything else server-side anyway
- * (assignment.service.ts), this just avoids a guaranteed-to-fail pick. */
+ * (assignment.service.ts), this just avoids a guaranteed-to-fail pick.
+ *
+ * Phase 2J: "New candidate" no longer collects any personal details here
+ * — ADMIN CREATES ACCESS, the STUDENT enters their own details when they
+ * open the invitation (see /docs/PRODUCT_RULES.md "Candidate ownership").
+ * This removed the duplicate-data-entry problem where an admin typed a
+ * candidate's name/phone/age/email, then the student was asked to
+ * "confirm" the exact same fields moments later.
+ */
 export function NewAssignmentDialog({
   candidates,
   publishedTests,
@@ -55,15 +59,9 @@ export function NewAssignmentDialog({
     initialCandidateId || candidates.length > 0 ? "existing" : "new"
   );
   const [candidateId, setCandidateId] = useState(initialCandidateId ?? candidates[0]?.id ?? "");
-  const [newCandidate, setNewCandidate] = useState<RawCandidateValues>(EMPTY_CANDIDATE);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RawCandidateValues, string>>>({});
   const [testId, setTestId] = useState(publishedTests[0]?.id ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function updateNewCandidate<K extends keyof RawCandidateValues>(key: K, value: string) {
-    setNewCandidate((prev) => ({ ...prev, [key]: value }));
-  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -73,37 +71,15 @@ export function NewAssignmentDialog({
       setError("Select a published test.");
       return;
     }
-
-    let candidatePayload: { candidateId: string } | { candidate: CandidateInput };
-    if (mode === "existing") {
-      if (!candidateId) {
-        setError("Select a candidate.");
-        return;
-      }
-      candidatePayload = { candidateId };
-    } else {
-      const parsed = candidateInputSchema.safeParse({
-        firstName: newCandidate.firstName,
-        lastName: newCandidate.lastName,
-        phoneNumber: newCandidate.phoneNumber,
-        age: newCandidate.age as unknown as number,
-        email: newCandidate.email.trim() === "" ? undefined : newCandidate.email,
-      });
-      if (!parsed.success) {
-        const errors: Partial<Record<keyof RawCandidateValues, string>> = {};
-        for (const issue of parsed.error.issues) {
-          const key = issue.path[0] as keyof RawCandidateValues | undefined;
-          if (key && !errors[key]) errors[key] = issue.message;
-        }
-        setFieldErrors(errors);
-        return;
-      }
-      setFieldErrors({});
-      candidatePayload = { candidate: parsed.data };
+    if (mode === "existing" && !candidateId) {
+      setError("Select a candidate.");
+      return;
     }
 
     setSubmitting(true);
-    const result = await createAssignmentAction({ testId, ...candidatePayload });
+    const result = await createAssignmentAction(
+      mode === "existing" ? { testId, candidateId } : { testId, newCandidate: true }
+    );
     setSubmitting(false);
 
     if (!result.ok) {
@@ -182,49 +158,9 @@ export function NewAssignmentDialog({
                   ))}
                 </Select>
               ) : (
-                <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field
-                      id="firstName"
-                      label="First name"
-                      value={newCandidate.firstName}
-                      error={fieldErrors.firstName}
-                      onChange={(v) => updateNewCandidate("firstName", v)}
-                    />
-                    <Field
-                      id="lastName"
-                      label="Last name"
-                      value={newCandidate.lastName}
-                      error={fieldErrors.lastName}
-                      onChange={(v) => updateNewCandidate("lastName", v)}
-                    />
-                  </div>
-                  <Field
-                    id="phoneNumber"
-                    label="Phone number"
-                    value={newCandidate.phoneNumber}
-                    error={fieldErrors.phoneNumber}
-                    onChange={(v) => updateNewCandidate("phoneNumber", v)}
-                    type="tel"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field
-                      id="age"
-                      label="Age"
-                      value={newCandidate.age}
-                      error={fieldErrors.age}
-                      onChange={(v) => updateNewCandidate("age", v)}
-                      type="number"
-                    />
-                    <Field
-                      id="email"
-                      label="Email (optional)"
-                      value={newCandidate.email}
-                      error={fieldErrors.email}
-                      onChange={(v) => updateNewCandidate("email", v)}
-                      type="email"
-                    />
-                  </div>
+                <div className="flex items-start gap-2.5 rounded-lg bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">
+                  <UserPlusIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <p>The student will enter their details when they open the invitation.</p>
                 </div>
               )}
             </div>
@@ -244,31 +180,5 @@ export function NewAssignmentDialog({
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-interface FieldProps {
-  id: keyof RawCandidateValues;
-  label: string;
-  value: string;
-  error?: string;
-  onChange: (value: string) => void;
-  type?: string;
-}
-
-function Field({ id, label, value, error, onChange, type = "text" }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        name={id}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={Boolean(error)}
-      />
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
   );
 }

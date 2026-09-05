@@ -22,17 +22,27 @@ type RawValues = {
   email: string;
 };
 
-/** Confirms/corrects the candidate details an Admin entered when creating
- * the assignment (see /docs/PHASE_2A.md "Candidate confirmation step" for
- * why this is an update, not a fresh creation). Validated with the same
- * Zod shape the server enforces — client-side validation is a UX
- * courtesy; the server call is the actual authority. */
+/** The candidate provides their OWN personal details here — an Admin
+ * creating an assignment for a new candidate no longer enters them (see
+ * /docs/PRODUCT_RULES.md "Candidate ownership"). `PlacementFlow` only
+ * ever routes here when the candidate's profile is still incomplete
+ * (`candidateProfileComplete === false`); an already-complete candidate
+ * skips straight to instructions. This still calls `updateCandidateAction`
+ * (an update, not a creation) — the candidate row already exists, created
+ * by the Admin as a placeholder, and this call completes it in place, so
+ * no duplicate candidate is ever created. Validated with the same Zod
+ * shape the server enforces — client-side validation is a UX courtesy;
+ * the server call is the actual authority. */
 export function CandidateForm({ token, initial, onSuccess }: CandidateFormProps) {
   const [values, setValues] = useState<RawValues>({
     firstName: initial.firstName,
     lastName: initial.lastName,
     phoneNumber: initial.phoneNumber,
-    age: String(initial.age),
+    // `initial.age === 0` is the placeholder for "not yet provided" (see
+    // /docs/PRODUCT_RULES.md "Candidate ownership") — the field must
+    // start genuinely empty, not showing a literal "0" the candidate
+    // would have to notice and clear themselves.
+    age: initial.age > 0 ? String(initial.age) : "",
     email: initial.email ?? "",
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RawValues, string>>>({});
@@ -85,10 +95,10 @@ export function CandidateForm({ token, initial, onSuccess }: CandidateFormProps)
           <VertexWordmark />
           <div className="flex flex-col gap-1.5">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Confirm your details
+              Tell us about yourself
             </h1>
             <p className="text-sm text-muted-foreground">
-              Please check that your information is correct before you begin.
+              Enter your details before starting the placement test.
             </p>
           </div>
         </div>

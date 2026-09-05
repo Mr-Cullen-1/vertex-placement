@@ -110,16 +110,40 @@ test — the student sees only the final result, after submission.
   progression, topic performance, and placement-band label are distinct
   fields/concepts, not folded into one computed value. See
   [ARCHITECTURE.md](./ARCHITECTURE.md#scoring--result-architecture).
+- **OFFICIAL PLACEMENT (`level`) is always `PlacementBand` matched
+  against TOTAL CORRECT SCORE (percentage) — never influenced by which
+  specific question was answered correctly.** This is computed once, at
+  attempt finalization (`computeScoring`/`matchPlacementBand`), and
+  persisted as a snapshot on `PlacementResult.placementBandId` — every
+  consumer (student result, admin result, assignment list, export) reads
+  that same persisted value; none recomputes it independently.
+- **Question progression** (`computeAnswerBreakdown`'s `progressionBand`
+  — the highest correctly-answered question number, mapped through the
+  source's fixed six question-number ranges) is a SEPARATE,
+  ADMIN-ONLY DIAGNOSTIC signal, never persisted, always recomputed from
+  raw answers on read. It **must never be shown to a student**, and
+  wherever it's shown to an admin it must be labeled as non-authoritative
+  diagnostic evidence ("Question progression evidence... this does not
+  determine placement"), never as if it were `level`. **P0 fix
+  (Phase 2J)**: this signal was previously also rendered on the student
+  result screen as "Recommended progression," which could show e.g.
+  "Advanced" for a 4/70-correct result if the one correct answer happened
+  to be a late/hard question — a real, reported bug. Removed from the
+  student-facing result entirely; `level` (or its absence, if no bands
+  are configured) is the only placement signal a student ever sees.
 
 ## Results
 
-**Student sees:** level, score, percentage, completion time, a concise
-performance summary. **Never**: the answer key, which answers were
-correct/incorrect, or a question-by-question review.
+**Student sees:** level (`PlacementBand`, score-based — absent if the
+test has no configured bands; never substituted with question-progression
+diagnostics), score, percentage, completion time, a concise performance
+summary. **Never**: the answer key, which answers were correct/incorrect,
+a question-by-question review, or the question-progression diagnostic.
 
 **Admin sees:** candidate information, score, percentage, level,
 completion time, difficulty progression, question-by-question analysis,
-topic analysis.
+topic analysis, and — clearly labeled as diagnostic-only, never as the
+official level — question progression evidence.
 
 Implemented as of Phase 1: `buildStudentResultSummary` produces exactly
 the student-safe view (never per-question data); `getAdminResultDetail`

@@ -440,6 +440,11 @@ export type PlacementStatus =
       durationSeconds: number;
       totalQuestions: number;
       candidate: { firstName: string; lastName: string; phoneNumber: string; age: number; email: string | null };
+      /** Phase 2J: true once the candidate has provided their own
+       * details (or an Admin created them with full details up front) —
+       * `PlacementFlow` skips the "tell us about yourself" step entirely
+       * when true, per /docs/PRODUCT_RULES.md "Candidate ownership". */
+      candidateProfileComplete: boolean;
     }
   | { kind: "IN_PROGRESS"; expiresAt: string; totalQuestions: number; testTitle: string }
   | { kind: "COMPLETED"; result: StudentResultSummary }
@@ -511,6 +516,7 @@ export async function getPlacementStatus(plaintextToken: string): Promise<Placem
       age: candidate.age,
       email: candidate.email,
     },
+    candidateProfileComplete: candidate.profileCompletedAt !== null,
   };
 }
 
@@ -667,6 +673,14 @@ export interface AssignmentResultSummary {
   rawScore: number;
   totalQuestions: number;
   percentage: number;
+  /** The OFFICIAL placement — the configured `PlacementBand` matched
+   * against total correct score at finalization, persisted on
+   * `PlacementResult`. Null when the test has no configured bands. Never
+   * derived from `progression` (question position) — see
+   * /docs/PRODUCT_RULES.md "Scoring & placement". */
+  level: string | null;
+  /** Admin-only diagnostic — see the Result Detail page ("Question
+   * progression evidence"). Never shown as if it were `level`. */
   progression: ReturnType<typeof computeAnswerBreakdown>;
 }
 
@@ -690,7 +704,7 @@ export async function getCanonicalResultSummaryForAssignment(
       isCanonical: true,
       status: { in: ["SUBMITTED", "AUTO_SUBMITTED"] },
     },
-    include: { assignment: true, answers: true, result: true },
+    include: { assignment: true, answers: true, result: { include: { placementBand: true } } },
   });
   if (!attempt || !attempt.result) return null;
 
@@ -714,6 +728,7 @@ export async function getCanonicalResultSummaryForAssignment(
     rawScore: attempt.result.rawScore,
     totalQuestions: attempt.result.totalQuestions,
     percentage: attempt.result.percentage,
+    level: attempt.result.placementBand?.label ?? null,
     progression: computeAnswerBreakdown(progressionQuestions, progressionAnswers),
   };
 }
