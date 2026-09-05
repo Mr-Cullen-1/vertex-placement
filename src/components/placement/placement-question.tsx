@@ -27,11 +27,11 @@ export function PlacementQuestion({
 }: PlacementQuestionProps) {
   return (
     <div className="flex animate-in flex-col gap-6 fade-in-0 slide-in-from-bottom-1 duration-200">
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-primary">
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
           Question {question.order} of {totalQuestions}
         </span>
-        <h1 className="text-xl font-semibold leading-snug text-foreground sm:text-2xl">
+        <h1 className="text-2xl leading-snug font-semibold text-foreground sm:text-3xl">
           {question.prompt}
         </h1>
       </div>

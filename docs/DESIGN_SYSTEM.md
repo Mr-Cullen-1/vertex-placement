@@ -383,11 +383,9 @@ Phase 2G polished the surface:
   `animate-soft-pulse` (opacity 100%→75%→100%, 1.8s) instead of
   Tailwind's default `animate-pulse` (which dips to 50% and reads as
   more alarming than intended).
-- **Question navigator**: unchanged desktop grid; on narrow viewports
-  with more than 12 questions (i.e. the real 70-question test, not a
-  short dev/demo test) it collapses behind a summary toggle
-  ("Question navigator (N/70 answered)") instead of filling the
-  screen with buttons — always fully expanded on `sm:` and above.
+- **Question navigator / active Test Runner layout**: see "Test Runner
+  (Phase 2I)" below — Phase 2G's version (a single collapsible grid
+  toggle) was replaced by a persistent sidebar / mobile-drawer split.
 - **Result screen**: score card unchanged in content; the progression
   section now renders the shared `ProgressionTrack` stepper (see
   below) instead of a plain label, still visually and
@@ -397,6 +395,95 @@ Phase 2G polished the surface:
   icon (link/shield-off/clock-alert/server-crash) so "invalid link,"
   "revoked," and "server error" read as visually distinct situations,
   not one generic error box.
+
+## Test Runner (Phase 2I)
+
+The active test-taking screen (`PlacementTestShell`) was redesigned into
+a focused, three-area assessment workspace, translating an examination-
+portal reference's *structural* ideas into the existing Vertex system —
+the reference's own visual language (blue branding, dense IDE-like
+layout) was explicitly not reused. **One runner regardless of attempt
+origin**: nothing in `PlacementTestShell`, `PlacementQuestion`,
+`AnswerOption`, or the navigator reads or cares whether the attempt was
+created by an admin assignment or (a future phase's) public "Try
+Yourself" flow — origin-specific behavior, if any is ever needed,
+belongs in the page/flow layer that hands the runner its props, never
+inside the runner itself.
+
+**Audited first, changed only what needed to change.** Already correct
+and left untouched: direct navigation to any question (`onJump`, wired
+through both the sidebar and the new mobile drawer — skipping and
+returning was always allowed, see `/docs/PRODUCT_RULES.md`), answer
+autosave-on-select (`submitAnswerAction` fires immediately, with an
+optimistic-then-reverted-on-failure update), the timer's server-issued
+`expiresAt` and its normal/warning(≤5min)/critical(≤1min) states, and
+the submit confirmation's answered/unanswered breakdown. **Two small,
+additive server-layer changes** (not business logic — pure display
+data threaded through, per audit): `PlacementStatus`'s `IN_PROGRESS`
+kind and `ValidatedInvitation`'s `test` object each gained a `title`
+field (`attempt.service.ts`, `invitation.service.ts`) — both were
+already loading the test row, just not exposing its title — so the new
+sidebar/drawer header has a real test title on both a fresh start and a
+resume-after-refresh, not a placeholder.
+
+**Layout** — `src/components/placement/placement-test-shell.tsx`:
+
+- **Desktop (`lg:` / 1024px and up)**: a fixed `h-dvh overflow-hidden`
+  shell with a persistent **left question navigator** (`w-72`, its own
+  `min-h-0 overflow-y-auto` scroll region — a 70-item grid never forces
+  the timer/submit controls out of view), a **top assessment bar**
+  (progress summary, timer, an always-available Submit button), a
+  **centered question workspace** (`max-w-2xl`, its own scroll region),
+  and a bottom Previous/Next footer. Chosen over `admin`'s `md`/900
+  thresholds deliberately — visual QA at 768/899/900 showed a sidebar
+  there would leave too little width for comfortable reading once a
+  260–288px panel is subtracted; 1024 is where both fit.
+- **Below `lg`**: the sidebar is replaced by a compact "Questions N/70"
+  trigger in the top bar, opening `QuestionDrawer` — a right-sliding
+  sheet (always mounted, transform-driven, mirroring the admin shell's
+  own mobile-drawer convention) containing the identical
+  `QuestionNavigator` grid. No admin/marketing chrome ever appears on
+  this route at any width — a genuinely distraction-free assessment
+  environment, not just visually quieter.
+- **Submit is available from two places on purpose**: the top bar's
+  Submit button (any question, any time — nothing server-side ever
+  actually required being on the last question; that was only ever a
+  UI-layer restriction) and the footer's right-hand button, which
+  becomes "Submit test" specifically on the final question. Both open
+  the same `SubmitConfirmation` dialog.
+
+**`QuestionNavigator`** (`question-navigator.tsx`) — simplified to a
+pure, reusable grid (the old built-in collapse-toggle button is gone;
+collapsing/expanding is now the drawer's job, not the grid's). Answered
+state is never color-only: a small check badge marks it independent of
+the accent tint; the current question gets a solid fill plus
+`aria-current="step"`, not just a border change.
+
+**`SubmitConfirmation`** gained a compact Answered/Unanswered/Total stat
+row (replacing a sentence) and, when any question is unanswered, a
+"Review unanswered" button that closes the dialog and jumps to the
+first unanswered question — reusing the existing direct-navigation
+plumbing, not a new review/flagging feature (none exists, and none was
+invented for this).
+
+**Autosave feedback**: a brief "Saved" confirmation (green check,
+~1.5s) now follows a successful save, replacing the previous silent
+clear from "Saving…" to nothing — still an inline `aria-live` region,
+never a toast.
+
+**Typography**: the question's eyebrow ("QUESTION 24 OF 70") moved to
+the small-caps treatment used everywhere else in the product
+(`text-xs font-semibold tracking-[0.14em] uppercase`), and the question
+text itself grew (`text-2xl`/`sm:text-3xl`) — a stronger, more
+deliberate size gap than before, per "the question must become the
+visual center of the screen."
+
+**Not changed**: `AnswerOption`'s anatomy (it already met every
+requirement — large clickable surface, A/B/C/D marker, restrained
+violet selected state, no correctness reveal); the welcome/instructions/
+candidate-form/result/error screens (out of scope — this phase is the
+active test screen only); any scoring, `PlacementBand`, progression,
+attempt-counting, timer, or question-order logic.
 
 ## Shared primitives introduced in Phase 2G
 

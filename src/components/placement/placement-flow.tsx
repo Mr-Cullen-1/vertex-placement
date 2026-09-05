@@ -31,7 +31,7 @@ type FlowState =
       starting: boolean;
       error: string | null;
     }
-  | { phase: "test"; expiresAt: string; totalQuestions: number }
+  | { phase: "test"; expiresAt: string; totalQuestions: number; testTitle: string }
   | { phase: "result"; result: StudentResultSummary }
   | { phase: "error"; code: string };
 
@@ -48,7 +48,12 @@ function deriveInitialState(initial: ActionResult<PlacementStatus>): FlowState {
         candidate: initial.data.candidate,
       };
     case "IN_PROGRESS":
-      return { phase: "test", expiresAt: initial.data.expiresAt, totalQuestions: initial.data.totalQuestions };
+      return {
+        phase: "test",
+        expiresAt: initial.data.expiresAt,
+        totalQuestions: initial.data.totalQuestions,
+        testTitle: initial.data.testTitle,
+      };
     case "COMPLETED":
       return { phase: "result", result: initial.data.result };
     case "TEST_UNAVAILABLE":
@@ -122,6 +127,7 @@ export function PlacementFlow({
               phase: "test",
               expiresAt: result.data.expiresAt,
               totalQuestions: result.data.totalQuestions,
+              testTitle: state.testTitle,
             });
           }}
         />
@@ -133,6 +139,7 @@ export function PlacementFlow({
           token={token}
           expiresAt={state.expiresAt}
           totalQuestions={state.totalQuestions}
+          testTitle={state.testTitle}
           onCompleted={(result) => setState({ phase: "result", result })}
           onFatalError={(code) => setState({ phase: "error", code })}
         />

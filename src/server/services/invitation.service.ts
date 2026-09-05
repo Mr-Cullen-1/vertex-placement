@@ -114,7 +114,7 @@ export async function revokeInvitation(actor: Actor, invitationId: string) {
 export interface ValidatedInvitation {
   invitation: { id: string; assignmentId: string };
   assignment: { id: string; testId: string; candidateId: string };
-  test: { id: string; status: string; durationSeconds: number };
+  test: { id: string; title: string; status: string; durationSeconds: number };
 }
 
 /** Looks up an invitation by its plaintext token (hashing it first — the
@@ -163,6 +163,7 @@ export async function validateTokenAndLoad(plaintextToken: string): Promise<Vali
     },
     test: {
       id: loaded.assignment.test.id,
+      title: loaded.assignment.test.title,
       status: loaded.assignment.test.status,
       durationSeconds: loaded.assignment.test.durationSeconds,
     },

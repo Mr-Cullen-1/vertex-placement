@@ -441,7 +441,7 @@ export type PlacementStatus =
       totalQuestions: number;
       candidate: { firstName: string; lastName: string; phoneNumber: string; age: number; email: string | null };
     }
-  | { kind: "IN_PROGRESS"; expiresAt: string; totalQuestions: number }
+  | { kind: "IN_PROGRESS"; expiresAt: string; totalQuestions: number; testTitle: string }
   | { kind: "COMPLETED"; result: StudentResultSummary }
   | { kind: "TEST_UNAVAILABLE" };
 
@@ -485,6 +485,7 @@ export async function getPlacementStatus(plaintextToken: string): Promise<Placem
       kind: "IN_PROGRESS",
       expiresAt: existing.expiresAt.toISOString(),
       totalQuestions,
+      testTitle: loaded.test.title,
     };
   }
 

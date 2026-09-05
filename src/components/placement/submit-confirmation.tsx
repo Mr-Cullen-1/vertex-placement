@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface SubmitConfirmationProps {
   open: boolean;
@@ -19,6 +20,11 @@ interface SubmitConfirmationProps {
   submitting: boolean;
   error: string | null;
   onConfirm: () => void;
+  /** Jumps to the first unanswered question and closes this dialog —
+   * only rendered when at least one question is unanswered. Reuses the
+   * same direct-navigation the question navigator already provides;
+   * this is not a new review/flagging feature. */
+  onReviewUnanswered: () => void;
 }
 
 export function SubmitConfirmation({
@@ -29,6 +35,7 @@ export function SubmitConfirmation({
   submitting,
   error,
   onConfirm,
+  onReviewUnanswered,
 }: SubmitConfirmationProps) {
   const unanswered = totalQuestions - answeredCount;
 
@@ -40,25 +47,57 @@ export function SubmitConfirmation({
             <SendIcon className="size-4.5" />
           </span>
           <DialogTitle>Submit your test?</DialogTitle>
-          <DialogDescription>
-            You have answered {answeredCount} of {totalQuestions} questions.
-            {unanswered > 0 &&
-              ` ${unanswered} question${unanswered === 1 ? " remains" : "s remain"} unanswered.`}{" "}
-            Once submitted, you cannot make further changes.
-          </DialogDescription>
+          <DialogDescription>Once submitted, you cannot make further changes.</DialogDescription>
         </DialogHeader>
+
+        <dl className="grid grid-cols-3 gap-3 rounded-xl bg-muted/50 px-4 py-3 text-center">
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs text-muted-foreground">Answered</dt>
+            <dd className="text-lg font-semibold text-foreground tabular-nums">{answeredCount}</dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs text-muted-foreground">Unanswered</dt>
+            <dd
+              className={cn(
+                "text-lg font-semibold tabular-nums",
+                unanswered > 0 ? "text-warning-foreground" : "text-foreground"
+              )}
+            >
+              {unanswered}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs text-muted-foreground">Total</dt>
+            <dd className="text-lg font-semibold text-foreground tabular-nums">{totalQuestions}</dd>
+          </div>
+        </dl>
+
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error} Please try again.
           </p>
         )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Continue test
-          </Button>
-          <Button onClick={onConfirm} disabled={submitting}>
-            {submitting ? "Submitting…" : error ? "Try again" : "Submit test"}
-          </Button>
+
+        <DialogFooter className="sm:flex-col sm:items-stretch">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+              Continue test
+            </Button>
+            <Button onClick={onConfirm} disabled={submitting}>
+              {submitting ? "Submitting…" : error ? "Try again" : unanswered > 0 ? "Submit anyway" : "Submit test"}
+            </Button>
+          </div>
+          {unanswered > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full sm:w-auto sm:self-end"
+              onClick={onReviewUnanswered}
+              disabled={submitting}
+            >
+              Review unanswered
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

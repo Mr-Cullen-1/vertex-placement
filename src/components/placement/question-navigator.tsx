@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface QuestionNavItem {
@@ -13,49 +12,33 @@ interface QuestionNavigatorProps {
   items: QuestionNavItem[];
   currentOrder: number;
   onJump: (order: number) => void;
+  /** Overrides the grid's column classes — the sidebar (narrower, fixed
+   * width) and the mobile drawer (wider, full-bleed) want different
+   * column counts for the same grid. Defaults to a responsive count
+   * that works reasonably in either context. */
+  gridClassName?: string;
   className?: string;
 }
 
-// Below this count the full grid is small enough to always show inline
-// (e.g. a short dev/demo test). At or above it — the real 70-question
-// test — it collapses behind a toggle on narrow screens so it never
-// dominates the viewport, per /docs/DESIGN_SYSTEM.md "Question
-// navigator" (a compact panel rather than filling the screen with
-// buttons on mobile).
-const ALWAYS_EXPANDED_THRESHOLD = 12;
-
-/** Grid of every question number, distinguishing answered / unanswered /
- * current — never blocks jumping to an unanswered question (see
- * /docs/PRODUCT_RULES.md: skipping and returning is always allowed). */
-export function QuestionNavigator({ items, currentOrder, onJump, className }: QuestionNavigatorProps) {
-  const collapsible = items.length > ALWAYS_EXPANDED_THRESHOLD;
-  const [expanded, setExpanded] = useState(!collapsible);
-  const answeredCount = items.filter((i) => i.answered).length;
-
+/**
+ * Pure question-state grid, shared by the desktop sidebar and the mobile
+ * drawer (Phase 2I) — direct navigation to any question, answered before
+ * this phase and unchanged here (see /docs/PRODUCT_RULES.md: skipping
+ * and returning is always allowed). Answered state is never color-only:
+ * a small check badge marks it independent of the tint, and the current
+ * question gets a solid fill plus `aria-current`, not just a border
+ * change — see /docs/DESIGN_SYSTEM.md "Test Runner".
+ */
+export function QuestionNavigator({
+  items,
+  currentOrder,
+  onJump,
+  gridClassName,
+  className,
+}: QuestionNavigatorProps) {
   return (
     <nav aria-label="Question navigator" className={className}>
-      {collapsible && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors sm:hidden"
-        >
-          <span>
-            Question navigator{" "}
-            <span className="font-normal text-muted-foreground">
-              ({answeredCount}/{items.length} answered)
-            </span>
-          </span>
-          <ChevronDownIcon className={cn("size-4 text-muted-foreground transition-transform duration-150", expanded && "rotate-180")} />
-        </button>
-      )}
-      <div
-        className={cn(
-          "grid grid-cols-7 gap-2 sm:grid-cols-10",
-          collapsible && !expanded ? "hidden sm:grid" : "mt-3 grid sm:mt-0"
-        )}
-      >
+      <div className={cn("grid grid-cols-6 gap-2", gridClassName)}>
         {items.map((item) => {
           const isCurrent = item.order === currentOrder;
           return (
@@ -66,18 +49,26 @@ export function QuestionNavigator({ items, currentOrder, onJump, className }: Qu
               aria-current={isCurrent ? "step" : undefined}
               aria-label={`Question ${item.order}${item.answered ? ", answered" : ", not answered"}${isCurrent ? ", current" : ""}`}
               className={cn(
-                "flex size-9 items-center justify-center rounded-lg border text-xs font-medium tabular-nums transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                "relative flex size-9 items-center justify-center rounded-lg border text-xs font-medium tabular-nums transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                 isCurrent && "border-primary bg-primary text-primary-foreground",
                 !isCurrent && item.answered && "border-primary/30 bg-accent text-foreground",
                 !isCurrent && !item.answered && "border-border bg-background text-muted-foreground hover:border-primary/40"
               )}
             >
               {item.order}
+              {!isCurrent && item.answered && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card"
+                >
+                  <CheckIcon className="size-2" strokeWidth={3} />
+                </span>
+              )}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
         <LegendDot className="bg-primary" label="Current" />
         <LegendDot className="border border-primary/30 bg-accent" label="Answered" />
         <LegendDot className="border border-border bg-background" label="Unanswered" />
