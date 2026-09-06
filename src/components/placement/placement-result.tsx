@@ -1,6 +1,8 @@
 import type { StudentResultSummary } from "@/domain/results/types";
 import { VertexWordmark } from "./vertex-mark";
 import { DetailedAnalysis } from "./detailed-analysis";
+import { LevelScale } from "./level-scale";
+import { ScoreRing } from "@/components/shared/score-ring";
 
 /**
  * Professional assessment result — not a game reward screen. No
@@ -59,27 +61,27 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-2 rounded-3xl border border-border bg-card px-8 py-10 text-center shadow-sm">
+        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border bg-card px-8 py-10 text-center shadow-sm">
           {result.level && (
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                Recommended level
-              </span>
-              <span className="rounded-full bg-accent px-4 py-1 text-sm font-medium text-accent-foreground">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-overline text-primary">Recommended level</span>
+              <span className="text-3xl leading-tight font-semibold tracking-tight text-foreground sm:text-4xl">
                 {result.level}
               </span>
             </div>
           )}
-          <div className="mt-2 text-5xl font-semibold tracking-tight text-foreground tabular-nums">
-            {result.rawScore}
-            <span className="text-2xl font-normal text-muted-foreground">
-              {" "}
-              / {result.totalQuestions}
+          <ScoreRing percentage={result.percentage} size={128} strokeWidth={8}>
+            <span className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-foreground">
+              {Math.round(result.percentage)}%
             </span>
-          </div>
-          <p className="text-base text-muted-foreground">
-            {Math.round(result.percentage)}% correct
-          </p>
+            <span className="text-caption">
+              {result.rawScore} / {result.totalQuestions}
+            </span>
+          </ScoreRing>
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-5 py-4">
+          <LevelScale level={result.level} />
         </div>
 
         <p className="text-center text-xs text-muted-foreground">

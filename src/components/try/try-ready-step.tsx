@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { VertexMark } from "@/components/placement/vertex-mark";
+import { OnboardingShell } from "@/components/shared/onboarding-shell";
 import { startPublicAttemptAction, resumeActiveAttemptAction } from "@/server/actions/self-serve-actions";
 
 const RULES = [
@@ -45,7 +46,7 @@ export function TryReadyStep({ mode, attemptNumber, testTitle, durationMinutes, 
   }
 
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
+    <OnboardingShell step="start">
       <div className="flex w-full max-w-md animate-page-in flex-col items-center gap-8 text-center">
         <VertexMark className="size-14" />
 
@@ -99,6 +100,6 @@ export function TryReadyStep({ mode, attemptNumber, testTitle, durationMinutes, 
           </>
         )}
       </div>
-    </div>
+    </OnboardingShell>
   );
 }

@@ -174,6 +174,29 @@
 }
 
 @layer utilities {
+  /* Semantic type-scale roles (Redesign pass) — named by JOB, not size,
+     so a heading's weight/tracking/leading stays consistent everywhere
+     it's used instead of being re-guessed per component. See
+     /docs/DESIGN_SYSTEM.md "Typography". */
+  .text-display {
+    @apply text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl;
+  }
+  .text-page-title {
+    @apply text-2xl leading-tight font-semibold tracking-tight;
+  }
+  .text-section-title {
+    @apply font-heading text-base leading-snug font-medium;
+  }
+  .text-metric {
+    @apply text-3xl leading-none font-semibold tracking-tight tabular-nums;
+  }
+  .text-overline {
+    @apply text-[11px] leading-none font-semibold tracking-[0.14em] uppercase;
+  }
+  .text-caption {
+    @apply text-xs leading-snug text-muted-foreground;
+  }
+
   /* A restrained, "felt not noticed" violet atmosphere for surfaces that
      would otherwise be flat empty white (admin canvas, login, student
      shell) — see /docs/DESIGN_SYSTEM.md "Background / atmosphere". */

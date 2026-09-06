@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { VertexWordmark } from "@/components/placement/vertex-mark";
+import { OnboardingShell } from "@/components/shared/onboarding-shell";
 import { requestCodeAction, verifyCodeAction, switchToAnotherEmailAction } from "@/server/actions/self-serve-actions";
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -63,10 +63,8 @@ export function TryCodeStep({
   }
 
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
+    <OnboardingShell step="verify">
       <div className="flex w-full max-w-md animate-page-in flex-col items-center gap-8 text-center">
-        <VertexWordmark />
-
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Enter your code</h1>
           <p className="text-sm text-muted-foreground">
@@ -118,6 +116,6 @@ export function TryCodeStep({
           </button>
         </div>
       </div>
-    </div>
+    </OnboardingShell>
   );
 }

@@ -1,9 +1,93 @@
 # Design System — Vertex Placement
 
-Authoritative as of Phase 2G.1 (premium EdTech admin refinement). Phase 0's
-original direction (below, in "History") still holds; this document now also
-records what Phase 2G and 2G.1 actually shipped so it can't drift out of sync
-with the real tokens/primitives in `src/`.
+Authoritative as of the Redesign pass (see "Redesign pass" below), building
+on Phase 2G/2G.1/2I/2L. Phase 0's original direction (below, in "History")
+still holds; this document records what actually shipped so it can't drift
+out of sync with the real tokens/primitives in `src/`.
+
+## Redesign pass
+
+A full-product UX/UI redesign request (Testora-level EdTech SaaS polish +
+Vertex identity) was scoped, after auditing the actual current state, as a
+**targeted gap-closing pass** rather than a ground-up rewrite — the product
+already carried real, previously-shipped Vertex design work (Phase
+2G/2G.1/2I/2L: violet OKLCH tokens, restrained atmosphere backgrounds, card
+variants, a dark admin sidebar, an existing no-horizontal-scroll table
+system, a working Collapsible-based Detailed Analysis). Rewriting
+already-strong surfaces would have been pure churn. What this pass actually
+found and fixed:
+
+- **Rejected-direction cleanup**: the landing page (`src/app/page.tsx`)
+  carried hand-drawn-style (`Caveat` font) annotations with scribbled-arrow
+  SVGs beside the product-visual hero. Hand-drawn annotations and scribbled
+  arrows are an explicitly rejected direction for this product — decorative
+  elements with no product purpose. Removed entirely (along with the
+  `Caveat` font dependency); the layered product-visual cards (Progression /
+  main test / result) now carry the visual interest on their own.
+- **`OnboardingShell` + stepper** (`src/components/shared/onboarding-shell.tsx`,
+  new) — the "Try Yourself" wizard (email → verify → profile → start) had
+  five step components each hand-rolling an identical
+  `vertex-atmosphere flex h-dvh …` wrapper with no shared header, no way
+  back to the landing page, and no progress indicator. `OnboardingShell` is
+  now the one shared shell: a minimal header (wordmark + "Back to home") and
+  a lightweight 4-step dot/line indicator, visually subordinate to the
+  card it wraps — never a marketing header, never competing with the form.
+  Applied to all five `try-*-step.tsx` components. Deliberately **not**
+  applied to the invited-candidate flow (`placement-start.tsx`,
+  `candidate-form.tsx`, `placement-instructions.tsx`) — that flow has no
+  natural 4-step stepper and a "back to home" link doesn't make sense for
+  someone who arrived via a direct invitation link; it already met the bar
+  on its own and was left alone, per this pass's targeted scope.
+- **Student Result "showpiece" upgrade** — `PlacementResult` and
+  `TryResultStep` (the two student-facing result screens; kept as separate
+  components deliberately, see their own doc comments) previously rendered
+  Recommended Level as a small pill above a large raw score. Recommended
+  Level is now the true hero (large heading, `text-overline` eyebrow); a new
+  `ScoreRing` (`src/components/shared/score-ring.tsx` — hand-built SVG
+  circular progress, no charting library) visualizes percentage as a
+  supporting secondary element; a new `LevelScale`
+  (`src/components/placement/level-scale.tsx`) shows the six standard
+  levels with the Recommended Level highlighted. **`LevelScale` is
+  deliberately a separate component from `ProgressionTrack`** even though
+  the dot/line visual language rhymes — `ProgressionTrack` visualizes the
+  question-position-based diagnostic signal, `LevelScale` only ever reads
+  the score-based `level` string. Conflating those two was exactly the bug
+  Phase 2L fixed; this pass was careful not to reintroduce it through a
+  shared component. `TryResultStep` was also missing the Phase 2L
+  `DetailedAnalysis` section entirely — added, using the same data
+  (`result.detailedAnalysis`) already computed server-side; no new
+  business logic.
+- **Course-level performance bars** — `DetailedAnalysis`'s "Performance by
+  course level" rows were text-only; each row now also carries a compact
+  accuracy bar (`entry.percentageOfTotal`, already computed, purely
+  presentational) per the "use small bars or compact visualizations"
+  requirement.
+- **Typography roles** — `src/app/globals.css` gained named semantic
+  utilities (`.text-display`, `.text-page-title`, `.text-section-title`,
+  `.text-metric`, `.text-overline`, `.text-caption`) so headings are named
+  by job, not by guessing a Tailwind size each time. Applied where added in
+  this pass; broader rollout across existing headings is a mechanical
+  follow-up, not done wholesale here to keep this pass's blast radius
+  targeted.
+- **Favicon/metadata** — the app previously had only a bare `favicon.ico`
+  and no `icons`/`themeColor` metadata. Added `src/app/icon.png` and
+  `src/app/apple-icon.png` (generated from the existing
+  `public/vertex-logo.png` — the real Vertex mark, not a new asset) via
+  Next's file-convention icons, plus a `viewport.themeColor` matching the
+  dark sidebar tone, in `src/app/layout.tsx`.
+- **Charts**: no charting library was added. The product already hand-built
+  every "chart-like" visual (progress bars, `ProgressionTrack`,
+  `MetricCard`) with plain SVG/div — `ScoreRing` and the course-level
+  accuracy bars follow the same convention rather than introducing
+  `recharts`/`d3`/etc. as a new dependency.
+- **Tooling note**: the official Anthropic `frontend-design` plugin was not
+  installed in this environment (no plugin marketplace configured) and
+  could not be installed non-interactively; the Dribbble references in the
+  request also aren't fetchable as useful visual data by this agent. This
+  pass used the request's own detailed written specification (which
+  encodes the Testora-level-polish direction in text: density, restraint,
+  no decorative filler, hand-built charts, evidence-aware diagnostic
+  language) as the design authority instead.
 
 ## Result detail — placement semantics (Phase 2G.1 audit)
 

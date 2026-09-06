@@ -56,18 +56,23 @@ export function DetailedAnalysis({ analysis }: { analysis: StudentDetailedAnalys
 
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-medium text-muted-foreground">Performance by course level</h3>
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-2.5">
               {courseLevelPerformance.map((entry) => (
-                <li
-                  key={entry.label}
-                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-muted/30 px-3 py-2 text-sm"
-                >
-                  <span className="min-w-0 truncate font-medium text-foreground">{entry.label}</span>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {entry.correct} / {entry.total} correct
-                    </span>
-                    {qualitativeBadge(entry)}
+                <li key={entry.label} className="flex flex-col gap-1.5 rounded-lg bg-muted/30 px-3 py-2.5 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <span className="min-w-0 truncate font-medium text-foreground">{entry.label}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {entry.correct} / {entry.total} correct
+                      </span>
+                      {qualitativeBadge(entry)}
+                    </div>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                    <div
+                      className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                      style={{ width: `${entry.percentageOfTotal}%` }}
+                    />
                   </div>
                 </li>
               ))}

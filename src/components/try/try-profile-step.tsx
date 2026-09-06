@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { VertexWordmark } from "@/components/placement/vertex-mark";
+import { OnboardingShell } from "@/components/shared/onboarding-shell";
 import { updateSelfServeProfileAction } from "@/server/actions/self-serve-actions";
 
 type RawValues = { firstName: string; lastName: string; phoneNumber: string; age: string };
@@ -58,10 +58,9 @@ export function TryProfileStep({ email, onSuccess }: { email: string; onSuccess:
   }
 
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
+    <OnboardingShell step="profile">
       <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
         <div className="flex flex-col items-center gap-4 text-center">
-          <VertexWordmark />
           <div className="flex flex-col gap-1.5">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Tell us about yourself</h1>
             <p className="text-sm text-muted-foreground">
@@ -133,7 +132,7 @@ export function TryProfileStep({ email, onSuccess }: { email: string; onSuccess:
           </Button>
         </form>
       </div>
-    </div>
+    </OnboardingShell>
   );
 }
 

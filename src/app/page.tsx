@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Caveat } from "next/font/google";
 import {
   ArrowRightIcon,
   BarChart3Icon,
@@ -12,11 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { VertexMark, VertexWordmark } from "@/components/placement/vertex-mark";
-
-// Used only for the small hand-drawn-style annotations beside the
-// product visual (see design/new reference.png) — no other UI on the
-// page uses it, so it's loaded here rather than in the root layout.
-const caveat = Caveat({ subsets: ["latin"], weight: ["500", "600"] });
 
 const FEATURES = [
   {
@@ -53,18 +47,18 @@ const ANSWER_OPTIONS = ["lives", "has lived", "is living", "lived"];
 const SELECTED_OPTION_INDEX = 1;
 
 /** Marketing/informational landing page for the root route — a single,
- * scroll-free hero screen (per the latest visual refinement: no stats
- * strip, no footer, everything above the fold), reproducing the
- * updated reference as closely as technically possible: a floating
- * pill navbar, the layered product-visual concept, hand-drawn
- * annotations, and an atmospheric background. Phase 2J added a "Try
- * Yourself" CTA (public self-service placement — see
- * /docs/PHASE_2J_TRY_YOURSELF.md) alongside the existing "Admin login"
- * control; a targeted addition to the existing hero/action hierarchy,
- * not a redesign — same branding, typography, motion, and responsive
- * behavior as before. No invented customer names or statistics anywhere.
- * No "adaptive"/"AI" language — the test is fixed-order with
- * progressively increasing difficulty. */
+ * scroll-free hero screen (no stats strip, no footer, everything above
+ * the fold): a floating pill navbar, the layered product-visual concept
+ * (the real Test Runner/Result UI, never a stock photo or illustration —
+ * see /docs/DESIGN_SYSTEM.md "Redesign — rejected directions"), and a
+ * restrained atmospheric background. The decorative hand-drawn-style
+ * annotations from an earlier pass were removed in the Redesign pass —
+ * that direction is explicitly rejected going forward; the product visual
+ * itself should carry the interest. Phase 2J added a "Try Yourself" CTA
+ * (public self-service placement — see /docs/PHASE_2J_TRY_YOURSELF.md)
+ * alongside the existing "Admin login" control. No invented customer
+ * names or statistics anywhere. No "adaptive"/"AI" language — the test is
+ * fixed-order with progressively increasing difficulty. */
 export default function Home() {
   return (
     <div className="relative flex h-dvh flex-col overflow-y-auto overflow-x-hidden bg-gradient-to-b from-white to-[oklch(0.97_0.012_292.7)]">
@@ -290,52 +284,6 @@ export default function Home() {
               <p className="pt-3 text-[11px] text-muted-foreground">
                 Ready for the next step in your English journey.
               </p>
-            </div>
-
-            {/* Hand-drawn annotations — positioned beside the progression/result
-             * cards' own footprint (never under the main card), with a
-             * higher z-index as a safety margin. */}
-            <div
-              className={cn(
-                "absolute top-[300px] left-0 z-30 w-36 text-primary/80",
-                caveat.className
-              )}
-            >
-              <svg
-                aria-hidden
-                viewBox="0 0 40 40"
-                className="absolute -top-9 left-8 h-9 w-9 text-primary/60"
-                fill="none"
-              >
-                <path
-                  d="M4 34 C10 14, 26 6, 36 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-                <path d="M28 3 L36 4 L33 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <p className="text-lg leading-tight">Progressive difficulty</p>
-              <p className="text-lg leading-tight">from Beginner to Advanced</p>
-            </div>
-
-            <div className={cn("absolute top-[330px] right-0 z-30 w-44 text-primary/80", caveat.className)}>
-              <svg
-                aria-hidden
-                viewBox="0 0 40 40"
-                className="absolute -top-8 right-8 h-8 w-8 text-primary/60"
-                fill="none"
-              >
-                <path
-                  d="M4 34 C10 14, 26 6, 36 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-                <path d="M28 3 L36 4 L33 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <p className="text-lg leading-tight">Clear levels.</p>
-              <p className="text-lg leading-tight">Brighter opportunities.</p>
             </div>
           </div>
 

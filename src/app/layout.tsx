@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   description: "Professional English placement testing for educational centers.",
 };
 
+export const viewport = {
+  themeColor: "#1c1730",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
