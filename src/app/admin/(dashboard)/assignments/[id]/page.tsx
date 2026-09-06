@@ -41,7 +41,7 @@ export default async function AssignmentDetailPage({
   }));
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8 lg:px-10 lg:py-8">
       <PageHeader
         eyebrow="Assignment"
         title={candidateDisplayName(assignment.candidate)}

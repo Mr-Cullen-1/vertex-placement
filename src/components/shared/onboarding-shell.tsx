@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { VertexWordmark } from "@/components/placement/vertex-mark";
+import { VertexMark } from "@/components/placement/vertex-mark";
 
 const STEPS = [
   { key: "email", label: "Email" },
@@ -12,15 +12,19 @@ const STEPS = [
 
 export type OnboardingStep = (typeof STEPS)[number]["key"];
 
+const FACTS = ["70 questions", "30 minutes", "2 free completed attempts"];
+
 /**
- * Redesign pass — the shared shell for the "Try Yourself" self-service
- * wizard (email -> verify -> profile -> start). Entering this flow means
- * the visitor has left the marketing landing page and entered the
- * product: no hero copy, no product screenshot, no marketing side panel
- * here — only a minimal wayfinding header, an optional step indicator,
- * and the auth-style card the caller renders as `children`. The card
- * itself remains the dominant visual element (see /docs/DESIGN_SYSTEM.md
- * "Onboarding shell").
+ * Correction pass — the shared shell for the "Try Yourself" self-service
+ * wizard (email -> verify -> profile -> start), rebuilt to use the SAME
+ * split-shell visual architecture as Admin Login (see
+ * /docs/DESIGN_SYSTEM.md "Correction pass — Testora palette"): a deep
+ * teal brand panel (left, ~45–50% desktop) with static, factual product
+ * copy, and a light gray onboarding workspace (right) holding the step
+ * indicator and the focused white card the caller renders as `children`.
+ * On narrow viewports the brand panel collapses to a compact header
+ * strip rather than a full-height column — see the `min-[900px]:flex-1`
+ * pattern below, identical to the admin login page's own breakpoint.
  *
  * `step` is omitted for terminal views (result, unavailable, error) where
  * a linear step position no longer applies.
@@ -33,25 +37,50 @@ export function OnboardingShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-dvh flex-col overflow-y-auto bg-background">
-      <header className="flex shrink-0 items-center justify-between px-6 py-5 sm:px-8">
-        <VertexWordmark className="scale-95 sm:scale-100" />
+    <div className="flex min-h-dvh flex-col bg-background min-[900px]:flex-row">
+      {/* LEFT — brand, deep teal. Compact on mobile, full-height column
+       * at 900px+ (mirrors admin login's own breakpoint). */}
+      <div className="relative flex shrink-0 flex-col items-center justify-center gap-4 bg-primary px-6 py-8 text-primary-foreground min-[900px]:flex-1 min-[900px]:gap-6 min-[900px]:py-16">
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="absolute top-5 left-5 flex items-center gap-1.5 text-xs font-medium text-primary-foreground/70 transition-colors hover:text-primary-foreground sm:top-6 sm:left-6"
         >
           <ArrowLeftIcon className="size-3.5" />
           Back to home
         </Link>
-      </header>
 
-      {step && (
-        <div className="mx-auto w-full max-w-xs shrink-0 px-6 pb-2 sm:max-w-sm">
-          <OnboardingStepper current={step} />
+        <div className="flex flex-col items-center gap-3 text-center min-[900px]:gap-5">
+          <VertexMark className="size-10 min-[900px]:size-14" />
+          <div className="flex flex-col gap-1 min-[900px]:gap-1.5">
+            <h1 className="text-lg font-semibold tracking-tight text-primary-foreground min-[900px]:text-2xl">
+              Check your English level
+            </h1>
+            <p className="hidden text-sm text-primary-foreground/70 min-[900px]:block">
+              A modern English placement assessment — no account needed.
+            </p>
+          </div>
         </div>
-      )}
 
-      <main className="flex flex-1 items-center justify-center px-6 py-6">{children}</main>
+        <ul className="hidden flex-col items-center gap-2 min-[900px]:flex">
+          {FACTS.map((fact) => (
+            <li key={fact} className="flex items-center gap-2 text-sm text-primary-foreground/80">
+              <span aria-hidden className="size-1 rounded-full bg-primary-foreground/50" />
+              {fact}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* RIGHT — onboarding workspace, light gray canvas. */}
+      <div className="flex flex-1 flex-col items-center overflow-y-auto px-6 py-8 min-[900px]:py-16">
+        {step && (
+          <div className="mb-6 w-full max-w-xs shrink-0 min-[900px]:max-w-sm">
+            <OnboardingStepper current={step} />
+          </div>
+        )}
+
+        <div className="flex w-full flex-1 items-center justify-center">{children}</div>
+      </div>
     </div>
   );
 }
@@ -73,7 +102,7 @@ function OnboardingStepper({ current }: { current: OnboardingStep }) {
                 aria-hidden
                 className={cn(
                   "flex size-2 shrink-0 rounded-full transition-colors duration-200",
-                  active ? "size-2.5 bg-primary" : done ? "bg-primary/60" : "bg-border"
+                  active ? "size-2.5 bg-primary" : done ? "bg-primary/60" : "bg-disabled"
                 )}
               />
               <span
@@ -90,7 +119,7 @@ function OnboardingStepper({ current }: { current: OnboardingStep }) {
                 aria-hidden
                 className={cn(
                   "mx-1.5 h-px flex-1 -translate-y-2.5 transition-colors duration-200",
-                  done ? "bg-primary/60" : "bg-border"
+                  done ? "bg-primary/60" : "bg-disabled"
                 )}
               />
             )}

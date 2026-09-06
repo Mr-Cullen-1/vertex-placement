@@ -17,7 +17,6 @@ import { AttemptNotFoundError } from "@/server/errors";
 import { PROGRESSION_BANDS } from "@/domain/placement/progression";
 import type { QuestionAnalysisEntry } from "@/domain/results/types";
 import { PageHeader } from "@/components/admin/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProgressionTrack } from "@/components/shared/progression-track";
@@ -58,7 +57,7 @@ export default async function ResultDetailPage({
   const isThinEvidence = result.progression.progressionBand !== null && answeredRatio < 0.2;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex max-w-[1480px] flex-col gap-6 p-4 md:p-8 lg:px-10 lg:py-8">
       <PageHeader
         eyebrow="Assessment report"
         title={`${result.candidate.firstName} ${result.candidate.lastName}`}
@@ -69,13 +68,11 @@ export default async function ResultDetailPage({
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeading icon={TrophyIcon} title="Objective result" description="Score-based, immutable" />
-            <CardContent className="flex flex-col items-center gap-2 text-center">
+            <CardContent className="flex flex-col items-center gap-3 text-center">
               {result.level && (
                 <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                    Recommended level
-                  </span>
-                  <Badge>{result.level}</Badge>
+                  <span className="text-overline text-primary">Recommended level</span>
+                  <span className="text-3xl font-semibold tracking-tight text-foreground">{result.level}</span>
                 </div>
               )}
               <div className="text-5xl font-semibold tracking-tight text-foreground tabular-nums">
@@ -83,7 +80,23 @@ export default async function ResultDetailPage({
                 <span className="text-lg font-normal text-muted-foreground"> / {result.totalQuestions}</span>
               </div>
               <p className="text-sm text-muted-foreground">{formatPercentage(result.percentage)} correct</p>
-              <dl className="mt-2 grid w-full grid-cols-2 gap-3 text-left text-xs">
+
+              <dl className="mt-2 grid w-full grid-cols-3 gap-3 text-center">
+                <div className="flex flex-col gap-0.5 rounded-lg bg-muted/60 px-2 py-2">
+                  <dt className="text-xs text-muted-foreground">Correct</dt>
+                  <dd className="text-sm font-semibold text-foreground">{result.progression.correctCount}</dd>
+                </div>
+                <div className="flex flex-col gap-0.5 rounded-lg bg-muted/60 px-2 py-2">
+                  <dt className="text-xs text-muted-foreground">Incorrect</dt>
+                  <dd className="text-sm font-semibold text-foreground">{result.progression.incorrectCount}</dd>
+                </div>
+                <div className="flex flex-col gap-0.5 rounded-lg bg-muted/60 px-2 py-2">
+                  <dt className="text-xs text-muted-foreground">Unanswered</dt>
+                  <dd className="text-sm font-semibold text-foreground">{result.progression.unansweredCount}</dd>
+                </div>
+              </dl>
+
+              <dl className="grid w-full grid-cols-2 gap-3 text-left text-xs sm:grid-cols-3">
                 <div>
                   <dt className="text-muted-foreground">Answered</dt>
                   <dd className="font-medium text-foreground">
@@ -95,18 +108,6 @@ export default async function ResultDetailPage({
                   <dd className="font-medium text-foreground">
                     {minutes}m {seconds}s
                   </dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Correct</dt>
-                  <dd className="font-medium text-foreground">{result.progression.correctCount}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Incorrect</dt>
-                  <dd className="font-medium text-foreground">{result.progression.incorrectCount}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Unanswered</dt>
-                  <dd className="font-medium text-foreground">{result.progression.unansweredCount}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Submission type</dt>
@@ -122,6 +123,9 @@ export default async function ResultDetailPage({
                   <dt className="text-muted-foreground">Completed</dt>
                   <dd className="font-medium text-foreground">{formatDateTime(result.completedAt)}</dd>
                 </div>
+              </dl>
+
+              <dl className="grid w-full grid-cols-2 gap-3 border-t border-border pt-3 text-left text-xs sm:grid-cols-3">
                 <div>
                   <dt className="text-muted-foreground">Phone</dt>
                   <dd className="font-medium text-foreground">{result.candidate.phoneNumber}</dd>

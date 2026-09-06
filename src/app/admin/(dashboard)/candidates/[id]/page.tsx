@@ -45,7 +45,7 @@ export default async function CandidateDetailPage({
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex max-w-[1440px] flex-col gap-6 p-4 md:p-8 lg:px-10 lg:py-8">
       <PageHeader
         eyebrow="Candidate"
         title={candidateDisplayName(candidate)}
@@ -58,67 +58,69 @@ export default async function CandidateDetailPage({
         }
       />
 
-      <Card>
-        <CardHeading icon={IdCardIcon} title="Candidate information" />
-        <CardContent>
-          {isPending ? (
-            <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-              Awaiting student details — this candidate hasn&apos;t opened their invitation and
-              entered their information yet.
-            </p>
-          ) : (
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Stat label="Phone" value={candidate.phoneNumber} />
-              <Stat label="Age" value={String(candidate.age)} />
-              <Stat label="Email" value={candidate.email ?? "—"} />
-              <Stat label="Added" value={formatDate(candidate.createdAt)} />
-            </dl>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_2fr]">
+        <Card className="h-fit">
+          <CardHeading icon={IdCardIcon} title="Candidate information" />
+          <CardContent>
+            {isPending ? (
+              <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                Awaiting student details — this candidate hasn&apos;t opened their invitation and
+                entered their information yet.
+              </p>
+            ) : (
+              <dl className="grid grid-cols-2 gap-4">
+                <Stat label="Phone" value={candidate.phoneNumber} />
+                <Stat label="Age" value={String(candidate.age)} />
+                <Stat label="Email" value={candidate.email ?? "—"} />
+                <Stat label="Added" value={formatDate(candidate.createdAt)} />
+              </dl>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeading icon={SendIcon} title="Assignments" description={`${assignments.length} total`} />
-        <CardContent>
-          {assignments.length === 0 ? (
-            <EmptyState
-              icon={SendIcon}
-              title="No assignments yet"
-              description="This candidate hasn't been assigned a placement test."
-            />
-          ) : (
-            <div className="flex max-h-[420px] flex-col gap-2 overflow-y-auto pr-0.5">
-              {assignments.map((assignment) => {
-                const displayStatus = displayStatusForAssignment(assignment);
-                const result = resultsByAssignmentId.get(assignment.id);
-                const resolvedHref =
-                  displayStatus === "COMPLETED" && result
-                    ? `/admin/results/${result.attemptId}`
-                    : `/admin/assignments/${assignment.id}`;
+        <Card>
+          <CardHeading icon={SendIcon} title="Assignments" description={`${assignments.length} total`} />
+          <CardContent>
+            {assignments.length === 0 ? (
+              <EmptyState
+                icon={SendIcon}
+                title="No assignments yet"
+                description="This candidate hasn't been assigned a placement test."
+              />
+            ) : (
+              <div className="flex max-h-[560px] flex-col gap-2 overflow-y-auto pr-0.5">
+                {assignments.map((assignment) => {
+                  const displayStatus = displayStatusForAssignment(assignment);
+                  const result = resultsByAssignmentId.get(assignment.id);
+                  const resolvedHref =
+                    displayStatus === "COMPLETED" && result
+                      ? `/admin/results/${result.attemptId}`
+                      : `/admin/assignments/${assignment.id}`;
 
-                return (
-                  <InteractiveListItem
-                    key={assignment.id}
-                    href={resolvedHref}
-                    actionLabel={displayStatus === "COMPLETED" && result ? "View result" : "View assignment"}
-                    title={assignment.test.title}
-                    subtitle={`Created ${formatDate(assignment.createdAt)}`}
-                    meta={
-                      result && (
-                        <span className="font-medium text-foreground">
-                          {result.rawScore}/{result.totalQuestions} ({formatPercentage(result.percentage)})
-                          {result.level ? ` · ${result.level}` : ""}
-                        </span>
-                      )
-                    }
-                    status={<AssignmentStatusBadge status={displayStatus} />}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  return (
+                    <InteractiveListItem
+                      key={assignment.id}
+                      href={resolvedHref}
+                      actionLabel={displayStatus === "COMPLETED" && result ? "View result" : "View assignment"}
+                      title={assignment.test.title}
+                      subtitle={`Created ${formatDate(assignment.createdAt)}`}
+                      meta={
+                        result && (
+                          <span className="font-medium text-foreground">
+                            {result.rawScore}/{result.totalQuestions} ({formatPercentage(result.percentage)})
+                            {result.level ? ` · ${result.level}` : ""}
+                          </span>
+                        )
+                      }
+                      status={<AssignmentStatusBadge status={displayStatus} />}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

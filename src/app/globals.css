@@ -7,6 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-disabled: var(--disabled);
+  --color-muted-icon: var(--muted-icon);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -56,101 +58,114 @@
 }
 
 :root {
-  /* Redesign pass — warm editorial exam-SaaS palette, replacing the prior
-     violet/white system product-wide. Primary ink, canvas, and accent
-     values are the approved hex tokens; everything else is a derived
-     neutral/taupe/espresso value carefully built around them. See
-     /docs/DESIGN_SYSTEM.md "Redesign pass — warm palette". */
-  --background: #f4f1ee;
-  --foreground: #121313;
-  --card: #fbfbfc;
-  --card-foreground: #121313;
-  --popover: #fbfbfc;
-  --popover-foreground: #121313;
-  /* Deep warm espresso — the one dominant action color (CTAs, selected
-     states, focus), replacing violet. Never a flooded surface color. */
-  --primary: #52372b;
-  --primary-foreground: #fbfbfc;
-  --secondary: #eee9e5;
-  --secondary-foreground: #121313;
-  --muted: #eee9e5;
-  --muted-foreground: #7a828c;
-  /* Soft taupe wash derived from the warm accent #8b634b — hover/selected
+  /* Correction pass — the exact Testora UI palette (deep teal + white +
+     cool light grays), replacing the prior warm brown/espresso system
+     product-wide. See /docs/DESIGN_SYSTEM.md "Correction pass — Testora
+     palette". Every value below is one of the specified hex tokens or a
+     documented light/dark derivation of one. */
+  --background: #f3f4f6;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  /* Deep teal — the one dominant action color (CTAs, active nav, focus,
+     primary chart data). Never replaced with brown or violet. */
+  --primary: #174e4f;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #000000;
+  --muted: #f3f4f6;
+  /* Secondary text (descriptions/metadata/timestamps). A lighter
+     muted-icon tier (#99a1af) is used inline where specifically called
+     for (placeholders, disabled state) rather than as this shared token,
+     to keep body copy at an accessible contrast level. */
+  --muted-foreground: #6a7282;
+  /* A very light teal wash derived from --primary — hover/selected
      surface backgrounds. */
-  --accent: #ede2d8;
-  --accent-foreground: #4a3226;
-  /* A softer, lower-contrast wash of --primary — for restrained tonal
-     surfaces (metric card accents, soft icon chips) where the full
-     --accent tint would be too strong. */
-  --primary-soft: #e8ddd3;
-  --success: #6b8f71;
-  --success-foreground: #fbfbfc;
-  --warning: #b28a4c;
-  --warning-foreground: #2b2015;
-  --info: #7c93a6;
-  --info-foreground: #fbfbfc;
-  --destructive: #a24e3f;
-  --border: #e2dcd5;
-  --input: #e2dcd5;
-  --ring: #8b634b;
-  --chart-1: #52372b;
-  --chart-2: #6b8f71;
-  --chart-3: #b28a4c;
-  --chart-4: #8b634b;
-  --chart-5: #7a828c;
+  --accent: #e6eeee;
+  --accent-foreground: #174e4f;
+  /* A softer, lower-contrast tonal surface than --accent — metric card
+     accents, soft icon chips. */
+  --primary-soft: #eef3f3;
+  --success: #00a63e;
+  --success-foreground: #ffffff;
+  --warning: #fcc800;
+  --warning-foreground: #7a5d00;
+  --info: #174e4f;
+  --info-foreground: #ffffff;
+  --destructive: #e7000b;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #174e4f;
+  /* Disabled controls / inactive stepper connectors / inactive
+     progress — a step down from --border, per the Testora palette. */
+  --disabled: #d1d5dc;
+  /* Muted icon tier — lighter than --muted-foreground, for clearly
+     secondary icons/placeholders only, never body copy. */
+  --muted-icon: #99a1af;
+  --chart-1: #174e4f;
+  --chart-2: #00a63e;
+  --chart-3: #fcc800;
+  --chart-4: #6a7282;
+  --chart-5: #99a1af;
   --radius: 0.625rem;
-  /* Admin sidebar — a light/medium warm stone surface (replacing the
-     prior near-black treatment), deep-graphite text, so inactive nav
-     items stay easy to scan rather than fighting low contrast. */
-  --sidebar: #ede7e1;
-  --sidebar-foreground: #121313;
-  --sidebar-primary: #52372b;
-  --sidebar-primary-foreground: #fbfbfc;
-  --sidebar-accent: #e2d6c9;
-  --sidebar-accent-foreground: #121313;
-  --sidebar-border: rgba(18, 19, 19, 0.08);
-  --sidebar-ring: #8b634b;
+  /* Admin sidebar — Testora architecture: a white surface with a plain
+     border-right, not a tinted/dark surface. Active nav is a solid
+     --primary fill (handled directly in admin-shell.tsx), not a tinted
+     "selected" background, so --sidebar-accent here is only the hover
+     state. */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #174e4f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f6;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #174e4f;
 }
 
 .dark {
-  --background: #1c1815;
-  --foreground: #f4f1ee;
-  --card: #262019;
-  --card-foreground: #f4f1ee;
-  --popover: #262019;
-  --popover-foreground: #f4f1ee;
-  --primary: #c9a688;
-  --primary-foreground: #1c1815;
-  --secondary: #332b23;
-  --secondary-foreground: #f4f1ee;
-  --muted: #332b23;
-  --muted-foreground: #a89c8f;
-  --accent: #3a2f26;
-  --accent-foreground: #ecd9c8;
-  --success: #6b8f71;
-  --success-foreground: #f4f1ee;
-  --warning: #b28a4c;
+  --background: #101828;
+  --foreground: #f3f4f6;
+  --card: #1d2939;
+  --card-foreground: #f3f4f6;
+  --popover: #1d2939;
+  --popover-foreground: #f3f4f6;
+  --primary: #2f8f8a;
+  --primary-foreground: #101828;
+  --secondary: #1d2939;
+  --secondary-foreground: #f3f4f6;
+  --muted: #1d2939;
+  --muted-foreground: #99a1af;
+  --accent: #1e3a38;
+  --accent-foreground: #eaf5f4;
+  --success: #00a63e;
+  --success-foreground: #101828;
+  --warning: #fcc800;
   --warning-foreground: #2b2015;
-  --info: #7c93a6;
-  --info-foreground: #1c1815;
-  --primary-soft: #3a2f26;
-  --destructive: #c46a58;
-  --border: rgba(244, 241, 238, 0.1);
-  --input: rgba(244, 241, 238, 0.15);
-  --ring: #8b634b;
-  --chart-1: #c9a688;
-  --chart-2: #6b8f71;
-  --chart-3: #b28a4c;
-  --chart-4: #8b634b;
-  --chart-5: #a89c8f;
-  --sidebar: #ede7e1;
-  --sidebar-foreground: #121313;
-  --sidebar-primary: #52372b;
-  --sidebar-primary-foreground: #fbfbfc;
-  --sidebar-accent: #e2d6c9;
-  --sidebar-accent-foreground: #121313;
-  --sidebar-border: rgba(18, 19, 19, 0.08);
-  --sidebar-ring: #8b634b;
+  --info: #2f8f8a;
+  --info-foreground: #101828;
+  --primary-soft: #1e3a38;
+  --destructive: #e7000b;
+  --border: rgba(243, 244, 246, 0.1);
+  --input: rgba(243, 244, 246, 0.15);
+  --ring: #2f8f8a;
+  --disabled: rgba(243, 244, 246, 0.2);
+  --muted-icon: #99a1af;
+  --chart-1: #2f8f8a;
+  --chart-2: #00a63e;
+  --chart-3: #fcc800;
+  --chart-4: #99a1af;
+  --chart-5: #6a7282;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #174e4f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f6;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #174e4f;
 }
 
 @layer base {
@@ -176,6 +191,14 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* A frozen mid-gradient still reads as "moving" — fall back to a
+     flat, stable surface instead (see /docs/DESIGN_SYSTEM.md "Loading
+     states"). */
+  .animate-shimmer {
+    background-image: none !important;
+    background-color: var(--border);
   }
 }
 
@@ -222,6 +245,22 @@
   .animate-page-in {
     animation: vertex-page-in 240ms ease-out;
   }
+
+  /* A real moving shimmer for loading skeletons (Correction pass) —
+     replaces a flat opacity pulse, which reads as a frozen/static page.
+     prefers-reduced-motion (below) freezes the animation but the
+     gradient itself still renders as a plain, stable light-gray surface,
+     never a blank flash. */
+  .animate-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      var(--border) 25%,
+      color-mix(in oklch, var(--border), white 60%) 37%,
+      var(--border) 63%
+    );
+    background-size: 400% 100%;
+    animation: vertex-shimmer 1.6s ease-in-out infinite;
+  }
 }
 
 @keyframes vertex-page-in {
@@ -232,6 +271,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes vertex-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 

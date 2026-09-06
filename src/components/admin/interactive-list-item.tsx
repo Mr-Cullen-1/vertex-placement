@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 interface InteractiveListItemProps {
   href: string;
   /** Primary identity — the strongest visual element (a candidate's
-   * name, a test's title, …). */
+   * name, a test's title, …). Plain text, never a link — see
+   * "Button-only navigation" below. */
   title: React.ReactNode;
   /** Quieter secondary line directly under the title. */
   subtitle?: React.ReactNode;
@@ -15,9 +16,7 @@ interface InteractiveListItemProps {
   /** A status badge or similar, shown alongside the action. */
   status?: React.ReactNode;
   /** The explicit, always-visible action label — e.g. "Open test",
-   * "View candidate", "View result". Never relies on the title being the
-   * only clickable element (see /docs/DESIGN_SYSTEM.md "List design
-   * system"). */
+   * "View candidate", "View result". */
   actionLabel: string;
   className?: string;
 }
@@ -25,12 +24,15 @@ interface InteractiveListItemProps {
 /**
  * The one shared "interactive list" row used by Tests/Candidates/
  * Assignments (replacing a plain desktop table) and by sub-lists on
- * detail pages (attempt history, assignments-per-candidate). A single
- * responsive component rather than a separate desktop-table / mobile-card
- * pair: the whole row is a real link, metadata wraps naturally, and an
- * explicit action label is always visible — never only a bare chevron or
- * a link hidden inside the title text. See /docs/DESIGN_SYSTEM.md "List
- * design system — global".
+ * detail pages (attempt history, assignments-per-candidate).
+ *
+ * Button-only navigation (Correction pass, explicit product decision):
+ * the row itself is a plain `<div>`, never a `<Link>` — the card
+ * background, the title, and the metadata are NOT clickable. Only the
+ * trailing action control (an explicit, always-visible "Open test" /
+ * "View candidate" / "View result" button) navigates. No hidden overlay
+ * link, no title-as-anchor. See /docs/DESIGN_SYSTEM.md "Button-only
+ * navigation".
  */
 export function InteractiveListItem({
   href,
@@ -42,10 +44,9 @@ export function InteractiveListItem({
   className,
 }: InteractiveListItemProps) {
   return (
-    <Link
-      href={href}
+    <div
       className={cn(
-        "group flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-xs transition-all duration-150 hover:border-primary/30 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+        "flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         className
       )}
     >
@@ -56,12 +57,15 @@ export function InteractiveListItem({
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-3">
         {status}
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors duration-150 group-hover:border-primary/40 group-hover:bg-accent group-hover:text-accent-foreground">
+        <Link
+          href={href}
+          className="group inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors duration-150 hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
+        >
           {actionLabel}
           <ArrowRightIcon className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
-        </span>
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 

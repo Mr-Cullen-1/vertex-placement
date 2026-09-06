@@ -5,7 +5,75 @@ on Phase 2G/2G.1/2I/2L. Phase 0's original direction (below, in "History")
 still holds; this document records what actually shipped so it can't drift
 out of sync with the real tokens/primitives in `src/`.
 
-## Redesign pass — warm palette (mandatory visual replacement)
+## Correction pass — Testora palette (replaces the warm palette below)
+
+The warm brown/espresso palette from the Redesign pass (below) was an
+incorrect reading of the Testora reference and was fully replaced by an
+explicit, exact-hex correction: deep teal `#174e4f` (primary — CTAs, active
+nav, focus, chart data), white `#ffffff` (cards/surfaces), cool light gray
+`#f3f4f6` (app canvas), `#e5e7eb` (borders), `#d1d5dc` (disabled/inactive
+stepper connectors — new `--disabled`/`bg-disabled` token), `#99a1af`
+(muted-icon tier — new `--muted-icon` token), `#6a7282` (secondary text),
+`#00a63e`/`#fcc800`/`#e7000b` (success/warning/destructive). No brown/beige/
+violet token remains active anywhere in `globals.css`.
+
+Structural corrections made alongside the palette swap:
+
+- **Sidebar** — active nav item is now a solid `bg-sidebar-primary` (teal)
+  fill with white text/icon, not a tinted background + thin left bar. The
+  sidebar itself is `bg-sidebar` (white) with a plain `border-r
+  border-sidebar-border`.
+- **Button-only navigation** (explicit product decision) — `InteractiveListItem`
+  no longer wraps the whole row in a `<Link>`. The row is a plain `<div>`;
+  title/metadata/background are not clickable; only the trailing action
+  control (a real `<Link>`-rendered button) navigates. Applies everywhere
+  the component is used (Tests, Candidates, Assignments, Test Detail's
+  assignment list, Candidate Detail's assignment list) with zero per-page
+  changes, since the behavior lives in the one shared component.
+- **Dashboard panel priority swapped** — Recent Activity is now the large
+  left panel (`xl:grid-cols-[1.8fr_1fr]`, `min-h-[520px]`), Recommended
+  Level Distribution the smaller right panel. The distribution always
+  shows all six `STANDARD_PLACEMENT_LEVELS`, including zero-count levels,
+  never hiding a category. Fixed a real horizontal-scrollbar bug in the
+  activity list: the list `<ul>`/`<li>`/row `<Link>` chain was missing
+  `min-w-0` at every level, so a flex item's content (an unshrinkable
+  trailing date+badge+chevron cluster) could force the row wider than its
+  column — CSS's own "one axis visible, one auto" rule then silently
+  turned `overflow-y-auto` into an effective `overflow: auto`, producing
+  the scrollbar. Fixed with `min-w-0` up the chain plus explicit
+  `overflow-x-hidden`, not by re-hiding the symptom.
+- **Try Yourself rebuilt to match Admin Login's split-shell** —
+  `OnboardingShell` now renders the same architecture as the login page: a
+  deep teal brand panel (~45–50% desktop, static factual copy — "70
+  questions," "30 minutes," "2 free completed attempts" — never
+  testimonials/illustrations) beside a light gray onboarding workspace
+  holding the stepper and the white focused card. On narrow viewports the
+  teal panel collapses to a compact header strip (`shrink-0` without
+  `flex-1` below the `min-[900px]` breakpoint — literally the same
+  responsive technique the login page already used) rather than a
+  compressed side-by-side split.
+- **Admin Login** — footer strip removed entirely (the restricted-access
+  notice now sits subtly below the form, inside the right panel); the
+  split occupies the full viewport.
+- **Wider containers** — Assessment Report `max-w-4xl` (896px) →
+  `max-w-[1480px]`; Candidate Detail `max-w-5xl` → `max-w-[1440px]` with a
+  genuine 1fr/2fr (profile / assignments) two-column composition, not a
+  narrow single column; Assignment Detail `max-w-4xl` → `max-w-6xl`.
+  Objective Result gained a true hero treatment for Recommended Level
+  (large heading, not a small `Badge`) and a compact 3-column Correct/
+  Incorrect/Unanswered stat row, with candidate metadata separated into
+  its own bottom section behind a border.
+- **Animated shimmer loading** — `Skeleton` (`ui/skeleton.tsx`) switched
+  from a flat `animate-pulse` opacity fade to a real moving
+  `.animate-shimmer` gradient (`globals.css`), frozen to a flat stable
+  surface under `prefers-reduced-motion: reduce` (a frozen mid-gradient
+  still reads as "moving," so this is a dedicated override, not just the
+  generic zero-duration rule). New `ResultSkeleton` (wide, 40/60 split)
+  and `TryOnboardingSkeleton` (split-shell shape) added alongside the
+  existing `ListSkeleton`/`DetailSkeleton`/`DashboardSkeleton`, each wired
+  to its route's `loading.tsx` (including a new one for `/try`).
+
+## Redesign pass — warm palette (mandatory visual replacement, corrected above)
 
 A second, mandatory redesign pass explicitly moved the product OFF the
 violet/near-black/white system above and onto a warm, editorial exam-SaaS

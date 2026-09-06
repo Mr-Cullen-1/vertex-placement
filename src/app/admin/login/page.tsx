@@ -27,13 +27,15 @@ async function login(formData: FormData) {
 }
 
 /**
- * Fullscreen two-tone Vertex authentication environment — a deep warm
- * espresso brand panel (left) split from a light warm-stone sign-in
- * workspace (right), per the Redesign pass's warm palette (see
- * /docs/DESIGN_SYSTEM.md "Redesign pass"). Deliberately no gradients,
- * glows, or ambient lighting — the two flat panel colors plus a plain
- * vertical divider carry the composition. Below ~900px the split
- * collapses to a single stacked column and the divider is dropped.
+ * Fullscreen two-tone Vertex authentication environment — a deep teal
+ * brand panel (left, `bg-primary`) split from a light gray sign-in
+ * workspace (right, `bg-background`), per the Testora palette (see
+ * /docs/DESIGN_SYSTEM.md "Correction pass — Testora palette"). No
+ * separate footer bar — the restricted-access notice sits subtly below
+ * the form, inside the right panel, so the split occupies the full
+ * viewport cleanly. Deliberately no gradients, glows, or ambient
+ * lighting. Below ~900px the split collapses to a single stacked column
+ * and the divider is dropped.
  */
 export default async function AdminLoginPage({
   searchParams,
@@ -138,13 +140,13 @@ export default async function AdminLoginPage({
                 Sign in
               </Button>
             </form>
+
+            <p className="text-center text-xs text-muted-foreground">
+              Restricted to authorized administrators of Vertex Placement.
+            </p>
           </div>
         </div>
       </div>
-
-      <p className="relative pb-8 text-center text-xs text-muted-foreground">
-        Restricted to authorized administrators of Vertex Placement.
-      </p>
     </div>
   );
 }

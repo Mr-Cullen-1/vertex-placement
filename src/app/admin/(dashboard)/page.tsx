@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { MetricCard } from "@/components/admin/metric-card";
 import { AssignmentStatusBadge } from "@/components/admin/status-badge";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
+import { STANDARD_PLACEMENT_LEVELS } from "@/domain/placement/levels";
 import { candidateDisplayName, formatDate } from "@/lib/format";
 
 /** Operational overview — every number here is a live count from the
@@ -46,11 +47,19 @@ export default async function AdminDashboardPage() {
   const completedAttempts = assignments.filter((a) => a.status === "COMPLETED").length;
   const availableTests = tests.filter((t) => t.status === "PUBLISHED").length;
   const assignedCandidateCount = new Set(assignments.map((a) => a.candidateId)).size;
-  const recentAssignments = assignments.slice(0, 8);
+  const recentAssignments = assignments.slice(0, 14);
 
   const isEmpty = candidates.length === 0 && assignments.length === 0;
-  const maxLevelCount = Math.max(1, ...levelDistribution.map((entry) => entry.count));
-  const totalPlacedResults = levelDistribution.reduce((sum, entry) => sum + entry.count, 0);
+
+  // Always show all six standard levels, even at zero — never hide a
+  // category just because no candidate has reached it yet.
+  const countByLabel = new Map(levelDistribution.map((entry) => [entry.label, entry.count]));
+  const fullDistribution = STANDARD_PLACEMENT_LEVELS.map((label) => ({
+    label,
+    count: countByLabel.get(label) ?? 0,
+  }));
+  const maxLevelCount = Math.max(1, ...fullDistribution.map((entry) => entry.count));
+  const totalPlacedResults = fullDistribution.reduce((sum, entry) => sum + entry.count, 0);
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 p-4 md:p-8">
@@ -95,50 +104,10 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[1.7fr_1fr]">
-        <Card className="min-h-0">
-          <CardHeading
-            icon={ActivityIcon}
-            title="Recommended Level distribution"
-            description={
-              totalPlacedResults > 0
-                ? `${totalPlacedResults} completed result${totalPlacedResults === 1 ? "" : "s"} placed, across every test`
-                : "No completed results yet"
-            }
-          />
-          <CardContent className="flex flex-col gap-4">
-            {levelDistribution.length === 0 ? (
-              <EmptyState
-                icon={ClipboardCheckIcon}
-                title="No results yet"
-                description="Once a candidate completes an assessment, its Recommended Level will appear here."
-              />
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {levelDistribution.map((entry) => (
-                  <li key={entry.label} className="flex items-center gap-3">
-                    <span className="w-36 shrink-0 truncate text-sm font-medium text-foreground">
-                      {entry.label}
-                    </span>
-                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
-                        style={{ width: `${(entry.count / maxLevelCount) * 100}%` }}
-                      />
-                    </div>
-                    <span className="w-6 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
-                      {entry.count}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="flex min-h-0 flex-col">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[1.8fr_1fr]">
+        <Card className="flex min-h-[520px] flex-col">
           <CardHeading title="Recent activity" description="The latest assignments across the system." />
-          <CardContent className="flex min-h-0 flex-1 flex-col">
+          <CardContent className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
             {isEmpty ? (
               <EmptyState
                 icon={UsersIcon}
@@ -162,14 +131,14 @@ export default async function AdminDashboardPage() {
                 }
               />
             ) : (
-              <ul className="flex min-h-0 flex-1 flex-col divide-y divide-border overflow-y-auto">
+              <ul className="flex min-h-0 min-w-0 flex-1 flex-col divide-y divide-border overflow-x-hidden overflow-y-auto">
                 {recentAssignments.map((assignment) => (
-                  <li key={assignment.id} className="shrink-0">
+                  <li key={assignment.id} className="min-w-0 shrink-0">
                     <Link
                       href={`/admin/assignments/${assignment.id}`}
-                      className="group flex items-center justify-between gap-3 rounded-lg py-2.5 pr-1 pl-2 -mx-2 transition-colors first:pt-0.5 last:pb-0.5 hover:bg-muted/50"
+                      className="group flex min-w-0 items-center justify-between gap-3 rounded-lg py-3 pr-1 pl-2 -mx-2 transition-colors first:pt-1 last:pb-1 hover:bg-muted/50"
                     >
-                      <div className="flex min-w-0 flex-col">
+                      <div className="flex min-w-0 flex-col gap-0.5">
                         <span
                           className={
                             assignment.candidate.profileCompletedAt
@@ -195,6 +164,36 @@ export default async function AdminDashboardPage() {
                 ))}
               </ul>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="min-h-0">
+          <CardHeading
+            icon={ActivityIcon}
+            title="Recommended Level distribution"
+            description={
+              totalPlacedResults > 0
+                ? `${totalPlacedResults} completed result${totalPlacedResults === 1 ? "" : "s"}`
+                : "No completed results yet"
+            }
+          />
+          <CardContent className="flex flex-col gap-3">
+            {fullDistribution.map((entry) => (
+              <div key={entry.label} className="flex items-center gap-2">
+                <span className="w-28 shrink-0 truncate text-xs font-medium text-foreground">
+                  {entry.label}
+                </span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                    style={{ width: `${(entry.count / maxLevelCount) * 100}%` }}
+                  />
+                </div>
+                <span className="w-4 shrink-0 text-right text-xs font-medium tabular-nums text-muted-foreground">
+                  {entry.count}
+                </span>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

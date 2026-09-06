@@ -1,5 +1,5 @@
-import { DetailSkeleton } from "@/components/admin/loading-skeletons";
+import { ResultSkeleton } from "@/components/admin/loading-skeletons";
 
 export default function Loading() {
-  return <DetailSkeleton />;
+  return <ResultSkeleton />;
 }

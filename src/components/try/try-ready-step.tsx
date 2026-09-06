@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { VertexMark } from "@/components/placement/vertex-mark";
 import { OnboardingShell } from "@/components/shared/onboarding-shell";
 import { startPublicAttemptAction, resumeActiveAttemptAction } from "@/server/actions/self-serve-actions";
 
@@ -48,8 +47,6 @@ export function TryReadyStep({ mode, attemptNumber, testTitle, durationMinutes, 
   return (
     <OnboardingShell step="start">
       <div className="flex w-full max-w-md animate-page-in flex-col items-center gap-8 text-center">
-        <VertexMark className="size-14" />
-
         <div className="flex flex-col gap-3">
           <span className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
             Attempt {attemptNumber} of 2
