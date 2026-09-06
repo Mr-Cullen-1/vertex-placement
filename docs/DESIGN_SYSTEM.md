@@ -895,6 +895,96 @@ say, a genuinely horizontal data visualization would.
   announce "radio button, N of M, selected/not selected," not a
   generic clickable div.
 
+## Student Assessment redesign + loading system
+
+The live test-taking flow (`/placement/[token]` — ready screen,
+instructions, the active test, submit confirmation) was rebuilt around a
+dedicated `AssessmentShell` frame: a bordered white "exam app" surface set
+inside the app canvas with real margin from `sm` up, expanding edge-to-edge
+below it. One shared shell across every phase (ready → instructions →
+active test) so the brand/sidebar/frame never visually reset between them
+— only the candidate-details form step keeps its own standalone layout
+(out of scope; it's a data-entry form, not part of the reference
+structure being adopted).
+
+- **Persistent sidebar breakpoint is `min-[1200px]`, not `lg`/1024** — at
+  1024 a 288px sidebar leaves too little room for a readable ~760-900px
+  question column. Below 1200, the existing mobile `QuestionDrawer`
+  covers both tablet and phone widths uniformly (one drawer mechanism,
+  not a three-tier sidebar-width system).
+- **Sidebar collapse** ("Hide navigation") is local component state, not
+  persisted — the `<aside>` animates `width` between `0` and `18rem` with
+  `overflow-hidden` on the *outer* element (its inner content wrapper
+  stays a fixed `w-72` so text clips cleanly instead of reflowing/
+  squishing mid-transition, and critically so the collapsed mark/logo
+  can't still visually poke out and intercept clicks — a real bug caught
+  during QA and fixed by adding `overflow-hidden` to the `<aside>` itself,
+  not just relying on its width going to zero).
+- **Top bar** centers the current position ("Question 24 of 70"), but
+  that center slot is hidden below `min-[420px]` — at narrower widths it
+  collides with the drawer trigger/timer rather than truncating. This is
+  not a data-loss regression: the position is always separately visible,
+  unconditionally, in the question content's own overline label.
+- **Mark for review** is a new client-side-only affordance (a `Set` of
+  question IDs held in `PlacementTestShell` state) — deliberately never
+  sent to the server. It doesn't exist as an attempt attribute today, and
+  giving it one would be a business-logic change, not a UI change. The
+  navigator shows it as a small flag badge (top-left) alongside the
+  existing answered check badge (bottom-right) so both can coexist on one
+  tile without collision.
+- **Question transition** is direction-aware (`.animate-question-next` /
+  `-prev`, opacity + ~8px translateX) — only the question content
+  animates; the shell, sidebar, top bar, and footer never do.
+- **`PlacementTimer`** gained an additive, optional `onTick` prop (fires
+  every second with the remaining seconds) purely so the submit
+  confirmation dialog can mirror "time remaining" — it changes nothing
+  about the timer's own display, expiry, or announcement logic.
+
+### Loading system
+
+- **`VertexLoader`** (`components/placement/vertex-loader.tsx`) — the
+  Vertex mark stays stationary at the center while two thin rings (teal
+  `--primary`, neutral `--muted-icon`) orbit at different speeds/
+  directions continuously, transform-only (no layout cost). Colored via
+  `stroke="currentColor"` plus an inline `style={{ color: "var(--...)" }}`
+  on each `<svg>` — **not** a raw `stroke="var(--primary)"` attribute,
+  which does not reliably resolve a CSS custom property as an SVG
+  presentation-attribute value in this environment (confirmed by
+  `getComputedStyle` returning black until switched to this pattern).
+  Its own visibility is delayed ~180ms (`.animate-loader-reveal`) so a
+  fast resolve never flashes it — the surrounding skeleton/content is
+  never delayed, only this decorative mark.
+- **`PlacementShellSkeleton`** mirrors the real `AssessmentShell` frame
+  (sidebar, top bar, centered workspace) and is used both as
+  `src/app/placement/[token]/loading.tsx` and as `PlacementTestShell`'s
+  own "still fetching questions" fallback.
+- Both freeze correctly under `prefers-reduced-motion`: the orbit rings
+  and the reveal fade get `animation: none !important` (static mark, no
+  fade delay), matching the existing shimmer-freeze pattern.
+- A small, explicitly-requested motion touch was also added to the
+  **already-approved Admin Dashboard** (structure/color untouched): a
+  staggered `.animate-page-in` reveal (header → metrics → analytics row)
+  and a one-time `.animate-grow-in` (`scaleX(0→1)`) on the Recommended
+  Level Distribution bars — pure CSS, no new state, verified not to
+  reintroduce the page-level scroll this dashboard was specifically
+  fixed to avoid.
+
+### Stuck-loading root cause and fix
+
+`/placement/[token]` had **no `loading.tsx`** at all. A client
+`router.push("/placement/…")` (from Try Yourself's ready/result steps)
+left the previous screen frozen — button still disabled, no visual
+change — for the entire duration of this route's server-side compute
+(several DB round-trips), with nothing to show in between. That is the
+concrete, reproducible root cause behind "a route gets stuck until a hard
+refresh": there was no Suspense boundary for Next.js to show during the
+pending navigation. The fix is `src/app/placement/[token]/loading.tsx`
+rendering `PlacementShellSkeleton`. `try-ready-step.tsx` and
+`try-result-step.tsx` additionally gained a 15s safety-net timeout around
+their own action call (not the navigation) so a truly hung server action
+surfaces a retry message instead of a disabled button forever — a small
+addition, not a fake minimum-loading duration.
+
 ## History (Phase 0 direction, retained)
 
 See git history for the original Phase 0 section of this document,

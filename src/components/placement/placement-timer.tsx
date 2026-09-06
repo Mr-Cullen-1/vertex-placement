@@ -20,9 +20,14 @@ interface PlacementTimerProps {
    * The caller is responsible for calling the actual submit action — this
    * component never finalizes anything itself. */
   onExpire: () => void;
+  /** Optional — fires every tick with the current remaining seconds,
+   * purely so a caller can display it elsewhere (e.g. the submit
+   * confirmation dialog). Doesn't change this component's own display,
+   * expiry, or announcement logic in any way. */
+  onTick?: (remainingSeconds: number) => void;
 }
 
-export function PlacementTimer({ expiresAt, onExpire }: PlacementTimerProps) {
+export function PlacementTimer({ expiresAt, onExpire, onTick }: PlacementTimerProps) {
   // `expiresAt` is the server-issued deadline and isn't expected to
   // change after mount; recomputed as a plain value (not a ref) so it's
   // safe to read during render.
@@ -36,6 +41,7 @@ export function PlacementTimer({ expiresAt, onExpire }: PlacementTimerProps) {
     const tick = () => {
       const next = deadline - Date.now();
       setRemainingMs(next);
+      onTick?.(Math.max(0, Math.ceil(next / 1000)));
       if (next <= 0 && !hasExpiredRef.current) {
         hasExpiredRef.current = true;
         onExpire();
@@ -44,7 +50,7 @@ export function PlacementTimer({ expiresAt, onExpire }: PlacementTimerProps) {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [deadline, onExpire]);
+  }, [deadline, onExpire, onTick]);
 
   const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
   const minutes = Math.floor(remainingSeconds / 60);

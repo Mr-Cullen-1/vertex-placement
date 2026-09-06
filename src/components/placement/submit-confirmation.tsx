@@ -17,6 +17,12 @@ interface SubmitConfirmationProps {
   onOpenChange: (open: boolean) => void;
   answeredCount: number;
   totalQuestions: number;
+  /** Count of questions client-side-flagged "mark for review" — purely
+   * informational here, never sent to the server. */
+  markedForReviewCount?: number;
+  /** Live remaining seconds, mirrored from the top bar's own timer via
+   * `PlacementTimer`'s `onTick` — display only, doesn't affect timing. */
+  remainingSeconds?: number | null;
   submitting: boolean;
   error: string | null;
   onConfirm: () => void;
@@ -32,6 +38,8 @@ export function SubmitConfirmation({
   onOpenChange,
   answeredCount,
   totalQuestions,
+  markedForReviewCount,
+  remainingSeconds,
   submitting,
   error,
   onConfirm,
@@ -71,6 +79,21 @@ export function SubmitConfirmation({
             <dd className="text-lg font-semibold text-foreground tabular-nums">{totalQuestions}</dd>
           </div>
         </dl>
+
+        {(Boolean(markedForReviewCount) || remainingSeconds != null) && (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            {Boolean(markedForReviewCount) && (
+              <span>
+                {markedForReviewCount} marked for review
+              </span>
+            )}
+            {remainingSeconds != null && (
+              <span className="tabular-nums">
+                {Math.floor(remainingSeconds / 60)}:{(remainingSeconds % 60).toString().padStart(2, "0")} remaining
+              </span>
+            )}
+          </div>
+        )}
 
         {error && (
           <p role="alert" className="text-sm text-destructive">

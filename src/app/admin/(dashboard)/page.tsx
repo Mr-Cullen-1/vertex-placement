@@ -63,13 +63,18 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 overflow-hidden p-4 md:p-8">
-      <PageHeader
-        eyebrow="Overview"
-        title="Dashboard"
-        description="A live operational snapshot of Vertex Placement — every number here reflects real data."
-      />
+      <div className="animate-page-in shrink-0">
+        <PageHeader
+          eyebrow="Overview"
+          title="Dashboard"
+          description="A live operational snapshot of Vertex Placement — every number here reflects real data."
+        />
+      </div>
 
-      <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+      <div
+        className="grid shrink-0 grid-cols-2 gap-3 animate-page-in lg:grid-cols-4"
+        style={{ animationDelay: "50ms", animationFillMode: "backwards" }}
+      >
         <MetricCard
           label="Candidates"
           value={candidates.length}
@@ -104,7 +109,10 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[1.8fr_1fr]">
+      <div
+        className="grid min-h-0 flex-1 grid-cols-1 gap-6 animate-page-in xl:grid-cols-[1.8fr_1fr]"
+        style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
+      >
         <Card className="flex h-full min-h-0 flex-col">
           <CardHeading
             className="shrink-0"
@@ -190,7 +198,7 @@ export default async function AdminDashboardPage() {
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
                   <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                    className="h-full animate-grow-in rounded-full bg-primary transition-[width] duration-500 ease-out"
                     style={{ width: `${(entry.count / maxLevelCount) * 100}%` }}
                   />
                 </div>

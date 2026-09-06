@@ -26,7 +26,7 @@ export function QuestionDrawer({ open, onClose, testTitle, items, currentOrder, 
 
   return (
     <div
-      className={cn("fixed inset-0 z-50 flex lg:hidden", !open && "pointer-events-none")}
+      className={cn("fixed inset-0 z-50 flex min-[1200px]:hidden", !open && "pointer-events-none")}
       aria-hidden={!open}
     >
       <button

@@ -37,7 +37,15 @@ export function TryResultStep({ result, canRetake }: TryResultStepProps) {
   async function handleTakeAgain() {
     setError(null);
     setStarting(true);
+    // See try-ready-step.tsx for why this timeout exists: a safety net
+    // for the action call itself, not an artificial delay. The follow-up
+    // navigation is covered by /placement/[token]'s own loading.tsx.
+    const timeoutId = setTimeout(() => {
+      setStarting(false);
+      setError("This is taking longer than expected. Please check your connection and try again.");
+    }, 15000);
     const started = await startPublicAttemptAction();
+    clearTimeout(timeoutId);
     if (!started.ok) {
       setStarting(false);
       setError(started.message);

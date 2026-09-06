@@ -35,7 +35,17 @@ export function TryReadyStep({ mode, attemptNumber, testTitle, durationMinutes, 
   async function handleClick() {
     setError(null);
     setBusy(true);
+    // A safety-net timeout, not an artificial minimum delay: if the
+    // server action itself never resolves (rather than rejecting), the
+    // button would otherwise stay disabled forever with no explanation.
+    // The subsequent router.push into /placement/[token] is separately
+    // covered by that route's own loading.tsx.
+    const timeoutId = setTimeout(() => {
+      setBusy(false);
+      setError("This is taking longer than expected. Please check your connection and try again.");
+    }, 15000);
     const result = mode === "resume" ? await resumeActiveAttemptAction() : await startPublicAttemptAction();
+    clearTimeout(timeoutId);
     if (!result.ok) {
       setBusy(false);
       setError(result.message);

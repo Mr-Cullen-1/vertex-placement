@@ -129,6 +129,7 @@ export function PlacementFlow({
     case "instructions":
       return (
         <PlacementInstructions
+          testTitle={state.testTitle}
           totalQuestions={state.totalQuestions}
           durationMinutes={Math.round(state.durationSeconds / 60)}
           starting={state.starting}

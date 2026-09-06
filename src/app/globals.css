@@ -200,6 +200,30 @@
     background-image: none !important;
     background-color: var(--border);
   }
+
+  /* VertexLoader's orbiting ribbons freeze in place (static mark, no
+     rotation) rather than jumping to a mid-rotation frame. */
+  .animate-orbit,
+  .animate-orbit-reverse {
+    animation: none !important;
+  }
+
+  /* The decorative loader reveal and question-transition slides collapse
+     to an instant, un-animated state — functionality is unaffected,
+     only the motion is removed. */
+  .animate-loader-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .animate-question-next,
+  .animate-question-prev {
+    animation: none !important;
+  }
+
+  .animate-grow-in {
+    animation: none !important;
+    transform: scaleX(1) !important;
+  }
 }
 
 @layer utilities {
@@ -298,4 +322,93 @@
 
 .animate-soft-pulse {
   animation: vertex-soft-pulse 1.8s ease-in-out infinite;
+}
+
+/* VertexLoader (Student Assessment loading system) — the Vertex mark
+   stays stationary at the center; these two rings rotate continuously
+   at different speeds/directions around it to read as an active,
+   working system rather than a generic spinner. Transform-only, so no
+   layout cost. See /docs/DESIGN_SYSTEM.md "Loading system". */
+.animate-orbit {
+  animation: vertex-orbit 1.6s linear infinite;
+  transform-origin: 50% 50%;
+}
+.animate-orbit-reverse {
+  animation: vertex-orbit-reverse 2.2s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes vertex-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes vertex-orbit-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* Delays the VertexLoader's own visibility (not the surrounding
+   skeleton/content, which render immediately) so a request resolving in
+   under ~180ms never flashes it — see /docs/DESIGN_SYSTEM.md "Loading
+   system: no artificial delay". */
+.animate-loader-reveal {
+  animation: vertex-loader-reveal 160ms ease-out both;
+  animation-delay: 180ms;
+}
+@keyframes vertex-loader-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Question-to-question transition — only the question content moves;
+   the shell, sidebar, top bar, and footer never animate on navigation.
+   Direction-aware so "Next" and "Previous" read as spatially distinct. */
+.animate-question-next {
+  animation: vertex-question-next 200ms ease-out;
+}
+.animate-question-prev {
+  animation: vertex-question-prev 200ms ease-out;
+}
+@keyframes vertex-question-next {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes vertex-question-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* One-time "0 -> actual width" reveal for a bar chart fill, applied
+   alongside the real inline `width` (never animates the width itself,
+   which would be expensive layout work — this only transforms). Used
+   once on mount, never repeating/looping (see /docs/DESIGN_SYSTEM.md
+   "No motion overload"). */
+.animate-grow-in {
+  animation: vertex-grow-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left;
+}
+@keyframes vertex-grow-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }

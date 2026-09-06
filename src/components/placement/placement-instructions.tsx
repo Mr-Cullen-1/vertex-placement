@@ -1,7 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { VertexWordmark } from "./vertex-mark";
+import { VertexMark } from "./vertex-mark";
+import { AssessmentShell } from "./assessment-shell";
+import { TestSummary } from "./placement-start";
 
 interface PlacementInstructionsProps {
+  testTitle: string;
   totalQuestions: number;
   durationMinutes: number;
   starting: boolean;
@@ -17,52 +23,66 @@ const RULES = [
   "The test ends automatically when time runs out.",
 ];
 
-/** Deliberately says nothing about placement bands, scoring thresholds,
- * or the answer key — see /docs/PRODUCT_RULES.md. */
+/** "Before you begin" — composed inside the same `AssessmentShell` as
+ * the ready screen and the live test (Student Assessment redesign), not
+ * an unrelated standalone page. Deliberately says nothing about
+ * placement bands, scoring thresholds, or the answer key — see
+ * /docs/PRODUCT_RULES.md. */
 export function PlacementInstructions({
+  testTitle,
   totalQuestions,
   durationMinutes,
   starting,
   error,
   onBegin,
 }: PlacementInstructionsProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
-      <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <VertexWordmark />
-          <div className="flex flex-col gap-1.5">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Before you begin
-            </h1>
+    <AssessmentShell
+      testTitle={testTitle}
+      sidebarCollapsed={sidebarCollapsed}
+      onToggleSidebarCollapsed={() => setSidebarCollapsed((c) => !c)}
+      sidebarBody={<TestSummary durationMinutes={durationMinutes} totalQuestions={totalQuestions} />}
+      topBarStart={
+        <div className="flex min-w-0 items-center gap-2 min-[1200px]:hidden">
+          <VertexMark className="size-6" />
+          <span className="truncate text-sm font-semibold text-foreground">{testTitle}</span>
+        </div>
+      }
+    >
+      <div className="flex h-full flex-col items-center justify-center px-4 py-8 sm:px-6">
+        <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Before you begin</h1>
             <p className="text-sm text-muted-foreground">
               {totalQuestions} questions · {durationMinutes} minutes maximum
             </p>
           </div>
+
+          <ul className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-xs">
+            {RULES.map((rule) => (
+              <li key={rule} className="flex items-start gap-3 text-sm text-foreground">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <CheckIcon className="size-3" />
+                </span>
+                <span>{rule}</span>
+              </li>
+            ))}
+          </ul>
+
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+
+          <Button size="lg" className="h-11 text-base" onClick={onBegin} disabled={starting}>
+            {starting ? "Starting…" : "Start test"}
+          </Button>
         </div>
-
-        <ul className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-xs">
-          {RULES.map((rule) => (
-            <li key={rule} className="flex items-start gap-3 text-sm text-foreground">
-              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-                <CheckIcon className="size-3" />
-              </span>
-              <span>{rule}</span>
-            </li>
-          ))}
-        </ul>
-
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-
-        <Button size="lg" className="h-11 text-base" onClick={onBegin} disabled={starting}>
-          {starting ? "Starting…" : "Start test"}
-        </Button>
       </div>
-    </div>
+    </AssessmentShell>
   );
 }
 

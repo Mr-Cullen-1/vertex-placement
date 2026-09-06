@@ -1,11 +1,15 @@
 "use client";
 
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, FlagIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface QuestionNavItem {
   order: number;
   answered: boolean;
+  /** Client-side-only flag, never persisted — a personal "come back to
+   * this one" marker, not a scored or saved attribute of the attempt
+   * (see /docs/DESIGN_SYSTEM.md "Test Runner: mark for review"). */
+  markedForReview?: boolean;
 }
 
 interface QuestionNavigatorProps {
@@ -47,7 +51,7 @@ export function QuestionNavigator({
               type="button"
               onClick={() => onJump(item.order)}
               aria-current={isCurrent ? "step" : undefined}
-              aria-label={`Question ${item.order}${item.answered ? ", answered" : ", not answered"}${isCurrent ? ", current" : ""}`}
+              aria-label={`Question ${item.order}${item.answered ? ", answered" : ", not answered"}${item.markedForReview ? ", marked for review" : ""}${isCurrent ? ", current" : ""}`}
               className={cn(
                 // `aspect-square w-full` (not a fixed `size-9`) so each
                 // button always exactly fills its grid track, whatever
@@ -58,10 +62,19 @@ export function QuestionNavigator({
                 "relative flex aspect-square w-full items-center justify-center rounded-lg border text-xs font-medium tabular-nums transition-all duration-150 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                 isCurrent && "border-primary bg-primary text-primary-foreground",
                 !isCurrent && item.answered && "border-primary/30 bg-accent text-foreground",
-                !isCurrent && !item.answered && "border-border bg-background text-muted-foreground hover:border-primary/40"
+                !isCurrent && !item.answered && "border-border bg-background text-muted-foreground hover:border-primary/40",
+                !isCurrent && item.markedForReview && "ring-2 ring-warning/60 ring-offset-1 ring-offset-card"
               )}
             >
               {item.order}
+              {item.markedForReview && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-1 -left-1 flex size-3.5 items-center justify-center rounded-full bg-warning text-warning-foreground ring-2 ring-card"
+                >
+                  <FlagIcon className="size-2" strokeWidth={3} />
+                </span>
+              )}
               {!isCurrent && item.answered && (
                 <span
                   aria-hidden="true"
@@ -78,6 +91,7 @@ export function QuestionNavigator({
         <LegendDot className="bg-primary" label="Current" />
         <LegendDot className="border border-primary/30 bg-accent" label="Answered" />
         <LegendDot className="border border-border bg-background" label="Unanswered" />
+        <LegendDot className="border border-border bg-background ring-2 ring-warning/60" label="Marked for review" />
       </div>
     </nav>
   );
