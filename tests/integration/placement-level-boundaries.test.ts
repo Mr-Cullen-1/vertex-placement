@@ -149,24 +149,26 @@ describe("P0 — official placement level is score-based, never question-positio
     expect(summary.level).toBe("Advanced");
   });
 
-  it("every configured band boundary resolves to the correct band, exactly at each edge", async () => {
-    const cases: [number, string][] = [
-      [7, "Beginner"], // 10% exactly — Beginner's upper edge
-      [8, "Elementary"], // 11.43% — just above Beginner, inside Elementary
-      [21, "Elementary"], // 30% exactly — Elementary's upper edge
-      [22, "Intermediate"], // 31.43% — just above Elementary, inside Intermediate
-      [42, "Intermediate"], // 60% exactly — Intermediate's upper edge
-      [43, "Advanced"], // 61.43% — just above Intermediate, inside Advanced
-    ];
-
-    for (const [correctCount, expectedLevel] of cases) {
-      await resetDb();
-      const sa = await createUser("SUPER_ADMIN");
-      const t = await setUpBandedTest(sa);
-      const correctOrders = Array.from({ length: correctCount }, (_, i) => i + 1);
-      const summary = await runAttempt(sa, t.id, correctOrders);
-      expect(summary.level, `${correctCount}/70 correct should be ${expectedLevel}`).toBe(expectedLevel);
-    }
+  // Split into one `it.each` case per boundary (rather than one giant test
+  // looping every case) so each gets its own resetDb() via `beforeEach`
+  // and its own test timeout, instead of sharing one budget — this
+  // environment's real Supabase-pooled connection has meaningful
+  // per-request latency (see /docs/PHASE_2D.md "Transaction / timing
+  // note"), and a single 70-question end-to-end attempt is already many
+  // sequential round trips.
+  it.each<[number, string]>([
+    [7, "Beginner"], // 10% exactly — Beginner's upper edge
+    [8, "Elementary"], // 11.43% — just above Beginner, inside Elementary
+    [21, "Elementary"], // 30% exactly — Elementary's upper edge
+    [22, "Intermediate"], // 31.43% — just above Elementary, inside Intermediate
+    [42, "Intermediate"], // 60% exactly — Intermediate's upper edge
+    [43, "Advanced"], // 61.43% — just above Intermediate, inside Advanced
+  ])("%i/70 correct should be %s", async (correctCount, expectedLevel) => {
+    const sa = await createUser("SUPER_ADMIN");
+    const t = await setUpBandedTest(sa);
+    const correctOrders = Array.from({ length: correctCount }, (_, i) => i + 1);
+    const summary = await runAttempt(sa, t.id, correctOrders);
+    expect(summary.level).toBe(expectedLevel);
   });
 
   it("official level is persisted as a snapshot and matches on every subsequent read (admin detail, assignment summary)", async () => {

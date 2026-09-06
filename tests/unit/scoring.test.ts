@@ -9,8 +9,49 @@ const questions: ScoringQuestionInput[] = [
 ];
 
 const bands: ScoringBandInput[] = [
-  { id: "band-low", order: 1, label: "Beginner", minPercentage: 0, maxPercentage: 49.99 },
-  { id: "band-high", order: 2, label: "Advanced", minPercentage: 50, maxPercentage: 100 },
+  {
+    id: "band-low",
+    order: 1,
+    label: "Beginner",
+    scoringMode: "PERCENTAGE",
+    minPercentage: 0,
+    maxPercentage: 49.99,
+    minRawScore: null,
+    maxRawScore: null,
+  },
+  {
+    id: "band-high",
+    order: 2,
+    label: "Advanced",
+    scoringMode: "PERCENTAGE",
+    minPercentage: 50,
+    maxPercentage: 100,
+    minRawScore: null,
+    maxRawScore: null,
+  },
+];
+
+const rawScoreBands: ScoringBandInput[] = [
+  {
+    id: "raw-low",
+    order: 1,
+    label: "Beginner",
+    scoringMode: "RAW_SCORE",
+    minPercentage: null,
+    maxPercentage: null,
+    minRawScore: 0,
+    maxRawScore: 1,
+  },
+  {
+    id: "raw-high",
+    order: 2,
+    label: "Advanced",
+    scoringMode: "RAW_SCORE",
+    minPercentage: null,
+    maxPercentage: null,
+    minRawScore: 2,
+    maxRawScore: 4,
+  },
 ];
 
 describe("computeScoring", () => {
@@ -88,5 +129,49 @@ describe("computeScoring", () => {
     const result = computeScoring([], [], []);
     expect(result.rawScore).toEqual({ rawScore: 0, totalQuestions: 0, percentage: 0 });
     expect(result.placementBand).toBeNull();
+  });
+
+  // Phase 2L — RAW_SCORE bands are matched against rawScore directly,
+  // never via a percentage conversion. See /docs/PHASE_2L_SCORING_POLICY.md
+  // ("Canonical raw-score resolver").
+  describe("RAW_SCORE bands", () => {
+    it("matches on raw score, not percentage — 2/4 correct (50%) still resolves via the raw-score range", () => {
+      const answers = [
+        { questionId: "q1", selectedOptionId: "q1-correct" },
+        { questionId: "q2", selectedOptionId: "wrong" },
+        { questionId: "q3", selectedOptionId: "q3-correct" },
+        { questionId: "q4", selectedOptionId: "wrong" },
+      ];
+      const result = computeScoring(questions, answers, rawScoreBands);
+      expect(result.rawScore.rawScore).toBe(2);
+      expect(result.placementBand).toEqual({ placementBandId: "raw-high", label: "Advanced" });
+    });
+
+    it("1 correct out of 4 (25%) resolves to the raw-score Beginner band (0-1), never a percentage-derived band", () => {
+      const answers = [{ questionId: "q1", selectedOptionId: "q1-correct" }];
+      const result = computeScoring(questions, answers, rawScoreBands);
+      expect(result.rawScore.rawScore).toBe(1);
+      expect(result.placementBand).toEqual({ placementBandId: "raw-low", label: "Beginner" });
+    });
+
+    it("a RAW_SCORE band never matches via percentage fields, even if they happened to be set", () => {
+      const mixedBands: ScoringBandInput[] = [
+        {
+          id: "raw-with-stale-percentage",
+          order: 1,
+          label: "Should not match on percentage",
+          scoringMode: "RAW_SCORE",
+          // Deliberately set to a range that WOULD match 25% if the
+          // resolver ever fell back to percentage — proves it doesn't.
+          minPercentage: 0,
+          maxPercentage: 30,
+          minRawScore: 3,
+          maxRawScore: 4,
+        },
+      ];
+      const answers = [{ questionId: "q1", selectedOptionId: "q1-correct" }]; // 1/4 = 25%
+      const result = computeScoring(questions, answers, mixedBands);
+      expect(result.placementBand).toBeNull();
+    });
   });
 });

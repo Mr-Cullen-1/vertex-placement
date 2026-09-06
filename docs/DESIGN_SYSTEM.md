@@ -60,6 +60,20 @@ implementation before touching anything:
   for a future phase if product wants that threshold enforced upstream
   rather than only flagged in the UI.
 
+**Phase 2L update**: this page's Score card was restructured into three
+visually separated cards — **Objective result** (Recommended Level, raw
+score, percentage, answered/correct/incorrect/unanswered, timestamps —
+all immutable), **Final Placement** (the new administrative override,
+its own card, edited only via `FinalPlacementControl`), and the existing
+diagnostic cards (Question progression evidence, the new **Performance
+by course level**, Topic performance, Difficulty progression) — so the
+three concepts this section's own audit worried about conflating can
+never again share one visual block. "Placement band" was renamed
+"Recommended Level" everywhere on this page and on the student result
+screen, to signal it's an automated recommendation, not an immutable
+decision (that's what Final Placement is for). See
+[PHASE_2L_SCORING_POLICY.md](./PHASE_2L_SCORING_POLICY.md).
+
 ## Phase 2G.1 — what changed
 
 Phase 2G unified the visual language product-wide; a real screen-by-screen
@@ -538,6 +552,39 @@ attempt-counting, timer, or question-order logic.
   badge, still no stock illustrations.
 - **`PageHeader`** gained an optional `eyebrow` and a bottom border,
   giving every admin page a slightly stronger, more consistent header.
+
+## Shared primitives added in Phase 2L
+
+- **`Collapsible`/`CollapsibleTrigger`/`CollapsiblePanel`**
+  (`src/components/ui/collapsible.tsx`) — thin wrapper over base-ui's
+  `Collapsible` primitive. `CollapsibleTrigger` gets `aria-expanded` and
+  keyboard handling for free; `CollapsiblePanel` animates via base-ui's
+  own measured `--collapsible-panel-height` CSS variable, applied via a
+  plain inline style (not a bracketed Tailwind height utility — writing
+  it as one, even inside a comment, gets picked up by Tailwind's content
+  scanner as a literal class candidate and breaks the build) plus
+  `transition-[height]`, collapsing to `data-starting-style:h-0
+  data-ending-style:h-0`) — no JS height measurement, no layout jump, no
+  external animation library. First consumer:
+  `DetailedAnalysis` (`src/components/placement/detailed-analysis.tsx`),
+  the student result screen's collapsed-by-default section — see
+  "Detailed analysis (Phase 2L)" below.
+
+## Detailed analysis (Phase 2L)
+
+The student result screen's "Detailed analysis" section
+(`DetailedAnalysis`) is collapsed by default and expands inline —
+never a new page, never an always-open wall of content. Nesting uses the
+same `Collapsible` primitive three levels deep: the outer section, an
+inner "Review your answers" disclosure, and one `Collapsible` per
+question row (70 of them at most, each cheap — no virtualization needed
+at this scale, matching this codebase's existing acceptable-N+1
+precedents). Structure top to bottom: an evidence-aware strength/weakness
+summary, a "Performance by course level" list (six fixed ranges, reusing
+`PROGRESSION_BANDS`), then the nested question review. Every row wraps
+rather than truncates awkwardly and uses flex/grid, never a table — see
+"No horizontal scrolling"; a long prompt or answer simply wraps onto more
+lines within its own row.
 
 ## Motion system
 

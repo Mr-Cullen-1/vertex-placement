@@ -52,7 +52,7 @@ export async function exportPlacementWorkbook(actor: Actor): Promise<ExportedWor
     { header: "Score", key: "score", width: 10 },
     { header: "Total", key: "total", width: 10 },
     { header: "Percentage", key: "percentage", width: 12 },
-    { header: "Placement band", key: "level", width: 20 },
+    { header: "Recommended Level", key: "level", width: 20 },
     { header: "Submission type", key: "submissionType", width: 18 },
     { header: "Started", key: "startedAt", width: 20 },
     { header: "Completed", key: "completedAt", width: 20 },
@@ -103,12 +103,14 @@ export async function exportPlacementWorkbook(actor: Actor): Promise<ExportedWor
       score: detail.rawScore,
       total: detail.totalQuestions,
       percentage: Math.round(detail.percentage * 100) / 100,
-      // The OFFICIAL placement (configured PlacementBand, matched on
+      // The Recommended Level (configured PlacementBand, matched on
       // total correct score) — never the question-position-derived
       // progression signal, which is admin-diagnostic only and stays out
       // of the export entirely to avoid it being read as authoritative
       // once outside the app's surrounding context (see P0 fix,
-      // /docs/PRODUCT_RULES.md "Scoring & placement").
+      // /docs/PRODUCT_RULES.md "Scoring & placement"). Final Placement
+      // (Phase 2L's administrative override) is intentionally not
+      // exported yet — out of this phase's scope.
       level: detail.level ?? "—",
       submissionType: detail.status === "AUTO_SUBMITTED" ? "Automatic (time limit)" : "Manual",
       startedAt: formatDateTime(detail.startedAt),

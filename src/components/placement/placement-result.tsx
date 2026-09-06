@@ -1,5 +1,6 @@
 import type { StudentResultSummary } from "@/domain/results/types";
 import { VertexWordmark } from "./vertex-mark";
+import { DetailedAnalysis } from "./detailed-analysis";
 
 /**
  * Professional assessment result — not a game reward screen. No
@@ -7,21 +8,32 @@ import { VertexWordmark } from "./vertex-mark";
  * (see /docs/PRODUCT_RULES.md "Results"). Renders exactly what the
  * server returned; never recomputes or infers anything about the score.
  *
- * OFFICIAL PLACEMENT (`result.level`) is the only placement signal shown
- * here — it is the admin-configured, percentage-based `PlacementBand`
- * match against the candidate's TOTAL correct score, never influenced by
- * which specific question was answered correctly. `result.progression`
- * (question-order-derived "highest correctly-answered question")
- * previously also rendered here as "Recommended progression" — removed
- * (P0 fix) after it produced results like "4/70 correct" showing
- * "Advanced" purely because a single late, harder question happened to
- * be answered correctly. That signal is real and still computed (its
- * objective answered/correct/incorrect/unanswered counts are still shown
- * below), but the question-position-derived band label is now admin-only
- * diagnostic — see the Result Detail page ("Question progression
- * evidence") and /docs/PRODUCT_RULES.md "Scoring & placement". Never
- * reintroduce a placement-band-like label here derived from anything
- * other than `result.level`.
+ * "Recommended Level" (`result.level`) is the only placement signal shown
+ * here — it is the admin-configured `PlacementBand` match against the
+ * candidate's TOTAL correct score (raw score or percentage, per that
+ * band's own scoring mode — see /docs/PHASE_2L_SCORING_POLICY.md), never
+ * influenced by which specific question was answered correctly.
+ * Deliberately labeled "Recommended" (Phase 2L), not an unqualified
+ * "Level" — this is an automated recommendation, not an immutable
+ * academic placement decision; that decision (Final Placement) is an
+ * admin-only concept and never rendered on this student-facing screen.
+ * `result.progression` (question-order-derived "highest correctly-
+ * answered question") previously also rendered here as "Recommended
+ * progression" — removed (P0 fix) after it produced results like "4/70
+ * correct" showing "Advanced" purely because a single late, harder
+ * question happened to be answered correctly. That signal is real and
+ * still computed (its objective answered/correct/incorrect/unanswered
+ * counts are still shown below), but the question-position-derived band
+ * label is now admin-only diagnostic — see the Result Detail page
+ * ("Question progression evidence") and /docs/PRODUCT_RULES.md "Scoring
+ * & placement". Never reintroduce a placement-band-like label here
+ * derived from anything other than `result.level`.
+ *
+ * Phase 2L also adds the collapsed-by-default "Detailed analysis"
+ * section (`DetailedAnalysis`, ./detailed-analysis.tsx) — course-level
+ * performance, an evidence-aware strength/weakness summary, and a
+ * question-by-question review. All diagnostic, never determines
+ * `result.level`.
  *
  * Phase 2J: reached by both an admin-invited candidate AND a public
  * "Try Yourself" visitor (/docs/PHASE_2J_TRY_YOURSELF.md "Shared Test
@@ -49,9 +61,14 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
 
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-border bg-card px-8 py-10 text-center shadow-sm">
           {result.level && (
-            <span className="rounded-full bg-accent px-4 py-1 text-sm font-medium text-accent-foreground">
-              {result.level}
-            </span>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                Recommended level
+              </span>
+              <span className="rounded-full bg-accent px-4 py-1 text-sm font-medium text-accent-foreground">
+                {result.level}
+              </span>
+            </div>
           )}
           <div className="mt-2 text-5xl font-semibold tracking-tight text-foreground tabular-nums">
             {result.rawScore}
@@ -96,6 +113,8 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
             <dd className="font-medium text-foreground">{progression.unansweredCount}</dd>
           </div>
         </dl>
+
+        <DetailedAnalysis analysis={result.detailedAnalysis} />
 
         {result.strongestTopics.length > 0 && (
           <div className="flex flex-col gap-2">

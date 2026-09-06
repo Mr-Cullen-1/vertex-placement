@@ -20,9 +20,19 @@ interface Band {
   id: string;
   order: number;
   label: string;
-  minPercentage: number;
-  maxPercentage: number;
+  scoringMode: "PERCENTAGE" | "RAW_SCORE";
+  minPercentage: number | null;
+  maxPercentage: number | null;
+  minRawScore: number | null;
+  maxRawScore: number | null;
   description: string | null;
+}
+
+function formatBandRange(band: Band): string {
+  if (band.scoringMode === "RAW_SCORE") {
+    return `${band.minRawScore ?? "—"}–${band.maxRawScore ?? "—"} correct`;
+  }
+  return `${band.minPercentage ?? "—"}–${band.maxPercentage ?? "—"}%`;
 }
 
 /** Editable PlacementBand list — Super Admin only. Locked once the test
@@ -56,9 +66,7 @@ export function BandsManager({
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <span className="text-muted-foreground">
-                  {band.minPercentage}–{band.maxPercentage}%
-                </span>
+                <span className="text-muted-foreground">{formatBandRange(band)}</span>
                 {!locked && (
                   <>
                     <BandFormDialog testId={testId} band={band} />

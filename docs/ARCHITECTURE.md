@@ -319,6 +319,25 @@ models):
   `/docs/PRODUCT_RULES.md` "Scoring & placement"); admin surfaces that
   keep it now label it "Question progression evidence... does not
   determine placement."
+- **Phase 2L**: `matchPlacementBand` now takes `rawScore` AND
+  `percentage`, and branches per-band on an explicit `scoringMode`
+  (`PERCENTAGE` | `RAW_SCORE`) — still exactly one resolver, one call
+  site, one persisted snapshot; only the internal matching logic gained a
+  second axis. The real Language Hub test's approved institutional
+  RAW_SCORE bands are configured via
+  `language-hub-scoring.service.ts`'s `applyLanguageHubInstitutionalBands`
+  (idempotent, scoped to that one test only). `level` is displayed as
+  "Recommended Level" on every student-facing surface. A new, separate
+  administrative field, `PlacementResult.finalPlacementLabel` ("Final
+  Placement"), lets an Admin/Super Admin override the institution's final
+  placement independent of the Recommended Level — never mutating
+  `rawScore`/`percentage`/`placementBandId`. A new diagnostic,
+  `computeCourseLevelPerformance` (`src/domain/placement/
+  course-level-performance.ts`), gives the student a per-course-level
+  correct/incorrect/unanswered breakdown (reusing `PROGRESSION_BANDS`'
+  ranges) inside a collapsed-by-default "Detailed analysis" section —
+  diagnostic only, same non-placement guarantee as question progression.
+  See [PHASE_2L_SCORING_POLICY.md](./PHASE_2L_SCORING_POLICY.md).
 
 ## Import architecture
 

@@ -31,6 +31,10 @@ export type Permission =
   // Candidates / Results — Admin and Super Admin
   | "candidate:read"
   | "result:read"
+  // Phase 2L: Final Placement override — an administrative decision,
+  // distinct from `result:read`. Both roles may set it (see
+  // /docs/PHASE_2L_SCORING_POLICY.md "Final Placement").
+  | "result:write"
   | "analytics:read:standard"
   | "export:standard"
   // Super Admin only
@@ -44,6 +48,7 @@ const ADMIN_PERMISSIONS: readonly Permission[] = [
   "invitation:write",
   "candidate:read",
   "result:read",
+  "result:write",
   "analytics:read:standard",
   "export:standard",
 ];

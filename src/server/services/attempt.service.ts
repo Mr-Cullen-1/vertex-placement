@@ -9,6 +9,7 @@ import {
   DuplicateSubmissionError,
   InvalidAttemptStateError,
   InvalidOptionError,
+  InvalidPlacementLevelError,
   InvitationUsedError,
   QuestionNotFoundError,
   TestNotPublishedError,
@@ -27,8 +28,9 @@ import {
   buildAdminResultDetail,
   buildStudentResultSummary,
 } from "@/domain/results/present";
-import type { AdminResultDetail, StudentResultSummary } from "@/domain/results/types";
+import type { AdminResultDetail, FinalPlacement, StudentResultSummary } from "@/domain/results/types";
 import type { TopicPerformanceEntry } from "@/domain/scoring/types";
+import { isStandardPlacementLevel } from "@/domain/placement/levels";
 
 /**
  * The attempt lifecycle and the ONE shared finalization pipeline (see
@@ -410,6 +412,8 @@ async function finalizeAttempt(
     topicPerformance: scoring.topicPerformance,
     progression,
     autoSubmitted: finalStatus === "AUTO_SUBMITTED",
+    questions: toAnalysisQuestions(questions),
+    answers: toAnalysisAnswers(answers),
   });
 }
 
@@ -570,13 +574,14 @@ async function buildStudentResultSummaryFromCompletedAttempt(
   const candidate = attempt.assignment.candidate;
   const topicPerformance = attempt.result.topicPerformance as unknown as TopicPerformanceEntry[];
 
-  // Placement guidance is re-derived fresh from the immutable
-  // answers/questions every time (never persisted) — see
-  // finalizeAttempt's comment and /docs/PHASE_2E.md.
+  // Placement guidance (and the Detailed Analysis diagnostics) are
+  // re-derived fresh from the immutable answers/questions every time
+  // (never persisted) — see finalizeAttempt's comment and
+  // /docs/PHASE_2E.md.
   const questions = await db.question.findMany({
     where: { testId: attempt.assignment.testId, status: "PUBLISHED" },
     orderBy: { order: "asc" },
-    include: { options: true },
+    include: { options: true, metadata: true },
   });
   const progressionQuestions: ProgressionQuestionInput[] = questions.map((q) => ({
     questionId: q.id,
@@ -600,6 +605,8 @@ async function buildStudentResultSummaryFromCompletedAttempt(
     topicPerformance,
     progression,
     autoSubmitted: attempt.status === "AUTO_SUBMITTED",
+    questions: toAnalysisQuestions(questions),
+    answers: toAnalysisAnswers(attempt.answers),
   });
 }
 
@@ -636,7 +643,7 @@ export async function getAdminResultDetail(
     include: {
       assignment: { include: { candidate: true, test: true } },
       answers: true,
-      result: { include: { placementBand: true } },
+      result: { include: { placementBand: true, finalPlacementSetBy: true } },
     },
   });
   if (!attempt || !attempt.result) throw new AttemptNotFoundError();
@@ -645,26 +652,6 @@ export async function getAdminResultDetail(
     where: { testId: attempt.assignment.testId, status: "PUBLISHED" },
     orderBy: { order: "asc" },
     include: { options: true, metadata: true },
-  });
-  const selectedByQuestionId = new Map(
-    attempt.answers.map((a) => [a.questionId, a.selectedOptionId])
-  );
-
-  const questionAnalysis = questions.map((question) => {
-    const correctOption = question.options.find((o) => o.isCorrect);
-    const selectedOptionId = selectedByQuestionId.get(question.id) ?? null;
-    const selectedOption = question.options.find((o) => o.id === selectedOptionId);
-    return {
-      questionId: question.id,
-      order: question.order,
-      prompt: question.prompt,
-      topic: question.metadata?.topic ?? null,
-      difficultyBand: question.metadata?.difficultyBand ?? null,
-      selectedOptionText: selectedOption?.text ?? null,
-      correctOptionText: correctOption?.text ?? "",
-      isAnswered: selectedOptionId !== null,
-      isCorrect: Boolean(selectedOption && correctOption && selectedOption.id === correctOption.id),
-    };
   });
 
   const progressionQuestions: ProgressionQuestionInput[] = questions.map((q) => ({
@@ -678,6 +665,16 @@ export async function getAdminResultDetail(
   }));
   const progression = computeAnswerBreakdown(progressionQuestions, progressionAnswers);
 
+  const recommendedLevel = attempt.result.placementBand?.label ?? null;
+  const finalPlacement: FinalPlacement = {
+    label: attempt.result.finalPlacementLabel ?? recommendedLevel,
+    isOverridden: attempt.result.finalPlacementLabel !== null,
+    setByName: attempt.result.finalPlacementSetBy
+      ? attempt.result.finalPlacementSetBy.name
+      : null,
+    setAt: attempt.result.finalPlacementSetAt?.toISOString() ?? null,
+  };
+
   return buildAdminResultDetail({
     attemptId: attempt.id,
     candidate: {
@@ -688,7 +685,7 @@ export async function getAdminResultDetail(
       email: attempt.assignment.candidate.email,
     },
     testTitle: attempt.assignment.test.title,
-    level: attempt.result.placementBand?.label ?? null,
+    level: recommendedLevel,
     rawScore: attempt.result.rawScore,
     totalQuestions: attempt.result.totalQuestions,
     percentage: attempt.result.percentage,
@@ -697,12 +694,46 @@ export async function getAdminResultDetail(
     completedAt: (attempt.submittedAt ?? attempt.startedAt).toISOString(),
     isCanonical: attempt.isCanonical,
     status: attempt.status as "SUBMITTED" | "AUTO_SUBMITTED",
+    finalPlacement,
     difficultyProgression:
       attempt.result.difficultyProgression as unknown as AdminResultDetail["difficultyProgression"],
     topicPerformance:
       attempt.result.topicPerformance as unknown as AdminResultDetail["topicPerformance"],
     progression,
-    questionAnalysis,
+    questions: toAnalysisQuestions(questions),
+    answers: toAnalysisAnswers(attempt.answers),
+  });
+}
+
+/** Phase 2L — the administrative "Final Placement" override, distinct
+ * from `level`/Recommended Level. `label: null` clears any existing
+ * override (the UI then falls back to displaying the Recommended Level
+ * itself, with `isOverridden: false`). Never touches `rawScore`,
+ * `percentage`, or `placementBandId` — those remain the immutable,
+ * objective scoring output. See /docs/PHASE_2L_SCORING_POLICY.md. */
+export async function setFinalPlacement(
+  actor: Actor,
+  attemptId: string,
+  label: string | null
+): Promise<void> {
+  assertPermission(actor, "result:write");
+  if (label !== null && !isStandardPlacementLevel(label)) {
+    throw new InvalidPlacementLevelError();
+  }
+
+  const attempt = await db.placementAttempt.findUnique({
+    where: { id: attemptId },
+    include: { result: true },
+  });
+  if (!attempt || !attempt.result) throw new AttemptNotFoundError();
+
+  await db.placementResult.update({
+    where: { id: attempt.result.id },
+    data: {
+      finalPlacementLabel: label,
+      finalPlacementSetByUserId: label !== null ? actor.userId : null,
+      finalPlacementSetAt: label !== null ? new Date() : null,
+    },
   });
 }
 
@@ -803,4 +834,46 @@ function isUniqueConstraintError(error: unknown): boolean {
     "code" in error &&
     (error as { code?: string }).code === "P2002"
   );
+}
+
+// --- Shared question/answer shaping for result diagnostics ---------------
+//
+// ONE mapping from Prisma's `Question` (with options + optional metadata)
+// into the shape both `buildQuestionAnalysis` and
+// `computeCourseLevelPerformance` need (see /domain/results/question-analysis.ts
+// and /domain/placement/course-level-performance.ts) — used by
+// finalizeAttempt, buildStudentResultSummaryFromCompletedAttempt, and
+// getAdminResultDetail so all three stay byte-identical in how they derive
+// these diagnostics from the same underlying questions/answers.
+
+interface AnalysisSourceQuestion {
+  id: string;
+  order: number;
+  prompt: string;
+  options: { id: string; text: string; isCorrect: boolean }[];
+  metadata?: { topic: string | null; difficultyBand: string | null } | null;
+}
+
+interface AnalysisSourceAnswer {
+  questionId: string;
+  selectedOptionId: string | null;
+}
+
+function toAnalysisQuestions(questions: readonly AnalysisSourceQuestion[]) {
+  return questions.map((q) => ({
+    questionId: q.id,
+    order: q.order,
+    prompt: q.prompt,
+    topic: q.metadata?.topic ?? null,
+    difficultyBand: q.metadata?.difficultyBand ?? null,
+    options: q.options,
+    correctOptionId: q.options.find((o) => o.isCorrect)?.id ?? "",
+  }));
+}
+
+function toAnalysisAnswers(answers: readonly AnalysisSourceAnswer[]) {
+  return answers.map((a) => ({
+    questionId: a.questionId,
+    selectedOptionId: a.selectedOptionId,
+  }));
 }

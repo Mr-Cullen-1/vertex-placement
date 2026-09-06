@@ -103,55 +103,81 @@ test — the student sees only the final result, after submission.
 
 - Do not invent official CEFR score boundaries — the source material
   provides progressive difficulty bands and placement guidance including
-  teacher discretion, not fixed cutoffs.
+  teacher discretion, not fixed cutoffs. Vertex's own institutional
+  policy for the real Language Hub test (Phase 2L, below) is explicitly
+  disclosed as Vertex's decision, never presented as a Macmillan cutoff
+  table.
 - Scoring and placement mapping are **configurable business logic**
   (`PlacementBand`, per test), set by a Super Admin — not hard-coded.
+  Each band declares its own `scoringMode` (`PERCENTAGE` or `RAW_SCORE`,
+  Phase 2L) — never inferred, never silently converted between the two.
+  See [PHASE_2L_SCORING_POLICY.md](./PHASE_2L_SCORING_POLICY.md).
 - Kept separate at every layer: raw score, percentage, difficulty
   progression, topic performance, and placement-band label are distinct
   fields/concepts, not folded into one computed value. See
   [ARCHITECTURE.md](./ARCHITECTURE.md#scoring--result-architecture).
-- **OFFICIAL PLACEMENT (`level`) is always `PlacementBand` matched
-  against TOTAL CORRECT SCORE (percentage) — never influenced by which
-  specific question was answered correctly.** This is computed once, at
-  attempt finalization (`computeScoring`/`matchPlacementBand`), and
-  persisted as a snapshot on `PlacementResult.placementBandId` — every
-  consumer (student result, admin result, assignment list, export) reads
-  that same persisted value; none recomputes it independently.
+- **"Recommended Level" (`level`) is always `PlacementBand` matched
+  against TOTAL CORRECT SCORE — raw score or percentage, per that band's
+  own `scoringMode` — never influenced by which specific question was
+  answered correctly.** This is computed once, at attempt finalization
+  (`computeScoring`/`matchPlacementBand`), and persisted as a snapshot on
+  `PlacementResult.placementBandId` — every consumer (student result,
+  admin result, assignment list, export) reads that same persisted
+  value; none recomputes it independently. Renamed from an unqualified
+  "level" to "Recommended Level" in every student-facing surface (Phase
+  2L) — it's an automated recommendation, not an immutable academic
+  placement decision.
+- **Final Placement** (Phase 2L, `PlacementResult.finalPlacementLabel`)
+  is a SEPARATE, ADMINISTRATIVE decision — an Admin or Super Admin may
+  override the institution's final placement to any of the six standard
+  Vertex levels, independent of the Recommended Level. Setting it never
+  mutates `rawScore`, `percentage`, or `placementBandId`. Who set it and
+  when is recorded (`finalPlacementSetByUserId`/`finalPlacementSetAt`).
+  Never shown or editable on a student-facing surface, and never
+  available for Try Yourself (self-service) candidates — see
+  [PHASE_2L_SCORING_POLICY.md](./PHASE_2L_SCORING_POLICY.md).
 - **Question progression** (`computeAnswerBreakdown`'s `progressionBand`
   — the highest correctly-answered question number, mapped through the
-  source's fixed six question-number ranges) is a SEPARATE,
-  ADMIN-ONLY DIAGNOSTIC signal, never persisted, always recomputed from
-  raw answers on read. It **must never be shown to a student**, and
-  wherever it's shown to an admin it must be labeled as non-authoritative
-  diagnostic evidence ("Question progression evidence... this does not
-  determine placement"), never as if it were `level`. **P0 fix
-  (Phase 2J)**: this signal was previously also rendered on the student
-  result screen as "Recommended progression," which could show e.g.
-  "Advanced" for a 4/70-correct result if the one correct answer happened
-  to be a late/hard question — a real, reported bug. Removed from the
-  student-facing result entirely; `level` (or its absence, if no bands
-  are configured) is the only placement signal a student ever sees.
+  source's fixed six question-number ranges) and **course-level
+  performance** (Phase 2L, `computeCourseLevelPerformance` — a full
+  per-band correct/incorrect/unanswered breakdown across those same six
+  ranges) are SEPARATE DIAGNOSTIC signals, never persisted, always
+  recomputed from raw answers on read. Question progression **must
+  never be shown to a student**; course-level performance IS shown to a
+  student, but only inside the collapsed-by-default "Detailed analysis"
+  section, explicitly labeled diagnostic and never rendered as if it
+  were `level`. **P0 fix (Phase 2J)**: question progression was
+  previously also rendered on the student result screen as "Recommended
+  progression," which could show e.g. "Advanced" for a 4/70-correct
+  result if the one correct answer happened to be a late/hard question —
+  a real, reported bug. Removed from the student-facing result entirely.
 
 ## Results
 
-**Student sees:** level (`PlacementBand`, score-based — absent if the
-test has no configured bands; never substituted with question-progression
-diagnostics), score, percentage, completion time, a concise performance
-summary. **Never**: the answer key, which answers were correct/incorrect,
-a question-by-question review, or the question-progression diagnostic.
+**Student sees:** Recommended Level (`PlacementBand`, score-based —
+absent if the test has no configured bands; never substituted with
+question-progression diagnostics), score, percentage, completion time, a
+concise performance summary, and (Phase 2L, collapsed by default) a
+Detailed Analysis section: course-level performance, an evidence-aware
+strength/weakness summary, and a question-by-question answer review.
+**Never**: Final Placement (admin-only), the question-progression
+diagnostic.
 
-**Admin sees:** candidate information, score, percentage, level,
-completion time, difficulty progression, question-by-question analysis,
+**Admin sees:** candidate information, score, percentage, Recommended
+Level, Final Placement (with override), completion time, difficulty
+progression, course-level performance, question-by-question analysis,
 topic analysis, and — clearly labeled as diagnostic-only, never as the
-official level — question progression evidence.
+official level — question progression evidence. The admin result page
+visually separates these into three groups: OBJECTIVE RESULT,
+ADMINISTRATIVE DECISION, DIAGNOSTIC ANALYSIS (Phase 2L).
 
-Implemented as of Phase 1: `buildStudentResultSummary` produces exactly
-the student-safe view (never per-question data); `getAdminResultDetail`
+Implemented as of Phase 1 (student-safe view) and extended in Phase 2L
+(Detailed Analysis, Final Placement): `buildStudentResultSummary`
+produces exactly the student-safe view; `getAdminResultDetail`
 (`attempt.service.ts`) produces the full admin view, including
 question-by-question analysis — reading it requires `result:read`
-(Admin or Super Admin), enforced the same way as every other RBAC check.
-Neither an admin dashboard page nor a student result page consumes these
-yet — see [PHASE_1.md](./PHASE_1.md) "Scope boundary".
+(Admin or Super Admin); setting Final Placement requires `result:write`
+(also both roles), enforced the same way as every other RBAC check.
 
 ## Analytics
 

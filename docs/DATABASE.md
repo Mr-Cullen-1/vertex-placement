@@ -47,11 +47,29 @@ independently of how the question text itself was authored.
 gives progressive difficulty bands and "teacher discretion," not official
 score boundaries. Inventing fixed CEFR cutoffs would be asserting something
 the source doesn't support. Instead, `PlacementBand` is configuration data
-— rows a Super Admin creates per test (`minPercentage`, `maxPercentage`,
-`label`, `description`) — and `PlacementResult.placementBandId` is a
+— rows a Super Admin creates per test (`label`, `description`, plus an
+explicit `scoringMode`) — and `PlacementResult.placementBandId` is a
 nullable lookup, not a computed enum. A test with no configured bands
 simply produces results with no placement label yet, rather than a
 fabricated one.
+
+**`scoringMode` instead of always-percentage (Phase 2L).** A band is
+either `PERCENTAGE` (`minPercentage`/`maxPercentage: Float?`, the
+original mechanism — every pre-Phase-2L row) or `RAW_SCORE`
+(`minRawScore`/`maxRawScore: Int?`, added for the real Language Hub
+test's approved institutional policy, matched against total correct
+answers directly). Both pairs of columns are nullable; a band only
+populates the pair matching its own mode. The resolver
+(`matchPlacementBand`) branches on each band's own `scoringMode` — never
+a hidden conversion between raw score and percentage. See
+[PHASE_2L_SCORING_POLICY.md](./PHASE_2L_SCORING_POLICY.md).
+
+**`PlacementResult.finalPlacementLabel`/`finalPlacementSetByUserId`/
+`finalPlacementSetAt` (Phase 2L)** — a separate, nullable, administrative
+override ("Final Placement"), distinct from `placementBandId`
+("Recommended Level"). `null` means no override; the UI then displays the
+Recommended Level itself. Never written by the scoring pipeline — only by
+`setFinalPlacement`, gated on the `result:write` permission.
 
 **`PlacementTest` / `PlacementAssignment` / `PlacementInvitation` /
 `PlacementAttempt` as four separate models**, not one row with status
@@ -155,10 +173,12 @@ migration at that point.
 These are flagged rather than guessed at, per the instruction to document
 ambiguity instead of inventing business rules:
 
-- Exact `PlacementBand` values (labels, percentage cutoffs) for the
-  Language Hub test — not set anywhere in Phase 0; must be configured by a
-  Super Admin once the real source material and any institutional guidance
-  are available.
+- ~~Exact `PlacementBand` values (labels, percentage cutoffs) for the
+  Language Hub test~~ — **resolved in Phase 2L**: Vertex's own
+  institutional RAW_SCORE policy (0–6 Beginner, 7–17 Elementary, 18–34
+  Pre-Intermediate, 35–48 Intermediate, 49–60 Upper Intermediate, 61–70
+  Advanced), applied via `applyLanguageHubInstitutionalBands`. See
+  [PHASE_2L_SCORING_POLICY.md](./PHASE_2L_SCORING_POLICY.md).
 - Whether `Candidate` should ever get a uniqueness constraint (e.g. phone +
   name) to detect duplicates — left open; the source material doesn't
   specify a dedup policy and inventing one risks rejecting legitimate

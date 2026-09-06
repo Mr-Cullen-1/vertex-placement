@@ -179,6 +179,18 @@ export class DuplicateSubmissionError extends DomainError {
   }
 }
 
+/** Phase 2L — thrown when a Final Placement override label isn't one of
+ * the six standard Vertex placement levels (see /domain/placement/levels.ts).
+ * Kept separate from ValidationError so the Server Action can surface a
+ * precise message without leaking Zod internals. */
+export class InvalidPlacementLevelError extends DomainError {
+  readonly code = "INVALID_PLACEMENT_LEVEL";
+  readonly httpStatus = 400;
+  constructor() {
+    super("Final Placement must be one of the standard Vertex placement levels.");
+  }
+}
+
 /** Thrown when a validation schema (Zod) rejects input. Wraps the
  * underlying issues without leaking implementation details. */
 export class ValidationError extends DomainError {

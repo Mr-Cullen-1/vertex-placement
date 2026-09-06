@@ -3,6 +3,7 @@ import {
   AlertTriangleIcon,
   BarChart3Icon,
   CheckIcon,
+  ClipboardCheckIcon,
   CompassIcon,
   LayersIcon,
   ListChecksIcon,
@@ -20,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProgressionTrack } from "@/components/shared/progression-track";
+import { FinalPlacementControl } from "@/components/admin/results/final-placement-control";
 import { formatDateTime, formatPercentage } from "@/lib/format";
 
 /** Admin-only result detail — intentionally shows the answer key and
@@ -64,87 +66,100 @@ export default async function ResultDetailPage({
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeading icon={TrophyIcon} title="Score" />
-          <CardContent className="flex flex-col items-center gap-2 text-center">
-            {result.level && (
-              <div className="flex flex-col items-center gap-1.5">
-                <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                  Placement band
-                </span>
-                <Badge>{result.level}</Badge>
-              </div>
-            )}
-            <div className="text-5xl font-semibold tracking-tight text-foreground tabular-nums">
-              {result.rawScore}
-              <span className="text-lg font-normal text-muted-foreground"> / {result.totalQuestions}</span>
-            </div>
-            <p className="text-sm text-muted-foreground">{formatPercentage(result.percentage)} correct</p>
-            <dl className="mt-2 grid w-full grid-cols-2 gap-3 text-left text-xs">
-              <div>
-                <dt className="text-muted-foreground">Answered</dt>
-                <dd className="font-medium text-foreground">
-                  {result.progression.answeredCount} / {result.totalQuestions}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Completion time</dt>
-                <dd className="font-medium text-foreground">
-                  {minutes}m {seconds}s
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Correct</dt>
-                <dd className="font-medium text-foreground">{result.progression.correctCount}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Incorrect</dt>
-                <dd className="font-medium text-foreground">{result.progression.incorrectCount}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Unanswered</dt>
-                <dd className="font-medium text-foreground">{result.progression.unansweredCount}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Submission type</dt>
-                <dd className="font-medium text-foreground">
-                  {result.status === "AUTO_SUBMITTED" ? "Automatic (time limit)" : "Manual"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Started</dt>
-                <dd className="font-medium text-foreground">{formatDateTime(result.startedAt)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Completed</dt>
-                <dd className="font-medium text-foreground">{formatDateTime(result.completedAt)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Phone</dt>
-                <dd className="font-medium text-foreground">{result.candidate.phoneNumber}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Age</dt>
-                <dd className="font-medium text-foreground">{result.candidate.age}</dd>
-              </div>
-              {result.candidate.email && (
-                <div>
-                  <dt className="text-muted-foreground">Email</dt>
-                  <dd className="font-medium text-foreground">{result.candidate.email}</dd>
+        <div className="flex flex-col gap-6 lg:col-span-1">
+          <Card>
+            <CardHeading icon={TrophyIcon} title="Objective result" description="Score-based, immutable" />
+            <CardContent className="flex flex-col items-center gap-2 text-center">
+              {result.level && (
+                <div className="flex flex-col items-center gap-1.5">
+                  <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                    Recommended level
+                  </span>
+                  <Badge>{result.level}</Badge>
                 </div>
               )}
-            </dl>
-          </CardContent>
-        </Card>
+              <div className="text-5xl font-semibold tracking-tight text-foreground tabular-nums">
+                {result.rawScore}
+                <span className="text-lg font-normal text-muted-foreground"> / {result.totalQuestions}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">{formatPercentage(result.percentage)} correct</p>
+              <dl className="mt-2 grid w-full grid-cols-2 gap-3 text-left text-xs">
+                <div>
+                  <dt className="text-muted-foreground">Answered</dt>
+                  <dd className="font-medium text-foreground">
+                    {result.progression.answeredCount} / {result.totalQuestions}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Completion time</dt>
+                  <dd className="font-medium text-foreground">
+                    {minutes}m {seconds}s
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Correct</dt>
+                  <dd className="font-medium text-foreground">{result.progression.correctCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Incorrect</dt>
+                  <dd className="font-medium text-foreground">{result.progression.incorrectCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Unanswered</dt>
+                  <dd className="font-medium text-foreground">{result.progression.unansweredCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Submission type</dt>
+                  <dd className="font-medium text-foreground">
+                    {result.status === "AUTO_SUBMITTED" ? "Automatic (time limit)" : "Manual"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Started</dt>
+                  <dd className="font-medium text-foreground">{formatDateTime(result.startedAt)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Completed</dt>
+                  <dd className="font-medium text-foreground">{formatDateTime(result.completedAt)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Phone</dt>
+                  <dd className="font-medium text-foreground">{result.candidate.phoneNumber}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Age</dt>
+                  <dd className="font-medium text-foreground">{result.candidate.age}</dd>
+                </div>
+                {result.candidate.email && (
+                  <div>
+                    <dt className="text-muted-foreground">Email</dt>
+                    <dd className="font-medium text-foreground">{result.candidate.email}</dd>
+                  </div>
+                )}
+              </dl>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeading icon={ClipboardCheckIcon} title="Final Placement" description="Administrative decision" />
+            <CardContent className="flex flex-col gap-3">
+              <p className="text-xs text-muted-foreground">
+                Defaults to the Recommended Level above. Override only if institutional judgment
+                differs — this never changes the raw score or Recommended Level.
+              </p>
+              <FinalPlacementControl attemptId={result.attemptId} finalPlacement={result.finalPlacement} />
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
             <CardHeading icon={CompassIcon} title="Question progression evidence" description="Diagnostic only" />
             <CardContent className="flex flex-col gap-4">
               <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                This does not determine placement. Official placement is the <strong>Placement
-                band</strong> above, based on total correct score — never on which specific
-                question was answered correctly.
+                This does not determine placement. The official recommendation is the{" "}
+                <strong>Recommended Level</strong> above, based on total correct score — never on
+                which specific question was answered correctly.
               </p>
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-muted-foreground">Highest correctly answered question:</span>
@@ -176,6 +191,48 @@ export default async function ResultDetailPage({
                   recommended rather than an assumed starting level.
                 </p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeading
+              icon={LayersIcon}
+              title="Performance by course level"
+              description="Diagnostic only — never determines placement"
+            />
+            <CardContent className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-0.5 rounded-lg bg-muted/40 px-3 py-2">
+                  <span className="text-[10px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
+                    Strongest area
+                  </span>
+                  <span className="text-sm font-medium text-foreground">
+                    {result.strengthWeakness.strongestLabel ?? "Limited evidence"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-0.5 rounded-lg bg-muted/40 px-3 py-2">
+                  <span className="text-[10px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
+                    Needs most improvement
+                  </span>
+                  <span className="text-sm font-medium text-foreground">
+                    {result.strengthWeakness.weakestLabel ?? "Limited evidence"}
+                  </span>
+                </div>
+              </div>
+              <ul className="flex flex-col gap-1.5">
+                {result.courseLevelPerformance.map((entry) => (
+                  <li
+                    key={entry.label}
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-muted/30 px-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 truncate font-medium text-foreground">{entry.label}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {entry.correct}/{entry.total} correct
+                      {entry.unanswered > 0 && ` · ${entry.unanswered} unanswered`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
 

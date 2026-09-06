@@ -30,12 +30,22 @@ export interface ScoringAnswerInput {
   selectedOptionId: string | null;
 }
 
+/** A band's evaluation metric is explicit per-row, never inferred — see
+ * /docs/PHASE_2L_SCORING_POLICY.md ("Why raw score, not percentage, for
+ * Language Hub"). No hidden conversion between raw score and percentage
+ * ever happens here: a RAW_SCORE band is matched only against `rawScore`,
+ * a PERCENTAGE band only against `percentage`. */
+export type ScoringMode = "PERCENTAGE" | "RAW_SCORE";
+
 export interface ScoringBandInput {
   id: string;
   label: string;
   order: number;
-  minPercentage: number;
-  maxPercentage: number;
+  scoringMode: ScoringMode;
+  minPercentage: number | null;
+  maxPercentage: number | null;
+  minRawScore: number | null;
+  maxRawScore: number | null;
 }
 
 export function computeScoring(
@@ -48,7 +58,7 @@ export function computeScoring(
   const rawScore = computeRawScore(questions, selectedByQuestionId);
   const difficultyProgression = computeDifficultyProgression(questions, selectedByQuestionId);
   const topicPerformance = computeTopicPerformance(questions, selectedByQuestionId);
-  const placementBand = matchPlacementBand(rawScore.percentage, bands);
+  const placementBand = matchPlacementBand(rawScore.rawScore, rawScore.percentage, bands);
 
   return { rawScore, difficultyProgression, topicPerformance, placementBand };
 }
@@ -118,12 +128,26 @@ function computeTopicPerformance(
 }
 
 function matchPlacementBand(
+  rawScoreValue: number,
   percentage: number,
   bands: readonly ScoringBandInput[]
 ): PlacementBandMatch | null {
   const sorted = [...bands].sort((a, b) => a.order - b.order);
-  const match = sorted.find(
-    (band) => percentage >= band.minPercentage && percentage <= band.maxPercentage
-  );
+  const match = sorted.find((band) => {
+    if (band.scoringMode === "RAW_SCORE") {
+      return (
+        band.minRawScore !== null &&
+        band.maxRawScore !== null &&
+        rawScoreValue >= band.minRawScore &&
+        rawScoreValue <= band.maxRawScore
+      );
+    }
+    return (
+      band.minPercentage !== null &&
+      band.maxPercentage !== null &&
+      percentage >= band.minPercentage &&
+      percentage <= band.maxPercentage
+    );
+  });
   return match ? { placementBandId: match.id, label: match.label } : null;
 }

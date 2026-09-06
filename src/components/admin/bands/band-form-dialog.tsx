@@ -16,14 +16,20 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+
+type ScoringMode = "PERCENTAGE" | "RAW_SCORE";
 
 interface BandDraft {
   id: string;
   order: number;
   label: string;
-  minPercentage: number;
-  maxPercentage: number;
+  scoringMode: ScoringMode;
+  minPercentage: number | null;
+  maxPercentage: number | null;
+  minRawScore: number | null;
+  maxRawScore: number | null;
   description: string | null;
 }
 
@@ -45,6 +51,7 @@ export function BandFormDialog({
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scoringMode, setScoringMode] = useState<ScoringMode>(band?.scoringMode ?? "PERCENTAGE");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,13 +60,24 @@ export function BandFormDialog({
 
     const formData = new FormData(event.currentTarget);
     const description = String(formData.get("description") ?? "").trim();
-    const input = {
-      order: Number(formData.get("order")),
-      label: String(formData.get("label") ?? ""),
-      minPercentage: Number(formData.get("minPercentage")),
-      maxPercentage: Number(formData.get("maxPercentage")),
-      description: description === "" ? null : description,
-    };
+    const input =
+      scoringMode === "RAW_SCORE"
+        ? {
+            order: Number(formData.get("order")),
+            label: String(formData.get("label") ?? ""),
+            scoringMode: "RAW_SCORE" as const,
+            minRawScore: Number(formData.get("minRawScore")),
+            maxRawScore: Number(formData.get("maxRawScore")),
+            description: description === "" ? null : description,
+          }
+        : {
+            order: Number(formData.get("order")),
+            label: String(formData.get("label") ?? ""),
+            scoringMode: "PERCENTAGE" as const,
+            minPercentage: Number(formData.get("minPercentage")),
+            maxPercentage: Number(formData.get("maxPercentage")),
+            description: description === "" ? null : description,
+          };
 
     const result =
       mode === "create"
@@ -114,34 +132,74 @@ export function BandFormDialog({
               autoFocus
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`band-min-${mode}`}>Min %</Label>
-              <Input
-                id={`band-min-${mode}`}
-                name="minPercentage"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
-                required
-                defaultValue={band?.minPercentage}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`band-max-${mode}`}>Max %</Label>
-              <Input
-                id={`band-max-${mode}`}
-                name="maxPercentage"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
-                required
-                defaultValue={band?.maxPercentage}
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`band-scoring-mode-${mode}`}>Evaluated against</Label>
+            <Select
+              id={`band-scoring-mode-${mode}`}
+              value={scoringMode}
+              onChange={(e) => setScoringMode(e.target.value as ScoringMode)}
+            >
+              <option value="PERCENTAGE">Percentage of total questions</option>
+              <option value="RAW_SCORE">Total correct answers (raw score)</option>
+            </Select>
           </div>
+          {scoringMode === "RAW_SCORE" ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`band-min-raw-${mode}`}>Min correct</Label>
+                <Input
+                  id={`band-min-raw-${mode}`}
+                  name="minRawScore"
+                  type="number"
+                  min={0}
+                  step="1"
+                  required
+                  defaultValue={band?.minRawScore ?? undefined}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`band-max-raw-${mode}`}>Max correct</Label>
+                <Input
+                  id={`band-max-raw-${mode}`}
+                  name="maxRawScore"
+                  type="number"
+                  min={0}
+                  step="1"
+                  required
+                  defaultValue={band?.maxRawScore ?? undefined}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`band-min-${mode}`}>Min %</Label>
+                <Input
+                  id={`band-min-${mode}`}
+                  name="minPercentage"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  required
+                  defaultValue={band?.minPercentage ?? undefined}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`band-max-${mode}`}>Max %</Label>
+                <Input
+                  id={`band-max-${mode}`}
+                  name="maxPercentage"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  required
+                  defaultValue={band?.maxPercentage ?? undefined}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`band-order-${mode}`}>Order (lowest band first)</Label>
             <Input

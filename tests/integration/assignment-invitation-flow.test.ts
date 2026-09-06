@@ -260,10 +260,10 @@ describe("O/P/Q — export authorization and content", () => {
     expect(resultsSheet.rowCount).toBeGreaterThan(1);
 
     const resultsHeader = resultsSheet.getRow(1).values as unknown[];
-    // The OFFICIAL placement (Placement band), never the question-
-    // position-derived progression signal — see the P0 scoring-semantics
-    // fix (/docs/PRODUCT_RULES.md "Scoring & placement").
-    expect(resultsHeader).toContain("Placement band");
+    // The OFFICIAL placement (Recommended Level, Phase 2L), never the
+    // question-position-derived progression signal — see the P0
+    // scoring-semantics fix (/docs/PRODUCT_RULES.md "Scoring & placement").
+    expect(resultsHeader).toContain("Recommended Level");
     expect(resultsHeader).not.toContain("Progression");
     expect(resultsHeader).toContain("Score");
 

@@ -32,6 +32,7 @@ model User {
   createdAssignments PlacementAssignment[] @relation("AssignmentCreatedBy")
   createdInvitations PlacementInvitation[] @relation("InvitationCreatedBy")
   importJobs         ImportJob[]           @relation("ImportJobCreatedBy")
+  finalPlacementOverrides PlacementResult[] @relation("FinalPlacementSetBy")
 
   @@map("users")
 }
@@ -152,6 +153,21 @@ model QuestionMetadata {
 // Configurable scoring → placement-level mapping, per test. Populated by
 // Super Admin. Intentionally NOT hard-coded — the source material does not
 // define official CEFR boundaries.
+//
+// Phase 2L: a band's evaluation metric is explicit per-row (`scoringMode`),
+// never inferred or silently converted between raw score and percentage —
+// see /docs/PHASE_2L_SCORING_POLICY.md ("Why raw score, not percentage, for
+// Language Hub"). PERCENTAGE bands use minPercentage/maxPercentage (the
+// original, still-supported mechanism — every pre-Phase-2L band row is
+// PERCENTAGE by default); RAW_SCORE bands use minRawScore/maxRawScore. A
+// test's bands are expected to use one mode consistently, but the resolver
+// (`matchPlacementBand`) checks each band's own `scoringMode`, so nothing
+// upstream needs to know which mode a given test uses.
+enum PlacementBandScoringMode {
+  PERCENTAGE
+  RAW_SCORE
+}
+
 model PlacementBand {
   id     String        @id @default(cuid())
   testId String
@@ -159,8 +175,11 @@ model PlacementBand {
 
   order         Int // display/evaluation order, lowest band first
   label         String // e.g. "A2", "Elementary" — whatever the org decides to call it
-  minPercentage Float
-  maxPercentage Float
+  scoringMode   PlacementBandScoringMode @default(PERCENTAGE)
+  minPercentage Float? // required (by application-level validation) when scoringMode = PERCENTAGE
+  maxPercentage Float?
+  minRawScore   Int? // required (by application-level validation) when scoringMode = RAW_SCORE
+  maxRawScore   Int?
   description   String?
 
   createdAt DateTime @default(now())
@@ -509,6 +528,20 @@ model PlacementResult {
   // even if metadata/topics are edited later.
   difficultyProgression Json // e.g. { "Beginner": { correct: 6, total: 6 }, ... }
   topicPerformance      Json // e.g. { "Grammar": 0.72, "Vocabulary": 0.61, ... }
+
+  // Phase 2L — administrative decision, deliberately separate from the
+  // objective, immutable `placementBandId` match above ("Recommended
+  // Level"). Null means no override has ever been made — the UI then
+  // displays the Recommended Level itself, but this column still lets us
+  // distinguish "never touched" from "an admin explicitly re-confirmed the
+  // same label" (both meaningfully different facts). Never written by
+  // anything in the scoring pipeline itself — only by the dedicated
+  // `setFinalPlacement` service function, gated on `result:write`. See
+  // /docs/PHASE_2L_SCORING_POLICY.md.
+  finalPlacementLabel       String?
+  finalPlacementSetByUserId String?
+  finalPlacementSetBy       User?     @relation("FinalPlacementSetBy", fields: [finalPlacementSetByUserId], references: [id])
+  finalPlacementSetAt       DateTime?
 
   computedAt DateTime @default(now())
 
