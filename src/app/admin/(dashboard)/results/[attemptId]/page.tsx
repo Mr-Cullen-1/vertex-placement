@@ -154,6 +154,67 @@ export default async function ResultDetailPage({
               <FinalPlacementControl attemptId={result.attemptId} finalPlacement={result.finalPlacement} />
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <Card>
+              <CardHeading icon={LayersIcon} title="Topic performance" />
+              <CardContent>
+                {result.topicPerformance.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No topic metadata on this test&apos;s questions.</p>
+                ) : (
+                  <ul className="flex flex-col gap-2.5">
+                    {result.topicPerformance.map((t) => (
+                      <li key={t.topic} className="flex flex-col gap-1.5 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">{t.topic}</span>
+                          <span className="font-medium text-foreground">
+                            {t.correct}/{t.total} ({formatPercentage(t.percentage)})
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                          <div
+                            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                            style={{ width: `${t.percentage}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeading icon={BarChart3Icon} title="Difficulty progression" />
+              <CardContent>
+                {result.difficultyProgression.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No difficulty-band metadata on this test&apos;s questions.</p>
+                ) : (
+                  <ul className="flex flex-col gap-2.5">
+                    {result.difficultyProgression.map((band) => {
+                      const pct = band.total > 0 ? (band.correct / band.total) * 100 : 0;
+                      return (
+                        <li key={band.band} className="flex flex-col gap-1.5 text-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-muted-foreground">{band.band}</span>
+                            <span className="font-medium text-foreground">
+                              {band.correct}/{band.total}
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                            <div
+                              className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -242,65 +303,6 @@ export default async function ResultDetailPage({
                   </li>
                 ))}
               </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeading icon={LayersIcon} title="Topic performance" />
-            <CardContent>
-              {result.topicPerformance.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No topic metadata on this test&apos;s questions.</p>
-              ) : (
-                <ul className="flex flex-col gap-2.5">
-                  {result.topicPerformance.map((t) => (
-                    <li key={t.topic} className="flex flex-col gap-1.5 text-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-muted-foreground">{t.topic}</span>
-                        <span className="font-medium text-foreground">
-                          {t.correct}/{t.total} ({formatPercentage(t.percentage)})
-                        </span>
-                      </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-                        <div
-                          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
-                          style={{ width: `${t.percentage}%` }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeading icon={BarChart3Icon} title="Difficulty progression" />
-            <CardContent>
-              {result.difficultyProgression.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No difficulty-band metadata on this test&apos;s questions.</p>
-              ) : (
-                <ul className="flex flex-col gap-2.5">
-                  {result.difficultyProgression.map((band) => {
-                    const pct = band.total > 0 ? (band.correct / band.total) * 100 : 0;
-                    return (
-                      <li key={band.band} className="flex flex-col gap-1.5 text-sm">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-muted-foreground">{band.band}</span>
-                          <span className="font-medium text-foreground">
-                            {band.correct}/{band.total}
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-                          <div
-                            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
             </CardContent>
           </Card>
         </div>

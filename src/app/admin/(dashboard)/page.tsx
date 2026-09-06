@@ -62,7 +62,7 @@ export default async function AdminDashboardPage() {
   const totalPlacedResults = fullDistribution.reduce((sum, entry) => sum + entry.count, 0);
 
   return (
-    <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 overflow-hidden p-4 md:p-8">
       <PageHeader
         eyebrow="Overview"
         title="Dashboard"
@@ -105,8 +105,12 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-[1.8fr_1fr]">
-        <Card className="flex min-h-[520px] flex-col">
-          <CardHeading title="Recent activity" description="The latest assignments across the system." />
+        <Card className="flex h-full min-h-0 flex-col">
+          <CardHeading
+            className="shrink-0"
+            title="Recent activity"
+            description="The latest assignments across the system."
+          />
           <CardContent className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
             {isEmpty ? (
               <EmptyState
@@ -167,8 +171,9 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="min-h-0">
+        <Card className="h-full overflow-hidden">
           <CardHeading
+            className="shrink-0"
             icon={ActivityIcon}
             title="Recommended Level distribution"
             description={
