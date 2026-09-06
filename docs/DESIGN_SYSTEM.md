@@ -5,6 +5,76 @@ on Phase 2G/2G.1/2I/2L. Phase 0's original direction (below, in "History")
 still holds; this document records what actually shipped so it can't drift
 out of sync with the real tokens/primitives in `src/`.
 
+## Redesign pass — warm palette (mandatory visual replacement)
+
+A second, mandatory redesign pass explicitly moved the product OFF the
+violet/near-black/white system above and onto a warm, editorial exam-SaaS
+palette — an explicit product decision, not a refinement of the violet
+direction. Scope: public + admin surfaces (landing, Try Yourself, admin
+login/shell/sidebar/dashboard/tests/candidates/assignments/questions/detail
+pages/result page). The active student Test Runner session
+(`PlacementTestShell`/`QuestionNavigator`/`AnswerOption`/`SubmitConfirmation`)
+was explicitly NOT restructured in this pass — it inherits the new shared
+tokens automatically (same CSS variables), but its own layout/components
+were left untouched, to be revisited in a dedicated pass.
+
+**New tokens** (`src/app/globals.css` `:root`): `--background: #f4f1ee` (warm
+stone canvas, replacing white), `--foreground: #121313`, `--card: #fbfbfc`,
+`--primary: #52372b` (deep espresso — the one dominant action color,
+replacing violet), `--accent: #ede2d8` (soft taupe wash, derived from
+`#8b634b`), `--success/#6b8f71`, `--warning/#b28a4c`, `--destructive/#a24e3f`
+(all muted/warm-toned, not saturated traffic-light colors), `--border:
+#e2dcd5`. **`--sidebar` inverted from dark to light** (`#ede7e1`, dark
+`#121313` text) — the admin sidebar is no longer near-black; the admin
+login's own dark treatment now comes directly from `bg-primary` (espresso)
+on its brand panel, not from `--sidebar*`, since those tokens no longer mean
+"the dark palette." `.vertex-atmosphere` (the violet radial-gradient wash)
+was removed from `AdminShell` and `OnboardingShell` specifically — flat
+canvas color instead, per the explicit "no gradient to fake depth" rule —
+but the utility class itself and its other call sites (the invited-candidate
+flow, out of scope this pass) are untouched.
+
+**New shared primitives**: `InteractiveListItem` + `ListPanel`
+(`src/components/admin/interactive-list-item.tsx`) — replaces the desktop
+`<Table>` + separate `MobileRecordCard` split on Tests/Candidates/
+Assignments/Candidate-Detail/Test-Detail's assignment list with ONE
+responsive row: a real link, explicit visible action ("Open test",
+"View candidate", "View result" — never only a bare chevron or a link
+hidden in the title), status badge, wrapping metadata. `MobileRecordCard`
+was deleted (fully superseded, zero remaining references). `BackButton`
+(`src/components/admin/back-button.tsx`) replaces `PageHeader`'s bare text
+back-link with a small bordered button.
+
+**Scroll architecture**: Tests/Candidates/Assignments/Questions pages are
+now `h-full min-h-0 flex-col` (filling the admin shell's `<main>` exactly)
+with a `shrink-0` `PageHeader` and a `flex-1 min-h-0 overflow-y-auto` list
+region — the header stays fixed and only the list scrolls, instead of the
+whole page growing with record count. The Dashboard's "Recent activity"
+panel is the same pattern inside a `Card`.
+
+**Dashboard**: replaced "4 identical KPI cards + one big list" with varied-
+weight metrics (per-tone top accent stripe) plus a real two-panel row —
+a **Recommended Level distribution** (horizontal bars, an honest tally of
+already-computed `placementBandId` values via the new
+`getRecommendedLevelDistribution` — see `attempt.service.ts` — never
+fabricated) beside Recent Activity.
+
+**Questions authoring**: each question row is now collapsed by default
+(order, status, one-line prompt preview) and expands inline via the
+existing `Collapsible` primitive — a real 70-question test previously
+rendered every prompt and every option fully expanded at once.
+
+**Admin Result**: the Objective-result / Diagnostic column ratio changed
+from `grid-cols-3` (33/67) to `grid-cols-[2fr_3fr]` (40/60); "Performance by
+course level," "Topic performance," and "Difficulty progression" all gained
+a compact accuracy bar per row (previously plain text rows).
+
+**Landing/buttons**: pill-shaped (`rounded-full`) buttons and colored
+drop-shadows (`shadow-primary/25` "glow") were replaced with the default
+compact button shape and a plain `shadow-xs`; the four icon-chip feature
+cards became a plain editorial list (title + description, no colored
+squares).
+
 ## Redesign pass
 
 A full-product UX/UI redesign request (Testora-level EdTech SaaS polish +

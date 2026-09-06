@@ -30,7 +30,7 @@ export default async function TestQuestionsPage({
   const editable = isSuperAdmin && test.status === "DRAFT";
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex h-full min-h-0 max-w-4xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
         eyebrow="Question authoring"
         title={`Questions — ${test.title}`}

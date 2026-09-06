@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getActorOrThrow } from "@/lib/actor";
 import { getCandidate } from "@/server/services/candidate.service";
 import { listAssignments } from "@/server/services/assignment.service";
+import { getCanonicalResultSummaryForAssignment } from "@/server/services/attempt.service";
 import { CandidateNotFoundError } from "@/server/errors";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -11,17 +12,8 @@ import { IdCardIcon, SendIcon } from "lucide-react";
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MobileRecordCard } from "@/components/admin/mobile-record-card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableRowChevronCell,
-} from "@/components/ui/table";
-import { candidateDisplayName, formatDate } from "@/lib/format";
+import { InteractiveListItem } from "@/components/admin/interactive-list-item";
+import { candidateDisplayName, formatDate, formatPercentage } from "@/lib/format";
 
 export default async function CandidateDetailPage({
   params,
@@ -42,6 +34,15 @@ export default async function CandidateDetailPage({
   const allAssignments = await listAssignments(actor);
   const assignments = allAssignments.filter((a) => a.candidateId === id);
   const isPending = !candidate.profileCompletedAt;
+
+  const resultsByAssignmentId = new Map<
+    string,
+    Awaited<ReturnType<typeof getCanonicalResultSummaryForAssignment>>
+  >();
+  for (const assignment of assignments) {
+    if (displayStatusForAssignment(assignment) !== "COMPLETED") continue;
+    resultsByAssignmentId.set(assignment.id, await getCanonicalResultSummaryForAssignment(actor, assignment.id));
+  }
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4 md:p-8">
@@ -86,54 +87,35 @@ export default async function CandidateDetailPage({
               description="This candidate hasn't been assigned a placement test."
             />
           ) : (
-            <>
-              <div className="hidden sm:block">
-                <Table className="table-fixed">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50%]">Test</TableHead>
-                      <TableHead className="w-[25%]">Status</TableHead>
-                      <TableHead className="w-[17%]">Created</TableHead>
-                      <TableHead aria-hidden="true" className="w-8" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell className="whitespace-normal">
-                          <Link
-                            href={`/admin/assignments/${assignment.id}`}
-                            className="block truncate font-medium text-foreground hover:underline"
-                          >
-                            {assignment.test.title}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="whitespace-normal">
-                          <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
-                        </TableCell>
-                        <TableCell className="whitespace-normal text-muted-foreground">
-                          {formatDate(assignment.createdAt)}
-                        </TableCell>
-                        <TableRowChevronCell />
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+            <div className="flex max-h-[420px] flex-col gap-2 overflow-y-auto pr-0.5">
+              {assignments.map((assignment) => {
+                const displayStatus = displayStatusForAssignment(assignment);
+                const result = resultsByAssignmentId.get(assignment.id);
+                const resolvedHref =
+                  displayStatus === "COMPLETED" && result
+                    ? `/admin/results/${result.attemptId}`
+                    : `/admin/assignments/${assignment.id}`;
 
-              <ul className="flex flex-col gap-2 sm:hidden">
-                {assignments.map((assignment) => (
-                  <li key={assignment.id}>
-                    <MobileRecordCard
-                      href={`/admin/assignments/${assignment.id}`}
-                      title={assignment.test.title}
-                      subtitle={formatDate(assignment.createdAt)}
-                      meta={<AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </>
+                return (
+                  <InteractiveListItem
+                    key={assignment.id}
+                    href={resolvedHref}
+                    actionLabel={displayStatus === "COMPLETED" && result ? "View result" : "View assignment"}
+                    title={assignment.test.title}
+                    subtitle={`Created ${formatDate(assignment.createdAt)}`}
+                    meta={
+                      result && (
+                        <span className="font-medium text-foreground">
+                          {result.rawScore}/{result.totalQuestions} ({formatPercentage(result.percentage)})
+                          {result.level ? ` · ${result.level}` : ""}
+                        </span>
+                      )
+                    }
+                    status={<AssignmentStatusBadge status={displayStatus} />}
+                  />
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>

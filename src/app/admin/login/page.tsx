@@ -27,14 +27,13 @@ async function login(formData: FormData) {
 }
 
 /**
- * Fullscreen dark Vertex authentication environment — brand identity
- * (left) split from the admin sign-in form (right) by a subtle
- * vertical divider, per the approved login direction. Reuses the
- * `--sidebar*` tokens (the product's one permanently-dark palette,
- * already used by the admin shell regardless of the page theme —
- * see /docs/DESIGN_SYSTEM.md "Admin shell") rather than introducing a
- * second dark theme. Below ~900px the split collapses to a single
- * stacked column and the divider is dropped entirely.
+ * Fullscreen two-tone Vertex authentication environment — a deep warm
+ * espresso brand panel (left) split from a light warm-stone sign-in
+ * workspace (right), per the Redesign pass's warm palette (see
+ * /docs/DESIGN_SYSTEM.md "Redesign pass"). Deliberately no gradients,
+ * glows, or ambient lighting — the two flat panel colors plus a plain
+ * vertical divider carry the composition. Below ~900px the split
+ * collapses to a single stacked column and the divider is dropped.
  */
 export default async function AdminLoginPage({
   searchParams,
@@ -44,24 +43,10 @@ export default async function AdminLoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="relative flex min-h-dvh flex-1 flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
-      {/* Ambient violet lighting — ~two soft radial glows, never a flat purple wash. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-[-15%] left-[-10%] -z-10 h-[560px] w-[560px] rounded-full bg-primary/25 blur-[140px]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-12%] bottom-[-18%] -z-10 h-[520px] w-[520px] rounded-full bg-primary/15 blur-[140px]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(120%_100%_at_50%_0%,transparent_45%,rgba(0,0,0,0.35)_100%)]"
-      />
-
+    <div className="flex min-h-dvh flex-1 flex-col bg-background">
       <div className="relative flex flex-1 flex-col justify-center min-[900px]:flex-row">
-        {/* LEFT — brand */}
-        <div className="relative flex flex-col items-center justify-center gap-6 px-6 py-14 min-[900px]:flex-1 min-[900px]:py-16">
+        {/* LEFT — brand, deep warm espresso */}
+        <div className="relative flex flex-col items-center justify-center gap-6 bg-primary px-6 py-14 text-primary-foreground min-[900px]:flex-1 min-[900px]:py-16">
           {/* Progression-band motif — real Vertex vocabulary (see
            * /domain/placement/progression.ts), purely decorative here:
            * never computes or implies an actual result. Split into a
@@ -69,11 +54,11 @@ export default async function AdminLoginPage({
            * than running straight through it. */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden min-[900px]:block">
             <div
-              className="absolute top-14 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent to-white/15"
+              className="absolute top-14 left-1/2 w-px -translate-x-1/2 bg-primary-foreground/15"
               style={{ bottom: "calc(50% + 110px)" }}
             />
             <ol
-              className="absolute inset-x-0 top-14 flex flex-col items-center justify-between text-[10px] font-semibold tracking-[0.22em] text-white/20 uppercase"
+              className="absolute inset-x-0 top-14 flex flex-col items-center justify-between text-[10px] font-semibold tracking-[0.22em] text-primary-foreground/35 uppercase"
               style={{ bottom: "calc(50% + 110px)" }}
             >
               {PROGRESSION_BANDS.slice(0, 3).map((band) => (
@@ -81,11 +66,11 @@ export default async function AdminLoginPage({
               ))}
             </ol>
             <div
-              className="absolute bottom-14 left-1/2 w-px -translate-x-1/2 bg-gradient-to-t from-transparent to-white/15"
+              className="absolute bottom-14 left-1/2 w-px -translate-x-1/2 bg-primary-foreground/15"
               style={{ top: "calc(50% + 110px)" }}
             />
             <ol
-              className="absolute inset-x-0 bottom-14 flex flex-col items-center justify-between text-[10px] font-semibold tracking-[0.22em] text-white/20 uppercase"
+              className="absolute inset-x-0 bottom-14 flex flex-col items-center justify-between text-[10px] font-semibold tracking-[0.22em] text-primary-foreground/35 uppercase"
               style={{ top: "calc(50% + 110px)" }}
             >
               {PROGRESSION_BANDS.slice(3).map((band) => (
@@ -95,44 +80,40 @@ export default async function AdminLoginPage({
           </div>
 
           <div className="relative z-10 flex flex-col items-center gap-5 text-center animate-page-in">
-            <VertexMark className="size-14 shadow-lg shadow-primary/30" />
+            <VertexMark className="size-14" />
             <div className="flex flex-col gap-1.5">
-              <h1 className="text-2xl font-semibold tracking-tight text-white">Vertex Placement</h1>
-              <p className="text-sm text-sidebar-foreground/55">Know where every student stands.</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-primary-foreground">Vertex Placement</h1>
+              <p className="text-sm text-primary-foreground/65">Know where every student stands.</p>
             </div>
           </div>
         </div>
 
-        {/* Divider — desktop only, ~65% viewport height, faded edges. */}
+        {/* Divider — desktop only, ~65% viewport height. */}
         <div
           aria-hidden="true"
-          className="hidden h-[65vh] w-px shrink-0 self-center bg-gradient-to-b from-transparent via-white/15 to-transparent animate-page-in min-[900px]:block"
+          className="hidden h-[65vh] w-px shrink-0 self-center bg-border animate-page-in min-[900px]:block"
           style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
         />
 
-        {/* RIGHT — authentication */}
+        {/* RIGHT — authentication, light warm stone */}
         <div className="relative flex flex-col items-center justify-center px-6 py-14 min-[900px]:flex-1 min-[900px]:py-16">
           <div
             className="flex w-full max-w-[420px] flex-col gap-8 animate-page-in"
-            style={{ animationDelay: "220ms", animationFillMode: "backwards" }}
+            style={{ animationDelay: "120ms", animationFillMode: "backwards" }}
           >
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-                Admin workspace
-              </span>
-              <h2 className="text-3xl font-semibold tracking-tight text-white">Welcome back</h2>
-              <p className="text-sm text-sidebar-foreground/55">
+              <span className="text-overline text-primary">Admin workspace</span>
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground">Welcome back</h2>
+              <p className="text-sm text-muted-foreground">
                 Sign in to manage placement tests, candidates and results.
               </p>
             </div>
 
             <form action={login} className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="email" className="text-sidebar-foreground/70">
-                  Email
-                </Label>
+                <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <MailIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-sidebar-foreground/40" />
+                  <MailIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
                     name="email"
@@ -140,18 +121,16 @@ export default async function AdminLoginPage({
                     required
                     autoComplete="email"
                     autoFocus
-                    className="h-[52px] rounded-xl border-white/10 bg-white/5 pl-11 text-base text-white placeholder:text-sidebar-foreground/35"
+                    className="h-[52px] rounded-xl pl-11 text-base"
                   />
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="password" className="text-sidebar-foreground/70">
-                  Password
-                </Label>
+                <Label htmlFor="password">Password</Label>
                 <PasswordField id="password" name="password" />
               </div>
               {error ? (
-                <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/15 px-3 py-2 text-sm text-destructive">
+                <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   Invalid email or password.
                 </p>
               ) : null}
@@ -163,7 +142,7 @@ export default async function AdminLoginPage({
         </div>
       </div>
 
-      <p className="relative pb-8 text-center text-xs text-sidebar-foreground/35">
+      <p className="relative pb-8 text-center text-xs text-muted-foreground">
         Restricted to authorized administrators of Vertex Placement.
       </p>
     </div>

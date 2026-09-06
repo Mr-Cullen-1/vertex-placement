@@ -48,55 +48,34 @@ const SELECTED_OPTION_INDEX = 1;
 
 /** Marketing/informational landing page for the root route — a single,
  * scroll-free hero screen (no stats strip, no footer, everything above
- * the fold): a floating pill navbar, the layered product-visual concept
+ * the fold): a compact editorial navbar, the layered product-visual concept
  * (the real Test Runner/Result UI, never a stock photo or illustration —
- * see /docs/DESIGN_SYSTEM.md "Redesign — rejected directions"), and a
- * restrained atmospheric background. The decorative hand-drawn-style
- * annotations from an earlier pass were removed in the Redesign pass —
- * that direction is explicitly rejected going forward; the product visual
- * itself should carry the interest. Phase 2J added a "Try Yourself" CTA
- * (public self-service placement — see /docs/PHASE_2J_TRY_YOURSELF.md)
- * alongside the existing "Admin login" control. No invented customer
- * names or statistics anywhere. No "adaptive"/"AI" language — the test is
- * fixed-order with progressively increasing difficulty. */
+ * see /docs/DESIGN_SYSTEM.md "Redesign pass"), and a flat warm canvas — no
+ * gradient, no decorative glow/blob shapes standing in for depth. Phase 2J
+ * added a "Try Yourself" CTA (public self-service placement — see
+ * /docs/PHASE_2J_TRY_YOURSELF.md) alongside the existing "Admin login"
+ * control. No invented customer names or statistics anywhere. No
+ * "adaptive"/"AI" language — the test is fixed-order with progressively
+ * increasing difficulty. */
 export default function Home() {
   return (
-    <div className="relative flex h-dvh flex-col overflow-y-auto overflow-x-hidden bg-gradient-to-b from-white to-[oklch(0.97_0.012_292.7)]">
-      {/* Atmospheric background — soft violet glow + a faint abstract
-       * "architecture" motif, standing in for the reference's layered
-       * translucent shapes without a photographic/stock asset. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-[-160px] right-[-8%] -z-10 h-[680px] w-[860px] rounded-full bg-primary/[0.09] blur-3xl"
-      />
-      <svg
-        aria-hidden
-        className="pointer-events-none absolute right-0 bottom-0 -z-10 h-[420px] w-[520px] text-primary/[0.08]"
-        viewBox="0 0 520 420"
-        fill="none"
-      >
-        <path d="M520 420 L360 420 L430 120 L520 60 Z" fill="currentColor" />
-        <path d="M420 420 L300 420 L385 150 L420 130 Z" fill="currentColor" opacity="0.7" />
-        <line x1="520" y1="120" x2="300" y2="420" stroke="currentColor" strokeWidth="1" />
-        <line x1="480" y1="90" x2="270" y2="420" stroke="currentColor" strokeWidth="1" />
-      </svg>
-
+    <div className="relative flex h-dvh flex-col overflow-y-auto overflow-x-hidden bg-background">
       <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-6 sm:px-10 xl:px-16">
-        <header className="mt-6 flex shrink-0 items-center justify-between gap-4 rounded-full border border-border bg-card/90 px-6 py-3 shadow-sm backdrop-blur-sm sm:mt-8 sm:px-8">
+        <header className="mt-6 flex shrink-0 items-center justify-between gap-4 rounded-2xl border border-border bg-card px-6 py-3 shadow-xs sm:mt-8 sm:px-8">
           <VertexWordmark />
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               nativeButton={false}
               render={<Link href="/admin/login" />}
-              className="rounded-full px-5"
+              className="px-5"
             >
               Admin login
             </Button>
             <Button
               nativeButton={false}
               render={<Link href="/try" />}
-              className="rounded-full px-5 shadow-lg shadow-primary/25"
+              className="px-5"
             >
               Try Yourself
               <ArrowRightIcon />
@@ -122,26 +101,21 @@ export default function Home() {
               minutes. Clear results. Confident next steps.
             </p>
 
-            <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+            <ul className="flex flex-col gap-3 border-t border-border pt-5">
               {FEATURES.map((feature) => (
-                <div key={feature.title} className="flex items-start gap-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-                    <feature.icon className="size-4.5" />
-                  </span>
-                  <span className="flex flex-col">
-                    <span className="text-sm font-semibold text-foreground">{feature.title}</span>
-                    <span className="text-xs text-muted-foreground">{feature.description}</span>
-                  </span>
-                </div>
+                <li key={feature.title} className="flex items-baseline gap-3 text-sm">
+                  <span className="font-semibold text-foreground">{feature.title}</span>
+                  <span className="text-muted-foreground">{feature.description}</span>
+                </li>
               ))}
-            </div>
+            </ul>
 
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 size="lg"
                 nativeButton={false}
                 render={<Link href="/try" />}
-                className="rounded-full px-6 shadow-lg shadow-primary/25"
+                className="px-6"
               >
                 Try Yourself
                 <ArrowRightIcon />
@@ -151,7 +125,7 @@ export default function Home() {
                 variant="outline"
                 nativeButton={false}
                 render={<Link href="/admin/login" />}
-                className="rounded-full px-6"
+                className="px-6"
               >
                 Admin login
               </Button>
@@ -194,7 +168,7 @@ export default function Home() {
             </div>
 
             {/* Main test card */}
-            <div className="relative z-20 mr-40 ml-40 rounded-[28px] border border-border bg-card p-5 shadow-2xl shadow-primary/10 sm:p-6">
+            <div className="relative z-20 mr-40 ml-40 rounded-[28px] border border-border bg-card p-5 shadow-xl sm:p-6">
               <div className="flex items-center justify-between pb-5">
                 <div className="flex items-center gap-2">
                   <VertexMark className="size-7" />
@@ -254,7 +228,7 @@ export default function Home() {
                   <BookmarkIcon className="size-3.5" />
                   Mark for review
                 </span>
-                <Button size="sm" nativeButton={false} render={<span />} className="rounded-full px-4">
+                <Button size="sm" nativeButton={false} render={<span />} className="px-4">
                   Next question
                   <ArrowRightIcon className="size-3.5" />
                 </Button>
@@ -292,7 +266,7 @@ export default function Home() {
            * naturally into a compact assessment preview" on smaller
            * screens rather than cramming the full layered composition. */}
           <div className="w-full xl:hidden">
-            <div className="mx-auto max-w-md rounded-[28px] border border-border bg-card p-5 shadow-2xl shadow-primary/10 sm:p-6">
+            <div className="mx-auto max-w-md rounded-[28px] border border-border bg-card p-5 shadow-xl sm:p-6">
               <div className="flex items-center justify-between pb-5">
                 <div className="flex items-center gap-2">
                   <VertexMark className="size-7" />

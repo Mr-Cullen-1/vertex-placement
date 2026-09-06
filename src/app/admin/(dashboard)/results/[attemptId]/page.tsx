@@ -65,8 +65,8 @@ export default async function ResultDetailPage({
         description={result.testTitle}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-6 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_3fr]">
+        <div className="flex flex-col gap-6">
           <Card>
             <CardHeading icon={TrophyIcon} title="Objective result" description="Score-based, immutable" />
             <CardContent className="flex flex-col items-center gap-2 text-center">
@@ -152,7 +152,7 @@ export default async function ResultDetailPage({
           </Card>
         </div>
 
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex flex-col gap-6">
           <Card>
             <CardHeading icon={CompassIcon} title="Question progression evidence" description="Diagnostic only" />
             <CardContent className="flex flex-col gap-4">
@@ -219,17 +219,22 @@ export default async function ResultDetailPage({
                   </span>
                 </div>
               </div>
-              <ul className="flex flex-col gap-1.5">
+              <ul className="flex flex-col gap-2.5">
                 {result.courseLevelPerformance.map((entry) => (
-                  <li
-                    key={entry.label}
-                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-muted/30 px-3 py-2 text-sm"
-                  >
-                    <span className="min-w-0 truncate font-medium text-foreground">{entry.label}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {entry.correct}/{entry.total} correct
-                      {entry.unanswered > 0 && ` · ${entry.unanswered} unanswered`}
-                    </span>
+                  <li key={entry.label} className="flex flex-col gap-1.5 rounded-lg bg-muted/30 px-3 py-2.5 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <span className="min-w-0 truncate font-medium text-foreground">{entry.label}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {entry.correct}/{entry.total} correct
+                        {entry.unanswered > 0 && ` · ${entry.unanswered} unanswered`}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                      <div
+                        className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                        style={{ width: `${entry.percentageOfTotal}%` }}
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -242,13 +247,21 @@ export default async function ResultDetailPage({
               {result.topicPerformance.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No topic metadata on this test&apos;s questions.</p>
               ) : (
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col gap-2.5">
                   {result.topicPerformance.map((t) => (
-                    <li key={t.topic} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="text-muted-foreground">{t.topic}</span>
-                      <span className="font-medium text-foreground">
-                        {t.correct}/{t.total} ({formatPercentage(t.percentage)})
-                      </span>
+                    <li key={t.topic} className="flex flex-col gap-1.5 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">{t.topic}</span>
+                        <span className="font-medium text-foreground">
+                          {t.correct}/{t.total} ({formatPercentage(t.percentage)})
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                        <div
+                          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                          style={{ width: `${t.percentage}%` }}
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -262,15 +275,26 @@ export default async function ResultDetailPage({
               {result.difficultyProgression.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No difficulty-band metadata on this test&apos;s questions.</p>
               ) : (
-                <ul className="flex flex-col gap-2">
-                  {result.difficultyProgression.map((band) => (
-                    <li key={band.band} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="text-muted-foreground">{band.band}</span>
-                      <span className="font-medium text-foreground">
-                        {band.correct}/{band.total}
-                      </span>
-                    </li>
-                  ))}
+                <ul className="flex flex-col gap-2.5">
+                  {result.difficultyProgression.map((band) => {
+                    const pct = band.total > 0 ? (band.correct / band.total) * 100 : 0;
+                    return (
+                      <li key={band.band} className="flex flex-col gap-1.5 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">{band.band}</span>
+                          <span className="font-medium text-foreground">
+                            {band.correct}/{band.total}
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                          <div
+                            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </CardContent>

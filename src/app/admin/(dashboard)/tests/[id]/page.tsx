@@ -13,21 +13,12 @@ import { TestStatusBadge, AssignmentStatusBadge } from "@/components/admin/statu
 import { displayStatusForAssignment } from "@/domain/placement/assignment-status";
 import { TestLifecycleActions } from "@/components/admin/tests/test-lifecycle-actions";
 import { PublicSelfServiceToggle } from "@/components/admin/tests/public-self-service-toggle";
-import { MobileRecordCard } from "@/components/admin/mobile-record-card";
+import { InteractiveListItem } from "@/components/admin/interactive-list-item";
 import { BandsManager } from "@/components/admin/bands/bands-manager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileTextIcon, LayersIcon, ListChecksIcon, SendIcon } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableRowChevronCell,
-} from "@/components/ui/table";
 import { candidateDisplayName, formatDate, formatDurationSeconds } from "@/lib/format";
 
 export default async function TestDetailPage({
@@ -129,64 +120,18 @@ export default async function TestDetailPage({
                   description="Create an assignment to send this test to a candidate."
                 />
               ) : (
-                <>
-                  {/* This card shares its row with the Placement bands
-                   * panel above `xl`, so it has noticeably less width
-                   * than a full-bleed table — a higher breakpoint than
-                   * the standalone Assignments list, chosen by testing
-                   * at that shared-width geometry (see
-                   * /docs/DESIGN_SYSTEM.md "No horizontal scrolling"). */}
-                  <div className="hidden xl:block">
-                    <Table className="table-fixed">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[45%]">Candidate</TableHead>
-                          <TableHead className="w-[25%]">Status</TableHead>
-                          <TableHead className="w-[20%]">Created</TableHead>
-                          <TableHead aria-hidden="true" className="w-8" />
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {testAssignments.map((assignment) => (
-                          <TableRow key={assignment.id}>
-                            <TableCell className="whitespace-normal">
-                              <Link
-                                href={`/admin/assignments/${assignment.id}`}
-                                className={
-                                  assignment.candidate.profileCompletedAt
-                                    ? "block truncate font-medium text-foreground hover:underline"
-                                    : "block truncate font-medium text-muted-foreground italic hover:underline"
-                                }
-                              >
-                                {candidateDisplayName(assignment.candidate)}
-                              </Link>
-                            </TableCell>
-                            <TableCell className="whitespace-normal">
-                              <AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-muted-foreground">
-                              {formatDate(assignment.createdAt)}
-                            </TableCell>
-                            <TableRowChevronCell />
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <ul className="flex flex-col gap-2 xl:hidden">
-                    {testAssignments.map((assignment) => (
-                      <li key={assignment.id}>
-                        <MobileRecordCard
-                          href={`/admin/assignments/${assignment.id}`}
-                          title={candidateDisplayName(assignment.candidate)}
-                          subtitle={formatDate(assignment.createdAt)}
-                          meta={<AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                <div className="flex max-h-[420px] flex-col gap-2 overflow-y-auto pr-0.5">
+                  {testAssignments.map((assignment) => (
+                    <InteractiveListItem
+                      key={assignment.id}
+                      href={`/admin/assignments/${assignment.id}`}
+                      actionLabel="View assignment"
+                      title={candidateDisplayName(assignment.candidate)}
+                      subtitle={`Created ${formatDate(assignment.createdAt)}`}
+                      status={<AssignmentStatusBadge status={displayStatusForAssignment(assignment)} />}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

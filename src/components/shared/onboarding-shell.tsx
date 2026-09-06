@@ -33,7 +33,7 @@ export function OnboardingShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col overflow-y-auto">
+    <div className="flex h-dvh flex-col overflow-y-auto bg-background">
       <header className="flex shrink-0 items-center justify-between px-6 py-5 sm:px-8">
         <VertexWordmark className="scale-95 sm:scale-100" />
         <Link

@@ -56,95 +56,101 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.18 0.01 285);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 285);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 285);
-  /* Vertex violet — primary brand accent, used deliberately (CTAs, selected
-     states, focus) rather than as a dominant surface color. See
-     /docs/DESIGN_SYSTEM.md */
-  --primary: oklch(0.541 0.221 292.7);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0.005 285);
-  --secondary-foreground: oklch(0.205 0.01 285);
-  --muted: oklch(0.97 0.005 285);
-  --muted-foreground: oklch(0.552 0.014 285);
-  --accent: oklch(0.955 0.03 292.7);
-  --accent-foreground: oklch(0.32 0.15 292.7);
+  /* Redesign pass — warm editorial exam-SaaS palette, replacing the prior
+     violet/white system product-wide. Primary ink, canvas, and accent
+     values are the approved hex tokens; everything else is a derived
+     neutral/taupe/espresso value carefully built around them. See
+     /docs/DESIGN_SYSTEM.md "Redesign pass — warm palette". */
+  --background: #f4f1ee;
+  --foreground: #121313;
+  --card: #fbfbfc;
+  --card-foreground: #121313;
+  --popover: #fbfbfc;
+  --popover-foreground: #121313;
+  /* Deep warm espresso — the one dominant action color (CTAs, selected
+     states, focus), replacing violet. Never a flooded surface color. */
+  --primary: #52372b;
+  --primary-foreground: #fbfbfc;
+  --secondary: #eee9e5;
+  --secondary-foreground: #121313;
+  --muted: #eee9e5;
+  --muted-foreground: #7a828c;
+  /* Soft taupe wash derived from the warm accent #8b634b — hover/selected
+     surface backgrounds. */
+  --accent: #ede2d8;
+  --accent-foreground: #4a3226;
   /* A softer, lower-contrast wash of --primary — for restrained tonal
      surfaces (metric card accents, soft icon chips) where the full
      --accent tint would be too strong. */
-  --primary-soft: oklch(0.955 0.025 292.7);
-  --success: oklch(0.64 0.17 149);
-  --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.2 0.02 75);
-  --info: oklch(0.62 0.13 245);
-  --info-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.005 285);
-  --input: oklch(0.92 0.005 285);
-  --ring: oklch(0.606 0.2 292.7);
-  --chart-1: oklch(0.541 0.221 292.7);
-  --chart-2: oklch(0.64 0.17 149);
-  --chart-3: oklch(0.75 0.15 75);
-  --chart-4: oklch(0.65 0.21 25);
-  --chart-5: oklch(0.556 0 0);
+  --primary-soft: #e8ddd3;
+  --success: #6b8f71;
+  --success-foreground: #fbfbfc;
+  --warning: #b28a4c;
+  --warning-foreground: #2b2015;
+  --info: #7c93a6;
+  --info-foreground: #fbfbfc;
+  --destructive: #a24e3f;
+  --border: #e2dcd5;
+  --input: #e2dcd5;
+  --ring: #8b634b;
+  --chart-1: #52372b;
+  --chart-2: #6b8f71;
+  --chart-3: #b28a4c;
+  --chart-4: #8b634b;
+  --chart-5: #7a828c;
   --radius: 0.625rem;
-  /* Admin shell keeps a persistent dark sidebar regardless of the page
-     theme (Linear/Stripe-style), distinct from the light, calm student
-     surface. */
-  --sidebar: oklch(0.16 0.02 285);
-  --sidebar-foreground: oklch(0.93 0.005 285);
-  --sidebar-primary: oklch(0.541 0.221 292.7);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.24 0.03 285);
-  --sidebar-accent-foreground: oklch(0.96 0.005 285);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.606 0.2 292.7);
+  /* Admin sidebar — a light/medium warm stone surface (replacing the
+     prior near-black treatment), deep-graphite text, so inactive nav
+     items stay easy to scan rather than fighting low contrast. */
+  --sidebar: #ede7e1;
+  --sidebar-foreground: #121313;
+  --sidebar-primary: #52372b;
+  --sidebar-primary-foreground: #fbfbfc;
+  --sidebar-accent: #e2d6c9;
+  --sidebar-accent-foreground: #121313;
+  --sidebar-border: rgba(18, 19, 19, 0.08);
+  --sidebar-ring: #8b634b;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.28 0.05 292.7);
-  --accent-foreground: oklch(0.9 0.03 292.7);
-  --success: oklch(0.64 0.17 149);
-  --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.2 0.02 75);
-  --info: oklch(0.62 0.13 245);
-  --info-foreground: oklch(0.985 0 0);
-  --primary-soft: oklch(0.28 0.05 292.7);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.606 0.2 292.7);
-  --chart-1: oklch(0.606 0.2 292.7);
-  --chart-2: oklch(0.64 0.17 149);
-  --chart-3: oklch(0.75 0.15 75);
-  --chart-4: oklch(0.65 0.21 25);
-  --chart-5: oklch(0.708 0 0);
-  --sidebar: oklch(0.16 0.02 285);
-  --sidebar-foreground: oklch(0.93 0.005 285);
-  --sidebar-primary: oklch(0.606 0.2 292.7);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.24 0.03 285);
-  --sidebar-accent-foreground: oklch(0.96 0.005 285);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.606 0.2 292.7);
+  --background: #1c1815;
+  --foreground: #f4f1ee;
+  --card: #262019;
+  --card-foreground: #f4f1ee;
+  --popover: #262019;
+  --popover-foreground: #f4f1ee;
+  --primary: #c9a688;
+  --primary-foreground: #1c1815;
+  --secondary: #332b23;
+  --secondary-foreground: #f4f1ee;
+  --muted: #332b23;
+  --muted-foreground: #a89c8f;
+  --accent: #3a2f26;
+  --accent-foreground: #ecd9c8;
+  --success: #6b8f71;
+  --success-foreground: #f4f1ee;
+  --warning: #b28a4c;
+  --warning-foreground: #2b2015;
+  --info: #7c93a6;
+  --info-foreground: #1c1815;
+  --primary-soft: #3a2f26;
+  --destructive: #c46a58;
+  --border: rgba(244, 241, 238, 0.1);
+  --input: rgba(244, 241, 238, 0.15);
+  --ring: #8b634b;
+  --chart-1: #c9a688;
+  --chart-2: #6b8f71;
+  --chart-3: #b28a4c;
+  --chart-4: #8b634b;
+  --chart-5: #a89c8f;
+  --sidebar: #ede7e1;
+  --sidebar-foreground: #121313;
+  --sidebar-primary: #52372b;
+  --sidebar-primary-foreground: #fbfbfc;
+  --sidebar-accent: #e2d6c9;
+  --sidebar-accent-foreground: #121313;
+  --sidebar-border: rgba(18, 19, 19, 0.08);
+  --sidebar-ring: #8b634b;
 }
 
 @layer base {

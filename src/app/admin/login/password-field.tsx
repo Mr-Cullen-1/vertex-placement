@@ -15,24 +15,21 @@ export function PasswordField({ id, name, className }: { id: string; name: strin
 
   return (
     <div className="relative">
-      <LockIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-sidebar-foreground/40" />
+      <LockIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         id={id}
         name={name}
         type={visible ? "text" : "password"}
         required
         autoComplete="current-password"
-        className={cn(
-          "h-[52px] rounded-xl border-white/10 bg-white/5 pr-11 pl-11 text-base text-white placeholder:text-sidebar-foreground/35",
-          className
-        )}
+        className={cn("h-[52px] rounded-xl pr-11 pl-11 text-base", className)}
       />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
-        className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1.5 text-sidebar-foreground/45 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {visible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
       </button>

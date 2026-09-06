@@ -804,6 +804,41 @@ export async function getCanonicalResultSummaryForAssignment(
   };
 }
 
+export interface RecommendedLevelDistributionEntry {
+  label: string;
+  order: number;
+  count: number;
+}
+
+/** Dashboard-only aggregate — a real count of canonical completed
+ * results per Recommended Level, across every test. Purely a read/tally
+ * of already-computed `placementBandId` values; never recomputes or
+ * infers a level. See /docs/DESIGN_SYSTEM.md "Dashboard". */
+export async function getRecommendedLevelDistribution(
+  actor: Actor
+): Promise<RecommendedLevelDistributionEntry[]> {
+  assertPermission(actor, "result:read");
+
+  const results = await db.placementResult.findMany({
+    where: { attempt: { isCanonical: true, status: { in: ["SUBMITTED", "AUTO_SUBMITTED"] } } },
+    select: { placementBand: { select: { label: true, order: true } } },
+  });
+
+  const counts = new Map<string, RecommendedLevelDistributionEntry>();
+  for (const result of results) {
+    if (!result.placementBand) continue;
+    const { label, order } = result.placementBand;
+    const existing = counts.get(label);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      counts.set(label, { label, order, count: 1 });
+    }
+  }
+
+  return [...counts.values()].sort((a, b) => a.order - b.order);
+}
+
 // --- Shared internals ------------------------------------------------
 
 /** Resolves a plaintext token to its attempt's internal id, re-running

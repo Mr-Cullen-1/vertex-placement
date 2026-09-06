@@ -51,7 +51,7 @@ export default async function CandidatesPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 p-4 md:p-8">
       <PageHeader
         eyebrow="Operations"
         title="Candidates"
