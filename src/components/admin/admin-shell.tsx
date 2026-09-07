@@ -100,10 +100,17 @@ export function AdminShell({ user, children }: AdminShellProps) {
          * on both this wrapper and `<main>` is required for a flex child
          * to actually shrink and hand scrolling to `overflow-y-auto`
          * instead of growing to fit all content (the classic flexbox
-         * "min-height: auto" trap). */}
+         * "min-height: auto" trap). `relative` lets a loading.tsx's
+         * `absolute inset-0` VertexLoader overlay anchor to THIS
+         * element's own fixed (flexbox-resolved) box — not to a
+         * content-driven wrapper further down, which would re-center on
+         * whatever height the skeleton content happens to stack to
+         * (e.g. a two-column skeleton collapsing to one column below
+         * `lg`) instead of the actually-visible workspace. See
+         * /docs/DESIGN_SYSTEM.md "Loading system". */}
         <main
           key={pathname}
-          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto animate-page-in bg-background"
+          className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto animate-page-in bg-background"
         >
           {children}
         </main>

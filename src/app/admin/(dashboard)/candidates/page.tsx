@@ -14,27 +14,37 @@ export default async function CandidatesPage() {
     listAssignments(actor),
   ]);
 
-  const rows: CandidateRow[] = [];
-  for (const c of candidates) {
-    // `assignments` is already ordered createdAt desc (see
-    // assignment.service.ts), so `own[0]` is this candidate's most recent.
-    const own = assignments.filter((a) => a.candidateId === c.id);
-    const latestAssignment = own[0] ?? null;
-    const latestCompleted = own.find((a) => displayStatusForAssignment(a) === "COMPLETED") ?? null;
+  // `assignments` is already ordered createdAt desc (see
+  // assignment.service.ts), so `own[0]` is each candidate's most recent.
+  const candidateOwnAssignments = candidates.map((c) => assignments.filter((a) => a.candidateId === c.id));
+  const latestCompletedAssignments = candidateOwnAssignments.map(
+    (own) => own.find((a) => displayStatusForAssignment(a) === "COMPLETED") ?? null
+  );
 
-    let latestResult: CandidateRow["latestResult"] = null;
-    if (latestCompleted) {
-      const summary = await getCanonicalResultSummaryForAssignment(actor, latestCompleted.id);
-      if (summary) {
-        latestResult = {
+  // Fetched concurrently (each lookup is a read-only, independent DB
+  // round-trip) rather than one at a time inside the loop below —
+  // sequential awaits here previously made this route's load time scale
+  // linearly with the number of candidates, which is what produced a
+  // visibly "stuck" page load, not a UI problem.
+  const latestResultSummaries = await Promise.all(
+    latestCompletedAssignments.map((latestCompleted) =>
+      latestCompleted ? getCanonicalResultSummaryForAssignment(actor, latestCompleted.id) : null
+    )
+  );
+
+  const rows: CandidateRow[] = candidates.map((c, i) => {
+    const own = candidateOwnAssignments[i];
+    const latestAssignment = own[0] ?? null;
+    const summary = latestResultSummaries[i];
+    const latestResult: CandidateRow["latestResult"] = summary
+      ? {
           rawScore: summary.rawScore,
           totalQuestions: summary.totalQuestions,
           percentage: summary.percentage,
-        };
-      }
-    }
+        }
+      : null;
 
-    rows.push({
+    return {
       id: c.id,
       firstName: c.firstName,
       lastName: c.lastName,
@@ -47,8 +57,8 @@ export default async function CandidatesPage() {
       completedCount: own.filter((a) => displayStatusForAssignment(a) === "COMPLETED").length,
       latestAssignmentStatus: latestAssignment ? displayStatusForAssignment(latestAssignment) : null,
       latestResult,
-    });
-  }
+    };
+  });
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 p-4 md:p-8">

@@ -35,14 +35,20 @@ export default async function CandidateDetailPage({
   const assignments = allAssignments.filter((a) => a.candidateId === id);
   const isPending = !candidate.profileCompletedAt;
 
+  // Fetched concurrently rather than one at a time — see the identical
+  // fix on the Assignments/Candidates list pages for why sequential
+  // awaits here previously made this route's load time scale linearly
+  // with the candidate's own assignment count.
+  const completedAssignments = assignments.filter(
+    (assignment) => displayStatusForAssignment(assignment) === "COMPLETED"
+  );
+  const resultSummaries = await Promise.all(
+    completedAssignments.map((assignment) => getCanonicalResultSummaryForAssignment(actor, assignment.id))
+  );
   const resultsByAssignmentId = new Map<
     string,
     Awaited<ReturnType<typeof getCanonicalResultSummaryForAssignment>>
-  >();
-  for (const assignment of assignments) {
-    if (displayStatusForAssignment(assignment) !== "COMPLETED") continue;
-    resultsByAssignmentId.set(assignment.id, await getCanonicalResultSummaryForAssignment(actor, assignment.id));
-  }
+  >(completedAssignments.map((assignment, i) => [assignment.id, resultSummaries[i]]));
 
   return (
     <div className="mx-auto flex max-w-[1440px] flex-col gap-6 p-4 md:p-8 lg:px-10 lg:py-8">

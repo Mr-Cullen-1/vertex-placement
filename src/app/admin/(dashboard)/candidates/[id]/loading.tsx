@@ -1,5 +1,5 @@
 import { DetailSkeleton } from "@/components/admin/loading-skeletons";
 
 export default function Loading() {
-  return <DetailSkeleton />;
+  return <DetailSkeleton label="Loading candidate" />;
 }

@@ -39,16 +39,21 @@ export default async function AssignmentsPage({
 
   // One result-summary lookup per COMPLETED assignment — reuses Phase 2E's
   // scoring/progression computation directly (see attempt.service.ts),
-  // never a second implementation. Fine at MVP scale (see /docs/PHASE_2F.md).
+  // never a second implementation. Fetched concurrently (each lookup is a
+  // read-only, independent DB round-trip) rather than one at a time —
+  // sequential awaits here previously made this route's load time scale
+  // linearly with the number of completed assignments, which is what
+  // produced a visibly "stuck" page load, not a UI problem.
+  const completedAssignments = assignments.filter(
+    (assignment) => displayStatusForAssignment(assignment) === "COMPLETED"
+  );
+  const resultSummaries = await Promise.all(
+    completedAssignments.map((assignment) => getCanonicalResultSummaryForAssignment(actor, assignment.id))
+  );
   const resultsByAssignmentId = new Map<
     string,
     Awaited<ReturnType<typeof getCanonicalResultSummaryForAssignment>>
-  >();
-  for (const assignment of assignments) {
-    if (displayStatusForAssignment(assignment) !== "COMPLETED") continue;
-    const summary = await getCanonicalResultSummaryForAssignment(actor, assignment.id);
-    resultsByAssignmentId.set(assignment.id, summary);
-  }
+  >(completedAssignments.map((assignment, i) => [assignment.id, resultSummaries[i]]));
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 p-4 md:p-8">
