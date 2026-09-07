@@ -20,17 +20,34 @@ option order is randomized per attempt.
 | | Super Admin | Admin | Student/Candidate |
 | --- | --- | --- | --- |
 | Account | yes | yes | **no** — token only |
-| Create/edit `PlacementTest` definitions | ✅ | ❌ | — |
-| Import questions | ✅ | ❌ | — |
-| Manage answer keys | ✅ | ❌ | — |
-| Configure `QuestionMetadata` | ✅ | ❌ | — |
-| Configure scoring/`PlacementBand` | ✅ | ❌ | — |
+| Create/edit `PlacementTest` definitions | ✅ | ✅ | — |
+| Import questions | ✅ | ✅ | — |
+| Manage answer keys | ✅ | ✅ | — |
+| Configure `QuestionMetadata` | ✅ | ✅ | — |
+| Configure scoring/`PlacementBand` | ✅ | ✅ | — |
+| Designate/change the public Try Yourself test | ✅ | ✅ | — |
 | Create `PlacementAssignment` / candidates | ✅ | ✅ | — |
 | Generate/regenerate invitation tokens | ✅ | ✅ | — |
 | View candidates/results | ✅ (everything) | ✅ | own result only |
-| Export analytics | ✅ full | ✅ standard | ❌ |
+| Final Placement operational override | ✅ | ✅ | — |
+| Export analytics | ✅ full (+ Question Analysis sheet) | ✅ standard | ❌ |
 | Manage Admin accounts (create/edit/reset password/deactivate) | ✅ | ❌ | — |
 | Be deactivated / have SUPER_ADMIN assigned to them | ❌ (protected) | ✅ (by Super Admin) | — |
+
+**Correction pass (pre-deploy phase 2):** test/question/band/import
+authoring was Super-Admin-only through the MVP build, tightened as a
+content-integrity precaution while no admin-management model existed to
+distinguish "trusted enough to run day-to-day operations" from "trusted
+enough to author test content." Once admin-management existed, that
+distinction stopped serving a real purpose: SUPER_ADMIN is not a
+"content administrator" — its only actual privilege beyond ADMIN is
+account/role administration (creating/editing/deactivating Admin
+accounts, and the protection that keeps Super Admin itself from being
+touched through that same path). The one deliberately-unchanged
+exception is the extra "Question Analysis" sheet in the full export
+(`export:full`/`analytics:read:full`) — a genuine content-depth
+distinction, not an account-administration one, and nothing in this
+correction asked for it to move.
 
 Enforced in code, not just UI, as of Phase 1: `src/server/rbac.ts` holds
 the single permission matrix, and every mutating (and most reading)

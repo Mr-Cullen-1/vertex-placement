@@ -2,6 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getActorOrThrow } from "@/lib/actor";
+import { hasPermission } from "@/server/rbac";
 import { getPlacementTest } from "@/server/services/placement-test.service";
 import { listQuestionsForTest } from "@/server/services/question.service";
 import { listPlacementBands } from "@/server/services/placement-band.service";
@@ -45,7 +46,8 @@ export default async function TestDetailPage({
 
   const publishedQuestionCount = questions.filter((q) => q.status === "PUBLISHED").length;
   const testAssignments = allAssignments.filter((a) => a.testId === id);
-  const isSuperAdmin = actor.role === "SUPER_ADMIN";
+  const canWriteTests = hasPermission(actor.role, "test:write");
+  const canWriteBands = hasPermission(actor.role, "band:write");
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 md:p-8">
@@ -65,7 +67,7 @@ export default async function TestDetailPage({
               <ListChecksIcon />
               Questions
             </Button>
-            {isSuperAdmin && (
+            {canWriteTests && (
               <>
                 <Separator orientation="vertical" className="h-5" />
                 <TestLifecycleActions test={test} />
@@ -94,7 +96,7 @@ export default async function TestDetailPage({
               {test.sourceAttribution && (
                 <p className="text-xs text-muted-foreground">Source: {test.sourceAttribution}</p>
               )}
-              {isSuperAdmin && (
+              {canWriteTests && (
                 <PublicSelfServiceToggle
                   testId={test.id}
                   status={test.status}
@@ -140,7 +142,7 @@ export default async function TestDetailPage({
         <Card variant="tinted" className="h-fit">
           <CardHeading icon={LayersIcon} title="Placement bands" description="Scoring configuration" />
           <CardContent>
-            {isSuperAdmin ? (
+            {canWriteBands ? (
               <BandsManager testId={id} bands={bands} locked={test.status === "ARCHIVED"} />
             ) : bands.length === 0 ? (
               <p className="text-sm text-muted-foreground">

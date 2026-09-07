@@ -6,64 +6,76 @@ import { createQuestion } from "@/server/services/question.service";
 import { createPlacementBand } from "@/server/services/placement-band.service";
 import { createAssignment } from "@/server/services/assignment.service";
 import { generateInvitation } from "@/server/services/invitation.service";
-import { ForbiddenError } from "@/server/errors";
 
 beforeEach(async () => {
   await resetDb();
 });
 
-describe("Admin cannot author test content", () => {
-  it("cannot create a placement test", async () => {
+/**
+ * Correction pass: test/question/band authoring was Super-Admin-only
+ * through the MVP build (this file used to assert Admin was rejected
+ * here) — corrected to Admin + Super Admin, since that restriction only
+ * ever served as a stand-in for account/role trust before Admin-account
+ * management existed. See /docs/PRODUCT_RULES.md "Roles". The one
+ * remaining Admin-cannot boundary is admin-account management itself —
+ * see tests/integration/admin-management.test.ts.
+ */
+describe("Admin CAN author test content", () => {
+  it("can create a placement test", async () => {
     const admin = await createUser("ADMIN");
-    await expect(
-      createPlacementTest(admin, { title: "Should fail", durationSeconds: 1800, totalQuestionCount: 4 })
-    ).rejects.toThrow(ForbiddenError);
+    const test = await createPlacementTest(admin, {
+      title: "Admin-authored",
+      durationSeconds: 1800,
+      totalQuestionCount: 4,
+    });
+    expect(test.status).toBe("DRAFT");
   });
 
-  it("cannot edit an existing placement test", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+  it("can edit an existing placement test", async () => {
     const admin = await createUser("ADMIN");
-    const { test } = await createPublishedTestWithQuestions(superAdmin);
-
-    await expect(updatePlacementTest(admin, test.id, { title: "Hijacked" })).rejects.toThrow(
-      ForbiddenError
-    );
+    const test = await createPlacementTest(admin, {
+      title: "Draft",
+      durationSeconds: 1800,
+      totalQuestionCount: 1,
+    });
+    const updated = await updatePlacementTest(admin, test.id, { title: "Renamed" });
+    expect(updated.title).toBe("Renamed");
   });
 
-  it("cannot create a question", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+  it("can create a question", async () => {
     const admin = await createUser("ADMIN");
-    const test = await createPlacementTest(superAdmin, {
+    const test = await createPlacementTest(admin, {
       title: "Draft",
       durationSeconds: 1800,
       totalQuestionCount: 1,
     });
 
-    await expect(
-      createQuestion(admin, test.id, {
-        order: 1,
-        prompt: "Injected question",
-        options: [
-          { text: "A", isCorrect: true, order: 1 },
-          { text: "B", isCorrect: false, order: 2 },
-        ],
-      })
-    ).rejects.toThrow(ForbiddenError);
+    const question = await createQuestion(admin, test.id, {
+      order: 1,
+      prompt: "Admin-authored question",
+      options: [
+        { text: "A", isCorrect: true, order: 1 },
+        { text: "B", isCorrect: false, order: 2 },
+      ],
+    });
+    expect(question.prompt).toBe("Admin-authored question");
   });
 
-  it("cannot modify scoring bands", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+  it("can create scoring bands", async () => {
     const admin = await createUser("ADMIN");
-    const { test } = await createPublishedTestWithQuestions(superAdmin);
+    const test = await createPlacementTest(admin, {
+      title: "Draft",
+      durationSeconds: 1800,
+      totalQuestionCount: 1,
+    });
 
-    await expect(
-      createPlacementBand(admin, test.id, {
-        order: 99,
-        label: "Injected",
-        minPercentage: 0,
-        maxPercentage: 100,
-      })
-    ).rejects.toThrow(ForbiddenError);
+    const band = await createPlacementBand(admin, test.id, {
+      order: 0,
+      label: "Beginner",
+      minPercentage: 0,
+      maxPercentage: 100,
+    });
+    expect(band.label).toBe("Beginner");
   });
 });
 
@@ -83,7 +95,7 @@ describe("Admin CAN operate assignments and invitations", () => {
   });
 });
 
-describe("Super Admin can do everything Admin can, plus authoring", () => {
+describe("Super Admin can do everything Admin can", () => {
   it("can create, publish, and modify test content end to end", async () => {
     const superAdmin = await createUser("SUPER_ADMIN");
     const { test } = await createPublishedTestWithQuestions(superAdmin);

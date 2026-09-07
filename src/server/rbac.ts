@@ -20,11 +20,19 @@ export interface Actor {
 }
 
 export type Permission =
-  // PlacementTest / Question / Option / Metadata — Super Admin only
+  // PlacementTest / Question / Option / Metadata / Import — normal
+  // product/content administration, Admin and Super Admin (Correction
+  // pass: previously Super-Admin-only; see /docs/PRODUCT_RULES.md
+  // "Roles" for why that was corrected). `test:write` also gates
+  // designating/clearing the public self-service test — see
+  // `setPublicSelfServiceTest`/`clearPublicSelfServiceTest` in
+  // placement-test.service.ts — since that's ordinary test
+  // administration, not account/role administration.
   | "test:read"
   | "test:write"
   | "question:write"
   | "band:write"
+  | "import:write"
   // Assignment / Invitation — Admin and Super Admin
   | "assignment:write"
   | "invitation:write"
@@ -37,19 +45,26 @@ export type Permission =
   | "result:write"
   | "analytics:read:standard"
   | "export:standard"
-  // Super Admin only
+  // Genuine remaining content-depth distinction, NOT part of this
+  // correction pass — the extra "Question Analysis" export sheet stays
+  // Super-Admin-only (see export.service.ts); nothing in the corrected
+  // role model asked for this one to change.
   | "analytics:read:full"
   | "export:full"
-  | "import:write"
   // Admin account management (list/create/edit/reset-password/deactivate
   // regular Admin accounts) — Super Admin only. See /docs/PRODUCT_RULES.md
-  // "Roles": SUPER_ADMIN = all application privileges + admin account
-  // management + role authority; ADMIN has every normal operational
-  // privilege above but never this one.
+  // "Roles": SUPER_ADMIN = ADMIN + admin account management + role/
+  // account authority + Super Admin protection authority. SUPER_ADMIN is
+  // NOT a "content administrator" — it has no product-content privilege
+  // ADMIN lacks; this is the one and only thing that distinguishes it.
   | "admin:manage";
 
 const ADMIN_PERMISSIONS: readonly Permission[] = [
   "test:read",
+  "test:write",
+  "question:write",
+  "band:write",
+  "import:write",
   "assignment:write",
   "invitation:write",
   "candidate:read",
@@ -61,12 +76,8 @@ const ADMIN_PERMISSIONS: readonly Permission[] = [
 
 const SUPER_ADMIN_PERMISSIONS: readonly Permission[] = [
   ...ADMIN_PERMISSIONS,
-  "test:write",
-  "question:write",
-  "band:write",
   "analytics:read:full",
   "export:full",
-  "import:write",
   "admin:manage",
 ];
 

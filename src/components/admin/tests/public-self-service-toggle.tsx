@@ -11,8 +11,10 @@ import {
 } from "@/server/actions/test-actions";
 
 /**
- * Super Admin-only — designates which PUBLISHED test `/try` launches
- * (see /docs/PHASE_2J_TRY_YOURSELF.md "Public test selection"). Only one
+ * Gated by `test:write` (Admin + Super Admin — ordinary test
+ * administration, not account/role management) — designates which
+ * PUBLISHED test `/try` launches (see
+ * /docs/PHASE_2J_TRY_YOURSELF.md "Public test selection"). Only one
  * test in the whole system can be public at a time; the server enforces
  * this (a partial unique index, not just this UI), so toggling one test
  * on implicitly toggles any other off.

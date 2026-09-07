@@ -17,7 +17,7 @@ import {
 } from "@/server/services/attempt.service";
 import { LANGUAGE_HUB_QUESTIONS } from "@/domain/import/sources/language-hub-2019";
 import { validateNormalizedQuestions } from "@/domain/import/validate";
-import { ForbiddenError, InvalidTestStateError } from "@/server/errors";
+import { InvalidTestStateError } from "@/server/errors";
 import type { NormalizedQuestion } from "@/domain/import/types";
 
 const ANSWER_KEY: Record<number, string> = {
@@ -119,10 +119,13 @@ describe("Phase 2D — source dataset integrity (pure, no DB)", () => {
 });
 
 describe("Phase 2D — import service (DB)", () => {
-  it("Admin cannot preview or confirm the import", async () => {
+  it("Admin can preview and confirm the import (Correction pass: import authoring is Admin + Super Admin — see /docs/PRODUCT_RULES.md 'Roles')", async () => {
     const admin = await createUser("ADMIN");
-    await expect(previewLanguageHubImport(admin)).rejects.toThrow(ForbiddenError);
-    await expect(confirmLanguageHubImport(admin)).rejects.toThrow(ForbiddenError);
+    const preview = await previewLanguageHubImport(admin);
+    expect(preview.isImportable).toBe(true);
+
+    const result = await confirmLanguageHubImport(admin);
+    expect(result.questionCount).toBe(70);
   });
 
   it("Super Admin can preview the import without persisting anything", async () => {

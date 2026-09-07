@@ -1,5 +1,6 @@
 import { ClipboardListIcon, GlobeIcon } from "lucide-react";
 import { getActorOrThrow } from "@/lib/actor";
+import { hasPermission } from "@/server/rbac";
 import { listPlacementTests } from "@/server/services/placement-test.service";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -13,7 +14,7 @@ import { formatDate, formatDurationSeconds } from "@/lib/format";
 export default async function TestsPage() {
   const actor = await getActorOrThrow();
   const tests = await listPlacementTests(actor);
-  const isSuperAdmin = actor.role === "SUPER_ADMIN";
+  const canWriteTests = hasPermission(actor.role, "test:write");
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-6 p-4 md:p-8">
@@ -22,7 +23,7 @@ export default async function TestsPage() {
         title="Placement tests"
         description="Test definitions available for assignment."
         action={
-          isSuperAdmin ? (
+          canWriteTests ? (
             <div className="flex flex-wrap items-center gap-2">
               <ImportTestDialog />
               <CreateTestDialog />
@@ -36,12 +37,12 @@ export default async function TestsPage() {
           icon={ClipboardListIcon}
           title="No placement tests yet"
           description={
-            isSuperAdmin
+            canWriteTests
               ? "Create a test to start assigning it to candidates, or import a test."
-              : "No placement test has been created yet. A Super Admin needs to create one."
+              : "No placement test has been created yet."
           }
           action={
-            isSuperAdmin ? (
+            canWriteTests ? (
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <ImportTestDialog />
                 <CreateTestDialog />

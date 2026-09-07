@@ -7,7 +7,7 @@ import {
   confirmLanguageHubImport,
   previewGenericImport,
 } from "@/server/services/import.service";
-import { ForbiddenError, InvalidTestStateError } from "@/server/errors";
+import { InvalidTestStateError } from "@/server/errors";
 
 function validPayload(overrides: Record<string, unknown> = {}) {
   return JSON.stringify({
@@ -63,11 +63,14 @@ beforeEach(async () => {
 });
 
 describe("Phase 2H — generic import authorization", () => {
-  it("Admin cannot preview or confirm a generic import", async () => {
+  it("Admin can preview and confirm a generic import (Correction pass: import authoring is Admin + Super Admin — see /docs/PRODUCT_RULES.md 'Roles')", async () => {
     const admin = await createUser("ADMIN");
-    await expect(previewGenericImport(admin, "test.json", validPayload())).rejects.toThrow(ForbiddenError);
-    await expect(confirmGenericImport(admin, "test.json", validPayload())).rejects.toThrow(ForbiddenError);
-    expect(await db.placementTest.count()).toBe(0);
+    const preview = await previewGenericImport(admin, "test.json", validPayload());
+    expect(preview.isImportable).toBe(true);
+
+    const result = await confirmGenericImport(admin, "test.json", validPayload());
+    expect(await db.placementTest.count()).toBe(1);
+    expect(result.questionCount).toBe(3);
   });
 });
 

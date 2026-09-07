@@ -49,9 +49,9 @@ against the same or a separate database):
 | `DIRECT_DATABASE_URL` | Yes | Supabase **Direct** connection string (port 5432) — used only by `prisma migrate deploy`, run by you, never automatically. |
 | `AUTH_SECRET` | Yes | Generate with `npx auth secret` or `openssl rand -base64 32`. Different from any value used in development. |
 | `NEXT_PUBLIC_APP_URL` | Yes | The production URL (e.g. `https://placement.vertexquiz.com`) — used to build invitation links. |
-| `RESEND_API_KEY` | Yes, for self-service | Without it, email verification silently falls back to a provider that **refuses to run in production** (a clear error, not a silent leak) — see step 8. |
-| `RESEND_FROM_EMAIL` | Recommended | A sender on your verified domain. Resend's own `onboarding@resend.dev` works without domain setup if you want to deploy before verifying a domain. |
-| `NEXT_PUBLIC_SUPPORT_CONTACT_EMAIL` | Optional | Shown once a visitor has used both free Try Yourself attempts. Omitting it just hides that button — never a fake address. |
+| `RESEND_API_KEY` | Not required to build; **required to operate** Try Yourself | The build succeeds without it. But if Try Yourself is enabled (a test has `isPublicSelfService = true`), verification codes **will not send** without it — see step 8. |
+| `RESEND_FROM_EMAIL` | Same as above | A sender on your verified domain. Resend's own `onboarding@resend.dev` works without domain setup if you want to deploy before verifying a domain. |
+| `NEXT_PUBLIC_SUPPORT_CONTACT_EMAIL` | Required only if you want the contact button shown | Shown once a visitor has used both free Try Yourself attempts. Omitting it just hides that button — never a fake address. |
 
 Do not set `SEED_SUPER_ADMIN_*` / `SEED_DEV_SAMPLE_TEST` in production —
 those are for local bootstrap only and the sample-test seed explicitly
@@ -104,18 +104,37 @@ follow their current guidance — this project doesn't hardcode one.
 
 ## 8. Configure Resend
 
-Set `RESEND_API_KEY` (and `RESEND_FROM_EMAIL`) in Vercel (step 4). Until
-you do, self-service ("Try Yourself") email verification is unavailable
-in a clearly-signaled way — `src/server/email/console-provider.ts`
-**throws** rather than silently logging codes if it's ever selected with
-`NODE_ENV=production`, so a misconfigured deployment fails loudly
-instead of leaking verification codes anywhere reachable. Admin login
-and the admin-invited candidate flow do not depend on email at all.
+**Build requirement vs. operational requirement — these are different:**
+the app **builds and deploys successfully without any Resend
+configuration at all** (`RESEND_API_KEY` isn't in the strict `env.ts`
+schema that fails the build — see `src/server/email/index.ts`). But if
+Try Yourself is enabled in production (i.e. some test has
+`isPublicSelfService = true`), **email verification will not actually
+function** until `RESEND_API_KEY` (and `RESEND_FROM_EMAIL`) are set:
+
+- **Required for a production launch with Try Yourself enabled:**
+  `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+- Without them, `src/server/email/console-provider.ts` is selected
+  instead — and it **throws** rather than silently logging codes,
+  because it refuses to run at all when `NODE_ENV=production`. That's a
+  clear, safe failure (visitors see the verification-code request fail
+  with an error), never a silent fallback that would leak codes
+  anywhere reachable.
+- Admin login and the admin-invited candidate flow do not depend on
+  email at all — you can deploy and use those without Resend configured.
+
+Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in Vercel (step 4) before
+relying on Try Yourself in production. Do not configure Resend remotely
+or send a real production email as part of this preparation phase —
+that's this step, performed by you, when you're ready.
 
 ## 9. Configure support contact
 
-Set `NEXT_PUBLIC_SUPPORT_CONTACT_EMAIL` if you want the "used both free
-attempts" screen to show a contact action.
+`NEXT_PUBLIC_SUPPORT_CONTACT_EMAIL` is optional in general, but
+**required** if the production "used both free attempts" screen should
+show a real contact action rather than omitting the button — the UI
+degrades gracefully either way (no fake address is ever shown), so this
+is a product decision, not a build requirement.
 
 ## 10. Deploy
 
@@ -123,41 +142,58 @@ Trigger the deploy from the Vercel dashboard (or push to the branch
 Vercel is watching). This step is yours — Claude Code does not run
 `vercel`, `vercel --prod`, or any deployment command.
 
-## 11. Run a smoke test against production
+## 11. Verify admin login
 
-Repeat the same walkthrough this phase's report describes locally,
-against the real production URL:
+Confirm the real Super Admin account (seeded in step 6) can log in.
 
-- Landing → Try Yourself → verify email → profile → ready → instructions
-  → assessment → submit → result → Detailed Analysis.
-- Admin login → Dashboard → Tests → Candidates → Assignments → Result →
-  Profile.
-- Super Admin → Admin Accounts → create a real Admin → have them log in
-  → confirm they see normal operational pages and cannot reach Admin
-  Accounts.
+## 12. Verify Test Admin login
 
-## 12. Verify Try Yourself OTP delivery
+If you're migrating/restoring the same account set used in development,
+the "Test Admin" account (a regular Admin the product owner created
+intentionally to exercise the day-to-day Admin experience — see this
+phase's report) can log in and reach Dashboard/Tests/Candidates/
+Assignments/Results normally, and cannot reach the "Admin accounts"
+section of `/admin/profile`. Any Admin account you create fresh in
+production should behave identically — this is role-based, not
+per-account.
 
-Request a real verification code against production and confirm the
-email actually arrives (Resend's dashboard shows delivery status too).
+## 13. Verify Try Yourself OTP email delivery
 
-## 13. Verify admin login
+With `isPublicSelfService = true` on the intended production test (see
+step 6) and Resend configured (step 8), request a real verification
+code against production and confirm the email actually arrives
+(Resend's dashboard shows delivery status too).
 
-Confirm the real Super Admin account (seeded in step 6) can log in, and
-that any Admin accounts you create afterward can too.
+## 14. Verify the Language Hub public test loads
 
-## 14. Verify a placement attempt/result end to end
+`/try` should resolve to the exact test you designated in step 6 — 70
+questions, the 6 institutional RAW_SCORE bands, PUBLISHED. Confirm this
+against the real data (the eligibility/ready screen), not just that the
+page renders.
 
-Either through Try Yourself or an admin-issued invitation, complete one
-real assessment against production and confirm the result page renders
-correctly with real, freshly-computed data.
+## 15. Run one safe smoke assessment
 
-## 15. Verify no QA data appears
+Complete one real assessment end to end (Try Yourself or an
+admin-issued invitation) and confirm the result page renders correctly
+with real, freshly-computed data — score, Recommended Level, and
+Detailed Analysis all present.
+
+## 16. Verify Result
+
+Open the same completed attempt from the Admin side
+(`/admin/results/[attemptId]`) and confirm the admin-facing Result
+Detail shows the identical Recommended Level and score as the
+student-facing one — one shared resolver, never two.
+
+## 17. Verify no QA data appears
 
 The pre-deploy cleanup (see this phase's report) emptied the development
 database of QA candidates/assignments/tests, but that cleanup ran
 against the **development** database — a fresh production database
 starts empty by construction. Confirm the Dashboard, Candidates, and
-Assignments lists show only what step 6 onward actually created, with
-no leftover fixture titles ("QA", "Phase2...", "Test edited", etc.)
-anywhere.
+Assignments lists show only what steps 11–15 actually created (plus
+Test Admin, if migrated), with no leftover fixture titles ("QA",
+"Phase2...", "Test edited", etc.) anywhere. If you completed a smoke
+assessment in step 15 purely to verify the flow, consider whether to
+keep or remove that one candidate/result before treating production as
+launch-ready — your call, not an automated cleanup.

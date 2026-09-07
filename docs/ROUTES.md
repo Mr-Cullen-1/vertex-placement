@@ -41,8 +41,8 @@ with "student does not need an account."
 
 | Route | Purpose | Minimum role |
 | --- | --- | --- |
-| `/admin/tests` | List `PlacementTest` definitions (view only for Admin; create for Super Admin) | Admin (read) / **Super Admin** (write) |
-| `/admin/tests/[id]` | Test detail — info, bands (editable for Super Admin), assignments; edit/publish/archive | Admin (read) / **Super Admin** (write) |
+| `/admin/tests` | List `PlacementTest` definitions; create/import | Admin |
+| `/admin/tests/[id]` | Test detail — info, bands, assignments; edit/publish/archive | Admin |
 | `/admin/candidates` | Candidate list/search + create | Admin |
 | `/admin/candidates/[id]` | Candidate detail + their assignments | Admin |
 | `/admin/assignments` | Create assignments, pick/enter candidate, generate/regenerate/revoke invitations | Admin |
@@ -53,25 +53,26 @@ with "student does not need an account."
 
 | Route | Purpose | Minimum role |
 | --- | --- | --- |
-| `/admin/tests/[id]/questions` | Question/option/metadata list + authoring (DRAFT tests only) | Admin (read) / **Super Admin** (write) |
+| `/admin/tests/[id]/questions` | Question/option/metadata list + authoring (DRAFT tests only) | Admin |
 
 The import pipeline was **not** built in Phase 2C — questions are
 authored one at a time through this page. See
 [PHASE_2C.md](./PHASE_2C.md) "Known limitations".
 
-### Still planned (not built)
+### Also implemented (not originally planned at this path)
 
 | Route | Purpose | Minimum role |
 | --- | --- | --- |
-| `/admin/tests/[testId]/import` | Import pipeline UI (upload -> preview -> confirm) | **Super Admin** |
-| `/admin/analytics` | Aggregate dashboard (level distribution, question/topic performance) | Admin (standard) / Super Admin (full export) |
-| `/admin/settings/users` | Manage Admin/Super Admin accounts | **Super Admin** |
+| `/admin/tests/[testId]/import` (dialog, not a separate route) | Import pipeline UI (upload -> preview -> confirm) | Admin |
+| `/admin/profile` | "My account" for every admin; "Admin accounts" management (create/edit/reset password/deactivate/reactivate regular Admins) for Super Admin only — see [PRODUCT_RULES.md](./PRODUCT_RULES.md) "Roles". Built here instead of the originally-sketched `/admin/settings/users`. | Admin (own account) / **Super Admin** (Admin accounts section) |
 
-**Admin cannot**, per the product rules: create/edit test definitions,
-modify scoring configuration or answer keys, or import/edit test content.
-Every route above marked **Super Admin** enforces that boundary; every
-other `/admin/*` route is reachable by both roles but Admin-facing views
-never expose test-authoring actions.
+**Correction pass (pre-deploy phase 2):** test/question/band/import
+authoring, and designating the public Try Yourself test, are now Admin
++ Super Admin — see [PRODUCT_RULES.md](./PRODUCT_RULES.md) "Roles" for
+why the original Super-Admin-only content-authoring split was removed.
+**Super Admin-only** now means exactly one thing: Admin account/role
+management (`/admin/profile`'s "Admin accounts" section and its
+underlying `admin:manage` permission) — not test/content authoring.
 
 ## API / route handlers
 

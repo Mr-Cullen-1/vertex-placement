@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getActorOrThrow } from "@/lib/actor";
+import { hasPermission } from "@/server/rbac";
 import { getPlacementTest } from "@/server/services/placement-test.service";
 import { listQuestionsForTest } from "@/server/services/question.service";
 import { TestNotFoundError } from "@/server/errors";
@@ -26,8 +27,8 @@ export default async function TestQuestionsPage({
   }
 
   const questions = await listQuestionsForTest(actor, id);
-  const isSuperAdmin = actor.role === "SUPER_ADMIN";
-  const editable = isSuperAdmin && test.status === "DRAFT";
+  const canWriteQuestions = hasPermission(actor.role, "question:write");
+  const editable = canWriteQuestions && test.status === "DRAFT";
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-4xl flex-col gap-6 p-4 md:p-8">
@@ -40,7 +41,7 @@ export default async function TestQuestionsPage({
         action={editable ? <QuestionFormDialog testId={id} nextOrder={questions.length + 1} /> : undefined}
       />
 
-      {!editable && isSuperAdmin && (
+      {!editable && canWriteQuestions && (
         <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
           This test is {test.status.toLowerCase()}, so its questions are read-only. Only a DRAFT
           test&apos;s questions can be authored.

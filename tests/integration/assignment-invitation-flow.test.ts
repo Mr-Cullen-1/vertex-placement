@@ -20,7 +20,6 @@ import {
 import { exportPlacementWorkbook } from "@/server/services/export.service";
 import {
   AssignmentAlreadyCompletedError,
-  ForbiddenError,
   TestNotPublishedError,
 } from "@/server/errors";
 import { hashInvitationToken } from "@/domain/tokens/token";
@@ -326,30 +325,36 @@ describe("R — completed assignment links to the Phase 2E result system", () =>
   });
 });
 
-describe("Admin's existing test-authoring boundary is unaffected by this phase", () => {
-  it("Admin still cannot create a test, a question, or a scoring band", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+describe("Admin's test-authoring access (Correction pass)", () => {
+  it("Admin can create a test, a question, and a scoring band (see tests/integration/authorization.test.ts and /docs/PRODUCT_RULES.md 'Roles' for why this is no longer Super-Admin-only)", async () => {
     const admin = await createUser("ADMIN");
     const { createPlacementTest } = await import("@/server/services/placement-test.service");
     const { createQuestion } = await import("@/server/services/question.service");
     const { createPlacementBand } = await import("@/server/services/placement-band.service");
-    const { test } = await createPublishedTestWithQuestions(superAdmin);
 
-    await expect(
-      createPlacementTest(admin, { title: "Should fail", durationSeconds: 1800, totalQuestionCount: 1 })
-    ).rejects.toThrow(ForbiddenError);
-    await expect(
-      createQuestion(admin, test.id, {
-        order: 99,
-        prompt: "Injected",
-        options: [
-          { text: "A", isCorrect: true, order: 1 },
-          { text: "B", isCorrect: false, order: 2 },
-        ],
-      })
-    ).rejects.toThrow(ForbiddenError);
-    await expect(
-      createPlacementBand(admin, test.id, { order: 99, label: "X", minPercentage: 0, maxPercentage: 100 })
-    ).rejects.toThrow(ForbiddenError);
+    const created = await createPlacementTest(admin, {
+      title: "Admin-authored",
+      durationSeconds: 1800,
+      totalQuestionCount: 1,
+    });
+    expect(created.status).toBe("DRAFT");
+
+    const question = await createQuestion(admin, created.id, {
+      order: 1,
+      prompt: "Admin-authored question",
+      options: [
+        { text: "A", isCorrect: true, order: 1 },
+        { text: "B", isCorrect: false, order: 2 },
+      ],
+    });
+    expect(question.prompt).toBe("Admin-authored question");
+
+    const band = await createPlacementBand(admin, created.id, {
+      order: 1,
+      label: "X",
+      minPercentage: 0,
+      maxPercentage: 100,
+    });
+    expect(band.label).toBe("X");
   });
 });

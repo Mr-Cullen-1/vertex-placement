@@ -50,6 +50,11 @@
  * Idempotent: a second --apply run finds zero QA rows left (every
  * candidate/test id is re-queried fresh each run, never assumed from a
  * prior report) and deletes nothing further.
+ *
+ * `users` (admin accounts) are entirely out of scope — this script has
+ * never had, and does not have, any delete/update targeting that table.
+ * See PROTECTED_USER_IDS below for the explicit (documentation-only,
+ * for now) allowlist this would need to respect if that ever changes.
  */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
@@ -63,6 +68,23 @@ const PROTECTED_CANDIDATE_IDS = [
   // Empty — see the file header for why "Amina Karimova" was reclassified
   // from initially-ambiguous to QA-DELETE.
 ];
+
+// This script has never deleted or modified any `users` row — every
+// PlacementTest/Candidate/Assignment/etc. classification above is scoped
+// to placement/candidate data, not accounts. Listed explicitly anyway
+// (by ID, never by name/email/role/created-date pattern — see
+// /docs/PRODUCT_RULES.md "Correction pass" for why a string/role guess
+// isn't good enough) so that if this script is ever extended to touch
+// `users`, whoever does it inherits an explicit, already-reviewed
+// allowlist instead of having to re-derive one: the real Super Admin,
+// and "Test Admin" (test@vertexstudio.com) — created intentionally by
+// the product owner to exercise the regular-Admin experience, not a QA
+// artifact of this development session.
+const PROTECTED_USER_IDS = [
+  "cmtlo41520000tgosxahyesjw", // real Super Admin
+  "cmtrcb9ub0007soosspftjeal", // Test Admin — intentionally created, must persist
+];
+void PROTECTED_USER_IDS; // referenced for documentation; no code path uses it yet
 
 const APPLY = process.argv.includes("--apply");
 

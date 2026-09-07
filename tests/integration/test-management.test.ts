@@ -5,6 +5,9 @@ import {
   createPlacementTest,
   publishPlacementTest,
   updatePlacementTest,
+  setPublicSelfServiceTest,
+  clearPublicSelfServiceTest,
+  getPublicSelfServiceTest,
 } from "@/server/services/placement-test.service";
 import {
   createQuestion,
@@ -19,7 +22,7 @@ import {
   deletePlacementBand,
   updatePlacementBand,
 } from "@/server/services/placement-band.service";
-import { ForbiddenError, InvalidTestStateError } from "@/server/errors";
+import { InvalidTestStateError } from "@/server/errors";
 
 beforeEach(async () => {
   await resetDb();
@@ -44,11 +47,14 @@ describe("Phase 2C — test creation and editing", () => {
     expect(test.status).toBe("DRAFT");
   });
 
-  it("Admin cannot create a test", async () => {
+  it("Admin can create a test (Correction pass: test authoring is Admin + Super Admin, not Super-Admin-only — see /docs/PRODUCT_RULES.md 'Roles')", async () => {
     const admin = await createUser("ADMIN");
-    await expect(
-      createPlacementTest(admin, { title: "Nope", durationSeconds: 1800, totalQuestionCount: 1 })
-    ).rejects.toThrow(ForbiddenError);
+    const test = await createPlacementTest(admin, {
+      title: "Admin-authored test",
+      durationSeconds: 1800,
+      totalQuestionCount: 1,
+    });
+    expect(test.status).toBe("DRAFT");
   });
 
   it("Super Admin can edit a draft test", async () => {
@@ -92,15 +98,60 @@ describe("Phase 2C — test creation and editing", () => {
     await expect(publishPlacementTest(superAdmin, test.id)).rejects.toThrow(InvalidTestStateError);
   });
 
-  it("Admin cannot publish a test", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+  it("Admin can publish a test", async () => {
     const admin = await createUser("ADMIN");
-    const test = await createPlacementTest(superAdmin, {
-      title: "Empty",
+    const test = await createPlacementTest(admin, {
+      title: "Admin-published",
       durationSeconds: 1800,
       totalQuestionCount: 1,
     });
-    await expect(publishPlacementTest(admin, test.id)).rejects.toThrow(ForbiddenError);
+    const question = await createQuestion(admin, test.id, {
+      order: 1,
+      prompt: "Q1",
+      options: baseOptions(0),
+    });
+    await publishQuestion(admin, question.id);
+    const published = await publishPlacementTest(admin, test.id);
+    expect(published.status).toBe("PUBLISHED");
+  });
+});
+
+describe("Correction pass — Admin can designate the public Try Yourself test", () => {
+  it("Admin can set and clear the public self-service test", async () => {
+    const admin = await createUser("ADMIN");
+    const test = await createPlacementTest(admin, {
+      title: "Admin public-test fixture",
+      durationSeconds: 1800,
+      totalQuestionCount: 1,
+    });
+    const question = await createQuestion(admin, test.id, { order: 1, prompt: "Q1", options: baseOptions(0) });
+    await publishQuestion(admin, question.id);
+    await publishPlacementTest(admin, test.id);
+
+    await setPublicSelfServiceTest(admin, test.id);
+    const publicTest = await getPublicSelfServiceTest();
+    expect(publicTest?.id).toBe(test.id);
+
+    await clearPublicSelfServiceTest(admin, test.id);
+    expect(await getPublicSelfServiceTest()).toBeNull();
+  });
+
+  it("setting a second test public unsets the first (exactly one public test at a time)", async () => {
+    const admin = await createUser("ADMIN");
+    async function publishedTest(title: string) {
+      const test = await createPlacementTest(admin, { title, durationSeconds: 1800, totalQuestionCount: 1 });
+      const question = await createQuestion(admin, test.id, { order: 1, prompt: "Q1", options: baseOptions(0) });
+      await publishQuestion(admin, question.id);
+      return publishPlacementTest(admin, test.id);
+    }
+    const testA = await publishedTest("A");
+    const testB = await publishedTest("B");
+
+    await setPublicSelfServiceTest(admin, testA.id);
+    await setPublicSelfServiceTest(admin, testB.id);
+
+    const publicTest = await getPublicSelfServiceTest();
+    expect(publicTest?.id).toBe(testB.id);
   });
 });
 
@@ -162,29 +213,25 @@ describe("Phase 2C — question authoring", () => {
     ).rejects.toThrow(InvalidTestStateError);
   });
 
-  it("Admin cannot create, edit, delete, or reorder questions", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+  it("Admin can create, edit, delete, reorder, and publish questions", async () => {
     const admin = await createUser("ADMIN");
-    const test = await createPlacementTest(superAdmin, {
+    const test = await createPlacementTest(admin, {
       title: "T",
       durationSeconds: 1800,
-      totalQuestionCount: 1,
+      totalQuestionCount: 2,
     });
-    const question = await createQuestion(superAdmin, test.id, {
-      order: 1,
-      prompt: "Q1",
-      options: baseOptions(0),
-    });
+    const q1 = await createQuestion(admin, test.id, { order: 1, prompt: "Q1", options: baseOptions(0) });
+    const q2 = await createQuestion(admin, test.id, { order: 2, prompt: "Q2", options: baseOptions(0) });
 
-    await expect(
-      createQuestion(admin, test.id, { order: 2, prompt: "Injected", options: baseOptions(0) })
-    ).rejects.toThrow(ForbiddenError);
-    await expect(updateQuestion(admin, question.id, { prompt: "Hijack" })).rejects.toThrow(
-      ForbiddenError
-    );
-    await expect(deleteQuestion(admin, question.id)).rejects.toThrow(ForbiddenError);
-    await expect(reorderQuestions(admin, test.id, [question.id])).rejects.toThrow(ForbiddenError);
-    await expect(publishQuestion(admin, question.id)).rejects.toThrow(ForbiddenError);
+    const updated = await updateQuestion(admin, q1.id, { prompt: "Q1 edited" });
+    expect(updated.prompt).toBe("Q1 edited");
+
+    await reorderQuestions(admin, test.id, [q2.id, q1.id]);
+    const reordered = await listQuestionsForTest(admin, test.id);
+    expect(reordered.map((q) => q.id)).toEqual([q2.id, q1.id]);
+
+    await publishQuestion(admin, q1.id);
+    await deleteQuestion(admin, q2.id); // still draft — deletable
   });
 
   it("can delete a question while the test is still draft", async () => {
@@ -310,27 +357,23 @@ describe("Phase 2C — placement bands", () => {
     ).rejects.toThrow();
   });
 
-  it("Admin cannot create, update, or delete bands", async () => {
-    const superAdmin = await createUser("SUPER_ADMIN");
+  it("Admin can create, update, and delete bands", async () => {
     const admin = await createUser("ADMIN");
-    const test = await createPlacementTest(superAdmin, {
+    const test = await createPlacementTest(admin, {
       title: "T",
       durationSeconds: 1800,
       totalQuestionCount: 1,
     });
-    const band = await createPlacementBand(superAdmin, test.id, {
+    const band = await createPlacementBand(admin, test.id, {
       order: 0,
       label: "Beginner",
       minPercentage: 0,
       maxPercentage: 50,
     });
 
-    await expect(
-      createPlacementBand(admin, test.id, { order: 1, label: "X", minPercentage: 0, maxPercentage: 100 })
-    ).rejects.toThrow(ForbiddenError);
-    await expect(updatePlacementBand(admin, band.id, { label: "Hijack" })).rejects.toThrow(
-      ForbiddenError
-    );
-    await expect(deletePlacementBand(admin, band.id)).rejects.toThrow(ForbiddenError);
+    const updated = await updatePlacementBand(admin, band.id, { label: "Renamed" });
+    expect(updated.label).toBe("Renamed");
+
+    await deletePlacementBand(admin, band.id);
   });
 });

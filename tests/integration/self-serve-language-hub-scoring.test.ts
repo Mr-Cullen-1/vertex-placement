@@ -80,6 +80,14 @@ async function runPublicAttemptWithNCorrect(email: string, correctCount: number)
 }
 
 describe("Try Yourself uses the exact same canonical RAW_SCORE resolver", () => {
+  it("4/70 -> Beginner", async () => {
+    const superAdmin = await createUser("SUPER_ADMIN");
+    await createPublicLanguageHubShapedTest(superAdmin);
+    const result = await runPublicAttemptWithNCorrect("student-4@example.com", 4);
+    expect(result.rawScore).toBe(4);
+    expect(result.level).toBe("Beginner");
+  });
+
   it("18/70 -> Pre-Intermediate", async () => {
     const superAdmin = await createUser("SUPER_ADMIN");
     await createPublicLanguageHubShapedTest(superAdmin);
