@@ -41,9 +41,9 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const { progression } = result;
 
   return (
-    <div className="min-h-dvh bg-assessment-canvas px-4 py-8 sm:px-8 sm:py-10 lg:py-12">
-      <div className="mx-auto flex w-full max-w-[1480px] animate-page-in flex-col gap-6 rounded-3xl border border-card-border bg-card p-5 shadow-sm sm:p-8 lg:p-10">
-        <div className="flex flex-col items-center gap-3 border-b border-border pb-6 text-center sm:flex-row sm:justify-between sm:text-left">
+    <div className="min-h-dvh bg-assessment-canvas px-4 py-8 sm:px-8 sm:py-10 lg:py-6">
+      <div className="mx-auto flex w-full max-w-[1480px] animate-page-in flex-col gap-6 rounded-3xl border border-card-border bg-card p-5 shadow-sm sm:p-8 lg:gap-5 lg:p-8">
+        <div className="flex flex-col items-center gap-3 border-b border-border pb-6 text-center sm:flex-row sm:justify-between sm:text-left lg:pb-5">
           <div className="flex items-center gap-3">
             <VertexMark className="size-9" />
             <div className="flex flex-col">
@@ -59,7 +59,7 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:gap-8">
-          <div className="flex flex-col items-center gap-5 rounded-2xl border border-card-border bg-muted/20 px-6 py-8 text-center">
+          <div className="flex flex-col items-center gap-5 rounded-2xl border border-card-border bg-muted/20 px-6 py-8 text-center lg:py-6">
             {result.level && (
               <div className="flex flex-col items-center gap-1.5">
                 <span className="text-overline text-primary">Recommended level</span>
