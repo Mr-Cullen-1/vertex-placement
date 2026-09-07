@@ -1,5 +1,5 @@
 import type { StudentResultSummary } from "@/domain/results/types";
-import { VertexWordmark } from "./vertex-mark";
+import { VertexMark } from "./vertex-mark";
 import { DetailedAnalysis } from "./detailed-analysis";
 import { LevelScale } from "./level-scale";
 import { ScoreRing } from "@/components/shared/score-ring";
@@ -19,29 +19,21 @@ import { ScoreRing } from "@/components/shared/score-ring";
  * "Level" — this is an automated recommendation, not an immutable
  * academic placement decision; that decision (Final Placement) is an
  * admin-only concept and never rendered on this student-facing screen.
- * `result.progression` (question-order-derived "highest correctly-
- * answered question") previously also rendered here as "Recommended
- * progression" — removed (P0 fix) after it produced results like "4/70
- * correct" showing "Advanced" purely because a single late, harder
- * question happened to be answered correctly. That signal is real and
- * still computed (its objective answered/correct/incorrect/unanswered
- * counts are still shown below), but the question-position-derived band
- * label is now admin-only diagnostic — see the Result Detail page
- * ("Question progression evidence") and /docs/PRODUCT_RULES.md "Scoring
- * & placement". Never reintroduce a placement-band-like label here
- * derived from anything other than `result.level`.
  *
- * Phase 2L also adds the collapsed-by-default "Detailed analysis"
- * section (`DetailedAnalysis`, ./detailed-analysis.tsx) — course-level
- * performance, an evidence-aware strength/weakness summary, and a
- * question-by-question review. All diagnostic, never determines
- * `result.level`.
+ * Manual QA correction pass: rebuilt from a narrow centered column into
+ * one wide main result card (near-full viewport width, ~32-56px side
+ * margins) with a horizontal hero grid (level/score/scale beside a
+ * compact stat row), matching the assessment shell's pastel teal canvas
+ * (`bg-assessment-canvas`) so Ready/Instructions/Test/Result feel
+ * continuous. "Detailed analysis" stays the same collapsed-by-default
+ * disclosure, now opening inside this one card rather than as a separate
+ * stacked block — see /docs/DESIGN_SYSTEM.md "Student Result redesign".
+ * No business/data logic changed: every value below is unchanged from
+ * the server response.
  *
  * Phase 2J: reached by both an admin-invited candidate AND a public
  * "Try Yourself" visitor (/docs/PHASE_2J_TRY_YOURSELF.md "Shared Test
- * Runner") — the two closing lines were reworded to stop assuming "the
- * center that invited you" exists. The only change this feature made to
- * this file; no layout/logic change, no "if public" branch.
+ * Runner") — wording stays origin-agnostic.
  */
 export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const minutes = Math.floor(result.completionSeconds / 60);
@@ -49,101 +41,89 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const { progression } = result;
 
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
-      <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <VertexWordmark />
-          <div className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground">Assessment complete</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {result.candidateName}
-            </h1>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border bg-card px-8 py-10 text-center shadow-sm">
-          {result.level && (
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-overline text-primary">Recommended level</span>
-              <span className="text-3xl leading-tight font-semibold tracking-tight text-foreground sm:text-4xl">
-                {result.level}
-              </span>
+    <div className="min-h-dvh bg-assessment-canvas px-4 py-8 sm:px-8 sm:py-10 lg:py-12">
+      <div className="mx-auto flex w-full max-w-[1480px] animate-page-in flex-col gap-6 rounded-3xl border border-card-border bg-card p-5 shadow-sm sm:p-8 lg:p-10">
+        <div className="flex flex-col items-center gap-3 border-b border-border pb-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex items-center gap-3">
+            <VertexMark className="size-9" />
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground">Assessment complete</span>
+              <span className="text-lg font-semibold tracking-tight text-foreground">{result.candidateName}</span>
             </div>
+          </div>
+          {result.autoSubmitted && (
+            <span className="rounded-full bg-warning/10 px-3 py-1 text-xs font-medium text-warning-foreground ring-1 ring-warning/25">
+              Submitted automatically at the time limit
+            </span>
           )}
-          <ScoreRing percentage={result.percentage} size={128} strokeWidth={8}>
-            <span className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-foreground">
-              {Math.round(result.percentage)}%
-            </span>
-            <span className="text-caption">
-              {result.rawScore} / {result.totalQuestions}
-            </span>
-          </ScoreRing>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-5 py-4">
-          <LevelScale level={result.level} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:gap-8">
+          <div className="flex flex-col items-center gap-5 rounded-2xl border border-card-border bg-muted/20 px-6 py-8 text-center">
+            {result.level && (
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-overline text-primary">Recommended level</span>
+                <span className="text-3xl leading-tight font-semibold tracking-tight text-foreground sm:text-4xl">
+                  {result.level}
+                </span>
+              </div>
+            )}
+            <ScoreRing percentage={result.percentage} size={132} strokeWidth={9}>
+              <span className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-foreground">
+                {Math.round(result.percentage)}%
+              </span>
+              <span className="text-caption">
+                {result.rawScore} / {result.totalQuestions}
+              </span>
+            </ScoreRing>
+            <div className="w-full max-w-xs">
+              <LevelScale level={result.level} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This result reflects your total correct answers on this assessment.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <StatCard label="Completion time" value={`${minutes}m ${seconds}s`} />
+              <StatCard label="Questions" value={String(result.totalQuestions)} />
+              <StatCard label="Correct" value={String(progression.correctCount)} />
+              <StatCard label="Incorrect" value={String(progression.incorrectCount)} />
+              <StatCard label="Unanswered" value={String(progression.unansweredCount)} />
+            </dl>
+
+            {result.strongestTopics.length > 0 && (
+              <div className="flex flex-col gap-2 rounded-2xl border border-card-border bg-card px-4 py-3.5">
+                <h2 className="text-xs font-medium text-muted-foreground">Your strongest areas</h2>
+                <div className="flex flex-col gap-1.5">
+                  {result.strongestTopics.map((topic) => (
+                    <div key={topic.topic} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{topic.topic}</span>
+                      <span className="font-medium text-foreground">{Math.round(topic.percentage)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-sm text-muted-foreground">{result.summary}</p>
+          </div>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground">
-          This result reflects your total correct answers on this assessment.
-        </p>
-
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-4 py-3">
-            <dt className="text-xs text-muted-foreground">Completion time</dt>
-            <dd className="font-medium text-foreground">
-              {minutes}m {seconds}s
-            </dd>
-          </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-4 py-3">
-            <dt className="text-xs text-muted-foreground">Questions</dt>
-            <dd className="font-medium text-foreground">{result.totalQuestions}</dd>
-          </div>
-        </dl>
-
-        <dl className="grid grid-cols-3 gap-3 text-center text-sm">
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
-            <dt className="text-xs text-muted-foreground">Correct</dt>
-            <dd className="font-medium text-foreground">{progression.correctCount}</dd>
-          </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
-            <dt className="text-xs text-muted-foreground">Incorrect</dt>
-            <dd className="font-medium text-foreground">{progression.incorrectCount}</dd>
-          </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
-            <dt className="text-xs text-muted-foreground">Unanswered</dt>
-            <dd className="font-medium text-foreground">{progression.unansweredCount}</dd>
-          </div>
-        </dl>
 
         <DetailedAnalysis analysis={result.detailedAnalysis} />
 
-        {result.strongestTopics.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-foreground">Your strongest areas</h2>
-            <div className="flex flex-col gap-2">
-              {result.strongestTopics.map((topic) => (
-                <div key={topic.topic} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{topic.topic}</span>
-                  <span className="font-medium text-foreground">
-                    {Math.round(topic.percentage)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <p className="text-center text-sm text-muted-foreground">{result.summary}</p>
-
-        {result.autoSubmitted && (
-          <p className="text-center text-xs text-muted-foreground">
-            Your test was submitted automatically when the time limit was reached.
-          </p>
-        )}
-
         <p className="text-center text-xs text-muted-foreground">Your result has been recorded.</p>
       </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-2xl border border-card-border bg-card px-3 py-3 text-center">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="font-medium text-foreground tabular-nums">{value}</dd>
     </div>
   );
 }

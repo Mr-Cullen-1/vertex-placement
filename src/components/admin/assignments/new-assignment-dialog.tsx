@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/select";
 
 export interface CandidateOption {
   id: string;
@@ -114,16 +114,15 @@ export function NewAssignmentDialog({
             assignment can be created.
           </p>
         ) : (
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} noValidate className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="testId">Placement test</Label>
-              <Select id="testId" value={testId} onChange={(e) => setTestId(e.target.value)}>
-                {publishedTests.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))}
-              </Select>
+              <Combobox
+                id="testId"
+                value={testId}
+                onValueChange={setTestId}
+                items={publishedTests.map((t) => ({ value: t.id, label: t.title }))}
+              />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -150,13 +149,12 @@ export function NewAssignmentDialog({
               </div>
 
               {mode === "existing" ? (
-                <Select value={candidateId} onChange={(e) => setCandidateId(e.target.value)} aria-label="Candidate">
-                  {candidates.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
-                    </option>
-                  ))}
-                </Select>
+                <Combobox
+                  value={candidateId}
+                  onValueChange={setCandidateId}
+                  items={candidates.map((c) => ({ value: c.id, label: c.label }))}
+                  aria-label="Candidate"
+                />
               ) : (
                 <div className="flex items-start gap-2.5 rounded-lg bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">
                   <UserPlusIcon className="mt-0.5 size-4 shrink-0 text-primary" />

@@ -25,7 +25,7 @@ function Card({
       data-size={size}
       data-variant={variant}
       className={cn(
-        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground shadow-xs ring-1 ring-foreground/10 transition-all duration-150 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 data-[variant=interactive]:cursor-pointer data-[variant=interactive]:hover:shadow-md data-[variant=interactive]:hover:ring-primary/25 data-[variant=tinted]:bg-[color-mix(in_oklch,var(--card)_92%,var(--primary)_8%)] data-[variant=tinted]:ring-primary/12 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground shadow-xs ring-1 ring-card-border transition-all duration-150 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 data-[variant=interactive]:cursor-pointer data-[variant=interactive]:hover:shadow-md data-[variant=interactive]:hover:ring-card-border-hover data-[variant=tinted]:bg-[color-mix(in_oklch,var(--card)_92%,var(--primary)_8%)] data-[variant=tinted]:ring-primary/20 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
         className
       )}
       {...props}

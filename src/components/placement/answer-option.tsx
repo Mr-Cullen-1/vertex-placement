@@ -24,7 +24,7 @@ export function AnswerOption({ label, text, selected, disabled, onSelect }: Answ
       disabled={disabled}
       onClick={onSelect}
       className={cn(
-        "group flex w-full items-center gap-4 rounded-2xl border-2 bg-card px-5 py-4 text-left transition-all duration-150",
+        "group flex w-full items-center gap-4 rounded-2xl border-2 bg-card px-5 py-3.5 text-left transition-all duration-150",
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         "disabled:pointer-events-none disabled:opacity-60",
         selected

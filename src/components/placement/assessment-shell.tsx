@@ -54,8 +54,8 @@ export function AssessmentShell({
   children,
 }: AssessmentShellProps) {
   return (
-    <div className="flex h-dvh overflow-hidden bg-background p-0 sm:p-4 lg:p-6 xl:p-8 2xl:p-10">
-      <div className="mx-auto flex w-full max-w-[1560px] overflow-hidden border-border bg-card sm:rounded-2xl sm:border sm:shadow-xs">
+    <div className="flex h-dvh overflow-hidden bg-assessment-canvas p-0 sm:p-4 lg:p-6 xl:p-8 2xl:p-10">
+      <div className="mx-auto flex w-full max-w-[1560px] overflow-hidden border-card-border bg-card sm:rounded-2xl sm:border sm:shadow-xs">
         <aside
           className={cn(
             "hidden shrink-0 flex-col overflow-hidden border-r border-border bg-card transition-[width] duration-[250ms] ease-out min-[1200px]:flex",

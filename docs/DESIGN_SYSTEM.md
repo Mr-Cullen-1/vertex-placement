@@ -985,6 +985,90 @@ their own action call (not the navigation) so a truly hung server action
 surfaces a retry message instead of a disabled button forever — a small
 addition, not a fake minimum-loading duration.
 
+## Manual QA correction pass (8 issues)
+
+A precise correction pass on top of the Student Assessment redesign —
+architecture/palette/business-logic unchanged, fixing 8 concrete defects
+found in live manual QA.
+
+- **Combobox** (`components/ui/select.tsx`, new `Combobox` export beside
+  the existing native `Select`, which two unrelated short-option-list call
+  sites keep using unchanged) — a custom `@base-ui/react/select`-based
+  picker replacing the native `<select>` specifically where option text
+  can be long/varied (New Assignment's "Placement test" and "Existing
+  candidate" fields). **Root cause of the popup extending outside the
+  modal**: not a Combobox bug at all — `NewAssignmentDialog`'s `<form>` is
+  a `display:grid` child of `DialogContent`, and CSS grid items (like flex
+  items) default to `min-width: auto`, so a long *unbroken* option string
+  (`white-space: nowrap` from `truncate`) propagated its full min-content
+  width up through the grid, overflowing the dialog. One `min-w-0` on that
+  `<form>` fixed it completely — the classic flex/grid "min-size auto"
+  trap, one level higher up the tree than usual.
+- **VertexLoader centering** — `PlacementShellSkeleton`'s `<main>` used to
+  center the loader-and-skeleton-content *as one flex group*, which put
+  the loader near the top rather than at the workspace's true center. Now
+  `<main>` is `relative`, the skeleton content is a normal top-anchored
+  block (matching the real destination layout), and the loader lives in a
+  separate `absolute inset-0 flex items-center justify-center` overlay —
+  centered on both axes independent of the skeleton's own height.
+- **Student flow order** — `PlacementFlow`'s `deriveInitialState` now
+  routes an incomplete profile straight to `candidate-form` (skipping
+  `welcome` entirely until the form succeeds), instead of showing "Ready
+  to start" first and only branching to the form after "Begin." An
+  already-complete profile is unaffected (goes straight to `welcome` as
+  before). Since `deriveInitialState` re-derives from a fresh server read
+  every mount, a refresh right after completing the form correctly lands
+  on "Ready to start," never back on the form — no client-side flag
+  needed.
+- **CandidateForm redesign** — rebuilt onto the same split-shell
+  visual family as Admin Login/Try Yourself (deep teal brand panel +
+  light gray form workspace), but as its own direct implementation, not
+  a reuse of `OnboardingShell` — that component's copy ("2 free
+  completed attempts," an Email/Verify/Profile/Start stepper) is
+  specific to the public self-service wizard and would be factually
+  wrong for an admin-invited candidate (no OTP step, no quota).
+- **Card border system** — new `--card-border`/`--card-border-hover`
+  tokens (a teal-tinted `#c9d7d7` / `#a9c2c1`), distinct from `--border`
+  (`#e5e7eb`), which stays untouched for internal dividers (list-row
+  rules, sidebar border, header/footer rules). Applied to the shared
+  `Card` and `Dialog` primitives, `InteractiveListItem`, `AssessmentShell`'s
+  outer frame, and the standalone bordered "cards" on
+  Ready/Instructions/Result/Try-Yourself/CandidateForm — a small,
+  bounded set of targeted touches on top of the two shared-primitive
+  changes that cover the vast majority of surfaces (Dashboard, Tests,
+  Candidates, Assignments, all detail pages, all dialogs) automatically.
+- **Active-question layout** — widened the question column
+  (`max-w-2xl` → `max-w-[880px]`), tightened vertical rhythm (`py-8
+  sm:py-12` → `py-6 sm:py-8`, tighter gaps throughout), and made the
+  question prompt's type size *content-aware* (a `promptSizeTier()`
+  helper keyed on character count, not just viewport width) so a long
+  prompt steps down automatically instead of forcing scroll on an
+  otherwise-normal question. Verified across real Language Hub questions
+  at 1440/1280/1024 with zero `<main>` scroll.
+- **Assessment canvas** — new `--assessment-canvas` token (`#e8f0ef`, a
+  soft pastel teal), applied only to `AssessmentShell`'s and
+  `PlacementShellSkeleton`'s outer canvas — `--background` (the admin
+  canvas) is untouched. Automatically covers Ready/Instructions/Test
+  since all three share `AssessmentShell`; `CandidateForm` deliberately
+  keeps `--background` per its own explicit spec.
+- **Student Result redesign** — one wide main card (`max-w-[1480px]`)
+  replacing the narrow centered column, with a horizontal hero grid
+  (Recommended Level + score ring + level scale beside a compact 5-up
+  stat row) instead of everything stacked vertically. "Detailed
+  analysis" is the same collapsed-by-default disclosure, now opening
+  inside this one card. No result data/scoring logic touched — every
+  value is the same server response, only the surrounding layout changed.
+
+Root-cause note on QA methodology: this session's real dev Supabase
+connection exhibited severe latency during verification (~4.5-6s per
+single `submitAnswerAction` call), unrelated to any change in this pass —
+confirmed via dev-server request logs, not guessed. A 70-question live
+completion run under that latency would take several minutes just for
+autosave; the Result redesign was verified using the 3-question QA
+fixture test instead to keep end-to-end QA tractable, plus direct code
+review (the changed file is layout/JSX only — `ScoreRing`, `LevelScale`,
+and `DetailedAnalysis` are unchanged, unmodified imports).
+
 ## History (Phase 0 direction, retained)
 
 See git history for the original Phase 0 section of this document,

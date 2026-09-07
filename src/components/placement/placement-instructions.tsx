@@ -60,7 +60,7 @@ export function PlacementInstructions({
             </p>
           </div>
 
-          <ul className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-xs">
+          <ul className="flex flex-col gap-3 rounded-2xl border border-card-border bg-card px-5 py-4 shadow-xs">
             {RULES.map((rule) => (
               <li key={rule} className="flex items-start gap-3 text-sm text-foreground">
                 <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">

@@ -13,8 +13,8 @@ import { VertexLoader } from "./vertex-loader";
  */
 export function PlacementShellSkeleton() {
   return (
-    <div className="flex h-dvh overflow-hidden bg-background p-0 sm:p-4 lg:p-6 xl:p-8 2xl:p-10">
-      <div className="mx-auto flex w-full max-w-[1560px] overflow-hidden border-border bg-card sm:rounded-2xl sm:border sm:shadow-xs">
+    <div className="flex h-dvh overflow-hidden bg-assessment-canvas p-0 sm:p-4 lg:p-6 xl:p-8 2xl:p-10">
+      <div className="mx-auto flex w-full max-w-[1560px] overflow-hidden border-card-border bg-card sm:rounded-2xl sm:border sm:shadow-xs">
         <aside className="hidden w-72 shrink-0 flex-col border-r border-border bg-card min-[1200px]:flex">
           <div className="flex shrink-0 items-center gap-2.5 border-b border-border p-5">
             <Skeleton className="size-7 rounded-[28%]" />
@@ -43,19 +43,26 @@ export function PlacementShellSkeleton() {
             </div>
           </header>
 
-          <main className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-4 py-8">
-            <div className="flex w-full max-w-2xl flex-col items-center gap-10">
-              <VertexLoader size="lg" label="Loading your assessment" />
-              <div className="flex w-full flex-col gap-6">
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-4/5" />
-                <div className="mt-2 flex flex-col gap-3">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-                  ))}
-                </div>
+          {/* `relative` + an `absolute inset-0` overlay is what actually
+           * centers VertexLoader on BOTH axes within this workspace,
+           * independent of the skeleton content's own (top-anchored, matching
+           * the real destination layout) height — centering it together
+           * with that content as one flex group previously left the loader
+           * sitting near the top rather than at the workspace's true
+           * center. See /docs/DESIGN_SYSTEM.md "Loading system". */}
+          <main className="relative min-h-0 flex-1 overflow-hidden">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-4/5" />
+              <div className="mt-2 flex flex-col gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+                ))}
               </div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <VertexLoader size="lg" label="Loading your assessment" />
             </div>
           </main>
 

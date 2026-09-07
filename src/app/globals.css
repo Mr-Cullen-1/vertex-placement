@@ -28,6 +28,9 @@
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
+  --color-card-border: var(--card-border);
+  --color-card-border-hover: var(--card-border-hover);
+  --color-assessment-canvas: var(--assessment-canvas);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
@@ -98,6 +101,20 @@
   --border: #e5e7eb;
   --input: #e5e7eb;
   --ring: #174e4f;
+  /* Card-boundary border system (Manual QA correction pass) — distinct
+     from --border, which stays neutral #e5e7eb for INTERNAL dividers
+     (list-row rules, table borders, sidebar border). A card/panel's
+     outer boundary uses this teal-tinted tier instead so it doesn't
+     visually blend into the #f3f4f6 canvas the way a near-invisible
+     neutral border did. See /docs/DESIGN_SYSTEM.md "Card border system". */
+  --card-border: #c9d7d7;
+  --card-border-hover: #a9c2c1;
+  /* Student Assessment outer canvas ONLY (Ready/Instructions/Test/
+     Result) — a soft pastel teal derived from the selected-answer
+     surface, distinct from --background (#f3f4f6), which stays the
+     admin canvas untouched. See /docs/DESIGN_SYSTEM.md "Assessment
+     canvas". */
+  --assessment-canvas: #e8f0ef;
   /* Disabled controls / inactive stepper connectors / inactive
      progress — a step down from --border, per the Testora palette. */
   --disabled: #d1d5dc;
@@ -151,6 +168,9 @@
   --border: rgba(243, 244, 246, 0.1);
   --input: rgba(243, 244, 246, 0.15);
   --ring: #2f8f8a;
+  --card-border: rgba(47, 143, 138, 0.35);
+  --card-border-hover: rgba(47, 143, 138, 0.55);
+  --assessment-canvas: #16302e;
   --disabled: rgba(243, 244, 246, 0.2);
   --muted-icon: #99a1af;
   --chart-1: #2f8f8a;

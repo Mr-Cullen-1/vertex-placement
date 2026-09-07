@@ -333,7 +333,7 @@ export function PlacementTestShell({
         </div>
       }
     >
-      <div className="mx-auto flex w-full max-w-2xl flex-col px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-[880px] flex-col px-4 py-6 sm:px-6 sm:py-8">
         <PlacementQuestion
           key={currentQuestion.questionId}
           question={currentQuestion}

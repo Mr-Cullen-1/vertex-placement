@@ -21,14 +21,7 @@ interface CandidateLike {
 }
 
 type FlowState =
-  | {
-      phase: "welcome";
-      testTitle: string;
-      durationSeconds: number;
-      totalQuestions: number;
-      candidate: CandidateLike;
-      candidateProfileComplete: boolean;
-    }
+  | { phase: "welcome"; testTitle: string; durationSeconds: number; totalQuestions: number }
   | { phase: "candidate-form"; testTitle: string; durationSeconds: number; totalQuestions: number; candidate: CandidateLike }
   | {
       phase: "instructions";
@@ -47,13 +40,27 @@ function deriveInitialState(initial: ActionResult<PlacementStatus>): FlowState {
 
   switch (initial.data.kind) {
     case "NOT_STARTED":
+      // Candidate ownership: the admin only creates access — the student
+      // enters their own profile data. An incomplete profile must be
+      // completed BEFORE "Ready to start" is ever shown, not after (a
+      // profile-incomplete candidate landing on "Ready to start" was a
+      // real ordering bug — see /docs/DESIGN_SYSTEM.md "Student flow
+      // order"). An already-complete candidate is never forced through
+      // the form again.
+      if (!initial.data.candidateProfileComplete) {
+        return {
+          phase: "candidate-form",
+          testTitle: initial.data.testTitle,
+          durationSeconds: initial.data.durationSeconds,
+          totalQuestions: initial.data.totalQuestions,
+          candidate: initial.data.candidate,
+        };
+      }
       return {
         phase: "welcome",
         testTitle: initial.data.testTitle,
         durationSeconds: initial.data.durationSeconds,
         totalQuestions: initial.data.totalQuestions,
-        candidate: initial.data.candidate,
-        candidateProfileComplete: initial.data.candidateProfileComplete,
       };
     case "IN_PROGRESS":
       return {
@@ -69,12 +76,20 @@ function deriveInitialState(initial: ActionResult<PlacementStatus>): FlowState {
   }
 }
 
-/** Orchestrates the pre-attempt wizard (welcome -> candidate confirmation
- * -> instructions), then hands off to the live test shell, then the
- * result screen. A page refresh during the wizard simply restarts it
- * (no attempt/timer has started yet, so nothing is lost — see
- * /docs/PHASE_2A.md); a refresh once the attempt exists resumes it
- * directly via `initialStatus`, computed server-side in page.tsx. */
+/** Orchestrates the pre-attempt wizard, then hands off to the live test
+ * shell, then the result screen. Order depends on profile completeness,
+ * computed once server-side in `deriveInitialState`:
+ *   incomplete profile: candidate-form -> welcome -> instructions -> test
+ *   complete profile:                    welcome -> instructions -> test
+ * An incomplete profile is never shown "Ready to start" before completing
+ * its own details (see /docs/DESIGN_SYSTEM.md "Student flow order"); an
+ * already-complete profile is never forced through the form again. A
+ * page refresh during the wizard simply restarts it (no attempt/timer has
+ * started yet, so nothing is lost — see /docs/PHASE_2A.md) — and since
+ * `deriveInitialState` re-reads profile completeness fresh from the
+ * server every time, a refresh right after completing the form correctly
+ * lands on "welcome," never back on the form. A refresh once the attempt
+ * exists resumes it directly via `initialStatus`. */
 export function PlacementFlow({
   token,
   initialStatus,
@@ -92,18 +107,13 @@ export function PlacementFlow({
           durationMinutes={Math.round(state.durationSeconds / 60)}
           totalQuestions={state.totalQuestions}
           onContinue={() => {
+            // By the time "welcome" is ever shown, the profile is
+            // guaranteed complete — either it already was, or the
+            // candidate-form step (which runs BEFORE this phase for an
+            // incomplete profile) just completed it. See
+            // `deriveInitialState` above.
             const { testTitle, durationSeconds, totalQuestions } = state;
-            // Phase 2J: a candidate who has already provided their own
-            // details (or was created with full details up front) skips
-            // straight to instructions — never a duplicate "confirm your
-            // details" step. Only a candidate whose profile is still
-            // pending sees the details form (see /docs/PRODUCT_RULES.md
-            // "Candidate ownership").
-            if (state.candidateProfileComplete) {
-              setState({ phase: "instructions", testTitle, durationSeconds, totalQuestions, starting: false, error: null });
-            } else {
-              setState({ phase: "candidate-form", testTitle, durationSeconds, totalQuestions, candidate: state.candidate });
-            }
+            setState({ phase: "instructions", testTitle, durationSeconds, totalQuestions, starting: false, error: null });
           }}
         />
       );
@@ -113,14 +123,15 @@ export function PlacementFlow({
         <CandidateForm
           token={token}
           initial={state.candidate}
+          testTitle={state.testTitle}
+          durationMinutes={Math.round(state.durationSeconds / 60)}
+          totalQuestions={state.totalQuestions}
           onSuccess={() =>
             setState({
-              phase: "instructions",
+              phase: "welcome",
               testTitle: state.testTitle,
               durationSeconds: state.durationSeconds,
               totalQuestions: state.totalQuestions,
-              starting: false,
-              error: null,
             })
           }
         />

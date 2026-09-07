@@ -64,7 +64,7 @@ export function TryResultStep({ result, canRetake }: TryResultStepProps) {
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border bg-card px-8 py-10 text-center shadow-sm">
+        <div className="flex flex-col items-center gap-5 rounded-3xl border border-card-border bg-card px-8 py-10 text-center shadow-sm">
           {result.level && (
             <div className="flex flex-col items-center gap-2">
               <span className="text-overline text-primary">Recommended level</span>
@@ -83,20 +83,20 @@ export function TryResultStep({ result, canRetake }: TryResultStepProps) {
           </ScoreRing>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card px-5 py-4">
+        <div className="flex flex-col gap-2 rounded-2xl border border-card-border bg-card px-5 py-4">
           <LevelScale level={result.level} />
         </div>
 
         <dl className="grid grid-cols-3 gap-3 text-center text-sm">
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
+          <div className="flex flex-col gap-1 rounded-2xl border border-card-border bg-card px-3 py-3">
             <dt className="text-xs text-muted-foreground">Correct</dt>
             <dd className="font-medium text-foreground">{result.progression.correctCount}</dd>
           </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
+          <div className="flex flex-col gap-1 rounded-2xl border border-card-border bg-card px-3 py-3">
             <dt className="text-xs text-muted-foreground">Incorrect</dt>
             <dd className="font-medium text-foreground">{result.progression.incorrectCount}</dd>
           </div>
-          <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-3 py-3">
+          <div className="flex flex-col gap-1 rounded-2xl border border-card-border bg-card px-3 py-3">
             <dt className="text-xs text-muted-foreground">Unanswered</dt>
             <dd className="font-medium text-foreground">{result.progression.unansweredCount}</dd>
           </div>
@@ -116,7 +116,7 @@ export function TryResultStep({ result, canRetake }: TryResultStepProps) {
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/30 px-5 py-4 text-center">
+          <div className="flex flex-col gap-3 rounded-2xl border border-card-border bg-muted/30 px-5 py-4 text-center">
             <p className="text-sm text-foreground">
               You&apos;ve completed both of your free placement attempts.
             </p>

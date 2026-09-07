@@ -46,7 +46,7 @@ export function InteractiveListItem({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+        "flex flex-col gap-3 rounded-xl border border-card-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         className
       )}
     >

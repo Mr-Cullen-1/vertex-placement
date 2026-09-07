@@ -22,7 +22,7 @@ export function LevelScale({ level }: { level: string | null }) {
         const isLast = index === STANDARD_PLACEMENT_LEVELS.length - 1;
 
         return (
-          <li key={label} className="flex flex-1 flex-col items-center gap-1.5 text-center">
+          <li key={label} className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
             <div className="flex w-full items-center">
               <span
                 aria-hidden
@@ -40,14 +40,23 @@ export function LevelScale({ level }: { level: string | null }) {
                 className={cn("h-px flex-1 transition-colors duration-200", isLast ? "opacity-0" : reached && !isCurrent ? "bg-primary" : "bg-border")}
               />
             </div>
+            {/* Hidden below `sm` — six labels can't fit legibly side by
+             * side under ~360px without overlapping, and the same level
+             * name is already shown as this card's own prominent
+             * heading, so nothing unique is lost by hiding the
+             * per-dot repeat here. The dot/connector row alone still
+             * conveys position. */}
             <span
               className={cn(
-                "text-[10px] leading-tight font-medium",
+                "hidden text-[10px] leading-tight font-medium sm:block",
                 isCurrent ? "text-foreground" : reached ? "text-foreground/80" : "text-muted-foreground"
               )}
             >
               {label}
             </span>
+            {isCurrent && (
+              <span className="text-[10px] leading-tight font-medium text-foreground sm:hidden">{label}</span>
+            )}
           </li>
         );
       })}

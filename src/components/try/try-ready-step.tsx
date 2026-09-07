@@ -73,18 +73,18 @@ export function TryReadyStep({ mode, attemptNumber, testTitle, durationMinutes, 
           <>
             {durationMinutes != null && totalQuestions != null && (
               <dl className="grid w-full grid-cols-2 gap-3">
-                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5 shadow-xs">
+                <div className="flex flex-col items-center gap-1 rounded-2xl border border-card-border bg-card px-4 py-5 shadow-xs">
                   <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Duration</dt>
                   <dd className="text-2xl font-semibold text-foreground tabular-nums">{durationMinutes} min</dd>
                 </div>
-                <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5 shadow-xs">
+                <div className="flex flex-col items-center gap-1 rounded-2xl border border-card-border bg-card px-4 py-5 shadow-xs">
                   <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Questions</dt>
                   <dd className="text-2xl font-semibold text-foreground tabular-nums">{totalQuestions}</dd>
                 </div>
               </dl>
             )}
 
-            <ul className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 text-left shadow-xs">
+            <ul className="flex w-full flex-col gap-3 rounded-2xl border border-card-border bg-card px-5 py-4 text-left shadow-xs">
               {RULES.map((rule) => (
                 <li key={rule} className="flex items-start gap-3 text-sm text-foreground">
                   <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">

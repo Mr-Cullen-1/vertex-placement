@@ -69,7 +69,7 @@ export function PlacementStart({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-4 py-5 shadow-xs">
+    <div className="flex flex-col items-center gap-1 rounded-2xl border border-card-border bg-card px-4 py-5 shadow-xs">
       <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
       <dd className="text-2xl font-semibold text-foreground tabular-nums">{value}</dd>
     </div>

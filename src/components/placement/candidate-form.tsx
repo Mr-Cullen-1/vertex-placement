@@ -6,12 +6,15 @@ import { updateCandidateAction } from "@/server/actions/attempt-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { VertexWordmark } from "./vertex-mark";
+import { VertexMark } from "./vertex-mark";
 
 interface CandidateFormProps {
   token: string;
   initial: { firstName: string; lastName: string; phoneNumber: string; age: number; email: string | null };
   onSuccess: () => void;
+  testTitle: string;
+  durationMinutes: number;
+  totalQuestions: number;
 }
 
 type RawValues = {
@@ -25,15 +28,32 @@ type RawValues = {
 /** The candidate provides their OWN personal details here — an Admin
  * creating an assignment for a new candidate no longer enters them (see
  * /docs/PRODUCT_RULES.md "Candidate ownership"). `PlacementFlow` only
- * ever routes here when the candidate's profile is still incomplete
- * (`candidateProfileComplete === false`); an already-complete candidate
- * skips straight to instructions. This still calls `updateCandidateAction`
- * (an update, not a creation) — the candidate row already exists, created
- * by the Admin as a placeholder, and this call completes it in place, so
- * no duplicate candidate is ever created. Validated with the same Zod
- * shape the server enforces — client-side validation is a UX courtesy;
- * the server call is the actual authority. */
-export function CandidateForm({ token, initial, onSuccess }: CandidateFormProps) {
+ * ever routes here BEFORE "Ready to start" when the candidate's profile
+ * is still incomplete (`candidateProfileComplete === false`) — an
+ * already-complete candidate skips this entirely (see
+ * /docs/DESIGN_SYSTEM.md "Student flow order"). This still calls
+ * `updateCandidateAction` (an update, not a creation) — the candidate row
+ * already exists, created by the Admin as a placeholder, and this call
+ * completes it in place, so no duplicate candidate is ever created.
+ * Validated with the same Zod shape the server enforces — client-side
+ * validation is a UX courtesy; the server call is the actual authority.
+ *
+ * Visually composed as the same split-shell family as Admin Login/Try
+ * Yourself (deep teal brand panel + light gray form workspace) rather
+ * than a plain centered page — see /docs/DESIGN_SYSTEM.md "Candidate
+ * form redesign". Not `OnboardingShell` itself: that component's copy
+ * ("2 free completed attempts," the Email/Verify/Profile/Start stepper)
+ * is specific to the public self-service wizard and would be factually
+ * wrong here — an admin-invited candidate has no OTP step and no
+ * self-service quota. */
+export function CandidateForm({
+  token,
+  initial,
+  onSuccess,
+  testTitle,
+  durationMinutes,
+  totalQuestions,
+}: CandidateFormProps) {
   const [values, setValues] = useState<RawValues>({
     firstName: initial.firstName,
     lastName: initial.lastName,
@@ -89,81 +109,110 @@ export function CandidateForm({ token, initial, onSuccess }: CandidateFormProps)
   }
 
   return (
-    <div className="vertex-atmosphere flex h-dvh flex-col items-center justify-center overflow-y-auto px-6 py-8">
-      <div className="flex w-full max-w-md animate-page-in flex-col gap-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <VertexWordmark />
-          <div className="flex flex-col gap-1.5">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Tell us about yourself
+    <div className="flex min-h-dvh flex-col bg-background min-[900px]:flex-row">
+      {/* LEFT — brand, deep teal. Compact on mobile (sizes to content,
+       * not a full-height column), full-height at 900px+ — the same
+       * `min-[900px]:flex-1` breakpoint pattern as Admin Login/
+       * OnboardingShell. */}
+      <div className="relative flex shrink-0 flex-col items-center justify-center gap-4 bg-primary px-6 py-8 text-primary-foreground min-[900px]:flex-1 min-[900px]:gap-6 min-[900px]:py-16">
+        <div className="flex flex-col items-center gap-3 text-center min-[900px]:gap-5">
+          <VertexMark className="size-10 min-[900px]:size-14" />
+          <div className="flex flex-col gap-1 min-[900px]:gap-1.5">
+            <h1 className="text-lg font-semibold tracking-tight text-primary-foreground min-[900px]:text-2xl">
+              Vertex Placement
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Enter your details before starting the placement test.
+            <p className="hidden text-sm text-primary-foreground/70 min-[900px]:block">
+              Complete your details before starting the placement test.
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4">
-            <Field
-              id="firstName"
-              label="First name"
-              value={values.firstName}
-              error={fieldErrors.firstName}
-              onChange={(v) => update("firstName", v)}
-              autoComplete="given-name"
-            />
-            <Field
-              id="lastName"
-              label="Last name"
-              value={values.lastName}
-              error={fieldErrors.lastName}
-              onChange={(v) => update("lastName", v)}
-              autoComplete="family-name"
-            />
+        <ul className="hidden flex-col items-center gap-2 min-[900px]:flex">
+          <li className="flex items-center gap-2 text-sm text-primary-foreground/80">
+            <span aria-hidden className="size-1 rounded-full bg-primary-foreground/50" />
+            {testTitle}
+          </li>
+          <li className="flex items-center gap-2 text-sm text-primary-foreground/80">
+            <span aria-hidden className="size-1 rounded-full bg-primary-foreground/50" />
+            {totalQuestions} questions
+          </li>
+          <li className="flex items-center gap-2 text-sm text-primary-foreground/80">
+            <span aria-hidden className="size-1 rounded-full bg-primary-foreground/50" />
+            {durationMinutes} minutes
+          </li>
+        </ul>
+      </div>
+
+      {/* RIGHT — form workspace, light gray canvas. */}
+      <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-8 min-[900px]:py-16">
+        <div className="flex w-full max-w-[560px] animate-page-in flex-col gap-6 rounded-2xl border border-card-border bg-card p-6 shadow-xs sm:p-8">
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">Tell us about yourself</h2>
+            <p className="text-sm text-muted-foreground">Enter your details before starting the placement test.</p>
           </div>
 
-          <Field
-            id="phoneNumber"
-            label="Phone number"
-            value={values.phoneNumber}
-            error={fieldErrors.phoneNumber}
-            onChange={(v) => update("phoneNumber", v)}
-            type="tel"
-            autoComplete="tel"
-          />
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 gap-4">
+              <Field
+                id="firstName"
+                label="First name"
+                value={values.firstName}
+                error={fieldErrors.firstName}
+                onChange={(v) => update("firstName", v)}
+                autoComplete="given-name"
+              />
+              <Field
+                id="lastName"
+                label="Last name"
+                value={values.lastName}
+                error={fieldErrors.lastName}
+                onChange={(v) => update("lastName", v)}
+                autoComplete="family-name"
+              />
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <Field
-              id="age"
-              label="Age"
-              value={values.age}
-              error={fieldErrors.age}
-              onChange={(v) => update("age", v)}
-              type="number"
-              inputMode="numeric"
+              id="phoneNumber"
+              label="Phone number"
+              value={values.phoneNumber}
+              error={fieldErrors.phoneNumber}
+              onChange={(v) => update("phoneNumber", v)}
+              type="tel"
+              autoComplete="tel"
             />
-            <Field
-              id="email"
-              label="Email (optional)"
-              value={values.email}
-              error={fieldErrors.email}
-              onChange={(v) => update("email", v)}
-              type="email"
-              autoComplete="email"
-            />
-          </div>
 
-          {submitError && (
-            <p role="alert" className="text-sm text-destructive">
-              {submitError}
-            </p>
-          )}
+            <div className="grid grid-cols-2 gap-4">
+              <Field
+                id="age"
+                label="Age"
+                value={values.age}
+                error={fieldErrors.age}
+                onChange={(v) => update("age", v)}
+                type="number"
+                inputMode="numeric"
+              />
+              <Field
+                id="email"
+                label="Email (optional)"
+                value={values.email}
+                error={fieldErrors.email}
+                onChange={(v) => update("email", v)}
+                type="email"
+                autoComplete="email"
+              />
+            </div>
 
-          <Button type="submit" size="lg" className="h-11 text-base" disabled={submitting}>
-            {submitting ? "Saving…" : "Continue"}
-          </Button>
-        </form>
+            {submitError && (
+              <p role="alert" className="text-sm text-destructive">
+                {submitError}
+              </p>
+            )}
+
+            <Button type="submit" size="lg" className="h-11 w-full text-base" disabled={submitting}>
+              {submitting ? "Saving…" : "Continue"}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
