@@ -40,7 +40,13 @@ export type Permission =
   // Super Admin only
   | "analytics:read:full"
   | "export:full"
-  | "import:write";
+  | "import:write"
+  // Admin account management (list/create/edit/reset-password/deactivate
+  // regular Admin accounts) — Super Admin only. See /docs/PRODUCT_RULES.md
+  // "Roles": SUPER_ADMIN = all application privileges + admin account
+  // management + role authority; ADMIN has every normal operational
+  // privilege above but never this one.
+  | "admin:manage";
 
 const ADMIN_PERMISSIONS: readonly Permission[] = [
   "test:read",
@@ -61,6 +67,7 @@ const SUPER_ADMIN_PERMISSIONS: readonly Permission[] = [
   "analytics:read:full",
   "export:full",
   "import:write",
+  "admin:manage",
 ];
 
 const PERMISSIONS_BY_ROLE: Record<UserRole, readonly Permission[]> = {

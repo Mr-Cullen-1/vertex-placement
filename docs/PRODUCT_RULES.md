@@ -29,12 +29,34 @@ option order is randomized per attempt.
 | Generate/regenerate invitation tokens | ✅ | ✅ | — |
 | View candidates/results | ✅ (everything) | ✅ | own result only |
 | Export analytics | ✅ full | ✅ standard | ❌ |
+| Manage Admin accounts (create/edit/reset password/deactivate) | ✅ | ❌ | — |
+| Be deactivated / have SUPER_ADMIN assigned to them | ❌ (protected) | ✅ (by Super Admin) | — |
 
 Enforced in code, not just UI, as of Phase 1: `src/server/rbac.ts` holds
 the single permission matrix, and every mutating (and most reading)
 function in `src/server/services/*` checks it against an explicit actor
 before touching the database. See "Authentication & authorization" in
 [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+**Admin account management** (pre-deploy phase): Super Admin manages
+Admin accounts from `/admin/profile` — see `src/server/services/
+user.service.ts`. "Remove admin" is a soft deactivation (`isActive =
+false`), never a hard delete: a regular Admin's `PlacementAssignment`/
+`PlacementInvitation`/Final-Placement-override rows carry a nullable
+`createdByUserId`/`finalPlacementSetByUserId`, and hard-deleting the
+User row would silently null out that attribution and lose real audit
+history. Deactivation is enforced immediately, not just at the next
+login: `src/lib/actor.ts`'s `getActorOrThrow` (used by every
+service-layer call) and the Admin layout both re-check `isActive`
+against the database on every real page render/Server Action call —
+deliberately NOT inside `src/lib/auth.ts`'s `jwt` callback or the
+general case in `src/proxy.ts`, since both run on every Link
+prefetch, and a DB round-trip there caused real, measured navigation
+flakiness for no additional security (`proxy.ts` never checked
+role/isActive to begin with — only "is there a session at all"). The
+Super Admin account itself can never be edited, deactivated, or have
+its role reassigned through this management path, regardless of who
+calls it — see `SuperAdminProtectedError`.
 
 ## Student flow
 

@@ -201,6 +201,39 @@ export class ValidationError extends DomainError {
   }
 }
 
+// --- Admin account management -------------------------------------------
+
+export class DuplicateEmailError extends DomainError {
+  readonly code = "DUPLICATE_EMAIL";
+  readonly httpStatus = 409;
+  constructor() {
+    super("An account with this email already exists.");
+  }
+}
+
+export class UserNotFoundError extends DomainError {
+  readonly code = "USER_NOT_FOUND";
+  readonly httpStatus = 404;
+  constructor() {
+    super("Admin account not found.");
+  }
+}
+
+/** Thrown by every admin-management operation (edit/reset password/
+ * deactivate) whenever the TARGET account is a Super Admin — regardless
+ * of caller, since only a Super Admin can reach this code path at all
+ * (see rbac.ts `admin:manage`). This is what makes Super Admin
+ * un-editable/un-removable/un-demotable through the ordinary
+ * admin-management UI, not a UI-only omission. See
+ * /docs/PRODUCT_RULES.md "Roles". */
+export class SuperAdminProtectedError extends DomainError {
+  readonly code = "SUPER_ADMIN_PROTECTED";
+  readonly httpStatus = 403;
+  constructor() {
+    super("The Super Admin account cannot be modified here.");
+  }
+}
+
 // --- Public self-service ("Try Yourself", Phase 2J) --------------------
 
 export class PublicTestUnavailableError extends DomainError {

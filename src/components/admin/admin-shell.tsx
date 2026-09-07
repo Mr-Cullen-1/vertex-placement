@@ -193,7 +193,11 @@ function SidebarContent({
       </div>
 
       <div className="flex flex-col gap-3 border-t border-sidebar-border px-2 pt-4">
-        <div className="flex items-center gap-2.5 overflow-hidden rounded-lg px-1 py-1">
+        <Link
+          href="/admin/profile"
+          onClick={onNavigate}
+          className="flex items-center gap-2.5 overflow-hidden rounded-lg px-1 py-1 transition-colors duration-150 hover:bg-sidebar-accent"
+        >
           <Avatar size="sm" className="shrink-0 bg-sidebar-accent">
             <AvatarFallback className="bg-sidebar-accent text-xs font-semibold text-sidebar-foreground">
               {initials}
@@ -206,7 +210,7 @@ function SidebarContent({
           <span className="ml-auto shrink-0 rounded-full bg-sidebar-primary/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-sidebar-primary uppercase">
             {user.role === "SUPER_ADMIN" ? "Super" : "Admin"}
           </span>
-        </div>
+        </Link>
         <form action={signOutAction}>
           <Button
             type="submit"
