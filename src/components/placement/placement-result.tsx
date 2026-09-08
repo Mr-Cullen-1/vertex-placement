@@ -25,9 +25,20 @@ import { ScoreRing } from "@/components/shared/score-ring";
  * margins) with a horizontal hero grid (level/score/scale beside a
  * compact stat row), matching the assessment shell's pastel teal canvas
  * (`bg-assessment-canvas`) so Ready/Instructions/Test/Result feel
- * continuous. "Detailed analysis" stays the same collapsed-by-default
- * disclosure, now opening inside this one card rather than as a separate
- * stacked block — see /docs/DESIGN_SYSTEM.md "Student Result redesign".
+ * continuous.
+ *
+ * Redesign pass: "Your strongest areas" (topic-based, sometimes
+ * "Unspecified" when a question has no tagged topic) is gone from this
+ * screen — the top stat row carries a plain "Result" percentage instead,
+ * reusing the same computed `percentage` shown in the hero ring. Detailed
+ * analysis is no longer a collapsed-by-default strip below the main
+ * card; it renders as an always-visible card in the right-hand column
+ * (`variant="panel"`, see detailed-analysis.tsx) with its own internal
+ * scroll, so a long analysis never grows the page itself. At `lg` and up
+ * the whole result card is fit to the viewport height so there's no dead
+ * strip below the fold; below `lg` the sections stack and the page
+ * scrolls normally, same as before.
+ *
  * No business/data logic changed: every value below is unchanged from
  * the server response.
  *
@@ -41,9 +52,9 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
   const { progression } = result;
 
   return (
-    <div className="min-h-dvh bg-assessment-canvas px-4 py-8 sm:px-8 sm:py-10 lg:py-6">
-      <div className="mx-auto flex w-full max-w-[1480px] animate-page-in flex-col gap-6 rounded-3xl border border-card-border bg-card p-5 shadow-sm sm:p-8 lg:gap-5 lg:p-8">
-        <div className="flex flex-col items-center gap-3 border-b border-border pb-6 text-center sm:flex-row sm:justify-between sm:text-left lg:pb-5">
+    <div className="flex min-h-dvh flex-col bg-assessment-canvas px-4 py-6 sm:px-8 sm:py-8 lg:h-dvh lg:overflow-hidden lg:py-6">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-1 animate-page-in flex-col gap-6 rounded-3xl border border-card-border-hover bg-card p-5 shadow-sm sm:p-8 lg:min-h-0 lg:gap-5 lg:p-8">
+        <div className="flex shrink-0 flex-col items-center gap-3 border-b border-border pb-6 text-center sm:flex-row sm:justify-between sm:text-left lg:pb-5">
           <div className="flex items-center gap-3">
             <VertexMark className="size-9" />
             <div className="flex flex-col">
@@ -58,8 +69,8 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:gap-8">
-          <div className="flex flex-col items-center gap-5 rounded-2xl border border-card-border bg-muted/20 px-6 py-8 text-center lg:py-6">
+        <div className="grid flex-1 grid-cols-1 gap-6 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:gap-8">
+          <div className="flex flex-col items-center justify-center gap-5 rounded-2xl border border-card-border bg-muted/20 px-6 py-8 text-center lg:py-10">
             {result.level && (
               <div className="flex flex-col items-center gap-1.5">
                 <span className="text-overline text-primary">Recommended level</span>
@@ -84,36 +95,29 @@ export function PlacementResult({ result }: { result: StudentResultSummary }) {
             </p>
           </div>
 
-          <div className="flex flex-col gap-5">
-            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="flex flex-col gap-5 lg:min-h-0">
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
               <StatCard label="Completion time" value={`${minutes}m ${seconds}s`} />
               <StatCard label="Questions" value={String(result.totalQuestions)} />
               <StatCard label="Correct" value={String(progression.correctCount)} />
               <StatCard label="Incorrect" value={String(progression.incorrectCount)} />
               <StatCard label="Unanswered" value={String(progression.unansweredCount)} />
+              <StatCard label="Result" value={`${Math.round(result.percentage)}%`} />
             </dl>
 
-            {result.strongestTopics.length > 0 && (
-              <div className="flex flex-col gap-2 rounded-2xl border border-card-border bg-card px-4 py-3.5">
-                <h2 className="text-xs font-medium text-muted-foreground">Your strongest areas</h2>
-                <div className="flex flex-col gap-1.5">
-                  {result.strongestTopics.map((topic) => (
-                    <div key={topic.topic} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{topic.topic}</span>
-                      <span className="font-medium text-foreground">{Math.round(topic.percentage)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <p className="shrink-0 text-sm text-muted-foreground">{result.summary}</p>
 
-            <p className="text-sm text-muted-foreground">{result.summary}</p>
+            <div className="flex min-h-0 flex-col lg:flex-1">
+              <DetailedAnalysis
+                analysis={result.detailedAnalysis}
+                variant="panel"
+                className="max-h-[420px] lg:max-h-none"
+              />
+            </div>
           </div>
         </div>
 
-        <DetailedAnalysis analysis={result.detailedAnalysis} />
-
-        <p className="text-center text-xs text-muted-foreground">Your result has been recorded.</p>
+        <p className="shrink-0 text-center text-xs text-muted-foreground">Your result has been recorded.</p>
       </div>
     </div>
   );
